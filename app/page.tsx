@@ -292,6 +292,7 @@ const parseAIResponse = (text: string, videoId: string) => {
   let currentSection = '';
   const parsedFlashcards: Flashcard[] = [];
   const parsedQuiz: QuizQuestion[] = [];
+
   const lines = text.split('\n');
 
   for (const line of lines) {
@@ -303,15 +304,19 @@ const parseAIResponse = (text: string, videoId: string) => {
       const parts = cleanLine.split('|');
       if (parts.length >= 3) {
         parsedFlashcards.push({
-          id: Date.now() + Math.random(), videoId,
-          question: parts[1].trim(), answer: parts.slice(2).join('|').trim(), learned: false
+          id: Date.now() + Math.random(),
+          videoId,
+          question: parts[1].trim(),
+          answer: parts.slice(2).join('|').trim(),
+          learned: false
         });
       }
     } else if (currentSection === 'QUIZ') {
       const parts = cleanLine.split('|');
       if (parts.length >= 7) {
         parsedQuiz.push({
-          id: Date.now() + Math.random(), videoId,
+          id: Date.now() + Math.random(),
+          videoId,
           question: parts[1].trim(),
           options: { A: parts[2].trim(), B: parts[3].trim(), C: parts[4].trim(), D: parts[5].trim() },
           correct: parts[6].trim().toUpperCase().replace(/[^ABCD]/g, ''), 
@@ -361,7 +366,7 @@ const OfflineBanner = () => {
 
   if (!isOffline) return null;
   return (
-    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-9999 animate-fade-in-up">
+    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-[9999] animate-fade-in-up">
       <WifiOff size={14} /> İnternet bağlantınız koptu. Lütfen bağlantınızı kontrol edin.
     </div>
   );
@@ -371,7 +376,7 @@ const BlueLightFilter = () => {
   const { blueLight } = useStore();
   if (blueLight === 0) return null;
   return (
-    <div className="fixed inset-0 pointer-events-none z-9998 transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 165, 0, 0.3)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
+    <div className="fixed inset-0 pointer-events-none z-[9998] transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 165, 0, 0.3)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
   );
 }
 
@@ -429,7 +434,6 @@ const LandingPage = () => {
         <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-4 text-transparent bg-clip-text bg-linear-to-r from-zinc-100 to-zinc-500 drop-shadow-sm text-center">
           BMO <span className="text-amber-500">Learn</span>
         </h1>
-        {/* REQ: Yazı kısaltıldı */}
         <p className={`text-base sm:text-lg md:text-xl font-medium tracking-wide mb-10 md:mb-12 text-zinc-400 text-center`}>
           Sadece odaklan.
         </p>
@@ -467,6 +471,11 @@ const LandingPage = () => {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* İMZA KISMI (LANDING PAGE) */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-600 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase opacity-50 hover:opacity-100 transition-opacity">
+        Developed by EHC
       </div>
     </div>
   );
@@ -927,9 +936,8 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState<number>(25 * 60);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 
-  // Sekme ismini dinamik olarak güncelleme
   useEffect(() => {
-    document.title = "BMO Learn | Odaklan ve Öğren";
+    document.title = "BMO Learn | Sadece odaklan.";
   }, []);
 
   useEffect(() => {
@@ -948,7 +956,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [initData]);
 
-  // Pomodoro Mantığı ve Heatmap Kaydı
   useEffect(() => {
     let interval: any;
     if (isTimerRunning && timeLeft > 0) {
@@ -994,7 +1001,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Sadece F11 Tuşu / Tarayıcı Fullscreen Senkronizasyonu
   useEffect(() => {
     const handleFullscreenChange = () => { 
       if (document.fullscreenElement) { setIsFocusMode(true); } 
@@ -1009,7 +1015,6 @@ export default function App() {
     if (musicPlayerRef.current?.isMuted) globalMuted ? musicPlayerRef.current.mute() : musicPlayerRef.current.unMute();
   }, [globalMuted]);
 
-  // YouTube DOM Hatası Çözümü (Failsafe)
   useEffect(() => {
     if (isInitializing) return; 
     
@@ -1118,7 +1123,6 @@ export default function App() {
     playSound('click');
   };
 
-  // Saf F11 Davranışı
   const toggleFocusMode = async () => {
     if (!document.fullscreenElement) {
       try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); setIsFocusMode(true); } catch (e) { }
@@ -1174,10 +1178,12 @@ export default function App() {
           <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
 
           <header className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40 backdrop-blur-xl bg-opacity-80 gap-3`}>
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-3 sm:gap-6">
               <button onClick={() => { useStore.getState().setView('landing'); playSound('click'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight">BMO <span className="text-amber-500">Learn</span></h1>
               </button>
+              {/* İMZA (Uygulama İçi) */}
+              <span className="hidden sm:inline-block text-[10px] uppercase tracking-widest text-zinc-500 font-bold mt-1 border-l border-zinc-800 pl-4">Developed by EHC</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -1216,7 +1222,6 @@ export default function App() {
 
           <main className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 max-w-400 mx-auto w-full`}>
             
-            {/* SOL TARAFI: VİDEO */}
             <div className={`flex flex-col w-full lg:w-[65%]`}>
               <form onSubmit={handleDashboardUrlChange} className={`flex gap-2 sm:gap-3 mb-4 sm:mb-5 p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm focus-within:border-amber-500/50 transition-colors`}>
                 <input type="text" value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} placeholder="Yeni bir YouTube Linki yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs sm:text-sm font-medium`} />
@@ -1236,7 +1241,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* SAĞ TARAF: ARAÇLAR */}
             <div className={`flex flex-col w-full lg:w-[35%] h-125 md:h-150 lg:h-auto bg-zinc-900 rounded-2xl sm:rounded-3xl border border-zinc-800 shadow-xl overflow-hidden transition-all duration-500`}>
               
               <div className={`flex border-b border-zinc-800 overflow-x-auto custom-scrollbar`}>
