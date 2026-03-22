@@ -9,7 +9,7 @@ import {
   PlayCircle, Coffee, Brain, History, Download, 
   CheckSquare, Square, Keyboard, Eye, WifiOff,
   Sparkles, Target, Copy, CheckCircle2, AlertCircle, Circle,
-  CalendarDays, SkipForward
+  CalendarDays, SkipForward, MonitorSmartphone, Share, MoreVertical
 } from 'lucide-react';
 
 // ==========================================
@@ -45,6 +45,8 @@ const RADIO_STATIONS = [
   { id: 'Fru_Ss-TqgY', title: 'Karadeniz Akustik', category: 'Yöresel & Akustik' },
 ];
 
+const EXAM_LEVELS = ["KPSS Lisans", "KPSS Ön Lisans", "TYT-AYT", "Vize Sınavı", "Final Sınavı"];
+
 const formatTime = (seconds: number): string => {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
   const s = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -76,12 +78,14 @@ interface AppState {
   pomodoroHistory: Record<string, number>; 
   activeVideoId: string;
   playerConfig: { vId: string; pId: string | null };
+  installPrompt: any; 
   
   setView: (view: 'landing' | 'app') => void;
   setPlayerConfig: (config: { vId: string; pId: string | null }) => void;
   toggleGlobalMute: () => void;
   setBlueLight: (val: number) => void;
   setActiveVideoId: (id: string) => void;
+  setInstallPrompt: (prompt: any) => void;
   
   addNote: (note: Note) => void;
   deleteNote: (id: number) => void;
@@ -114,13 +118,14 @@ interface AppState {
 const useStore = create<AppState>((set) => ({
   view: 'landing', globalMuted: false, blueLight: 0,
   notes: [], flashcards: [], quiz: [], todos: [], history: [], pomodoroHistory: {},
-  activeVideoId: '', playerConfig: { vId: '', pId: null },
+  activeVideoId: '', playerConfig: { vId: '', pId: null }, installPrompt: null,
 
   setView: (view) => set({ view }),
   setPlayerConfig: (config) => set({ playerConfig: config }),
   toggleGlobalMute: () => set((state) => ({ globalMuted: !state.globalMuted })),
   setBlueLight: (val) => set({ blueLight: val }),
   setActiveVideoId: (id) => set({ activeVideoId: id }),
+  setInstallPrompt: (prompt) => set({ installPrompt: prompt }),
   
   addNote: (note) => set((state) => {
     const newNotes = [...state.notes, note].sort((a, b) => a.time - b.time);
@@ -366,7 +371,7 @@ const OfflineBanner = () => {
 
   if (!isOffline) return null;
   return (
-    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-[9999] animate-fade-in-up">
+    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-9999 animate-fade-in-up">
       <WifiOff size={14} /> İnternet bağlantınız koptu. Lütfen bağlantınızı kontrol edin.
     </div>
   );
@@ -376,33 +381,85 @@ const BlueLightFilter = () => {
   const { blueLight } = useStore();
   if (blueLight === 0) return null;
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9998] transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 165, 0, 0.3)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
+    <div className="fixed inset-0 pointer-events-none z-9998 transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 165, 0, 0.3)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
   );
 }
 
+// PWA: Manifest ve Service Worker Enjeksiyonu
 const PWAInjector = () => {
+  const setInstallPrompt = useStore(state => state.setInstallPrompt);
+  
   useEffect(() => {
-    if (typeof window !== 'undefined' && !document.getElementById('pwa-manifest')) {
-      const manifest = {
-        name: "BMO Learn",
-        short_name: "BMOLearn",
-        start_url: ".",
-        display: "standalone",
-        background_color: "#09090b",
-        theme_color: "#f59e0b",
-        icons: [
-          { src: "https://www.google.com/favicon.ico", sizes: "192x192", type: "image/png" },
-          { src: "https://www.google.com/favicon.ico", sizes: "512x512", type: "image/png" }
-        ]
+    if (typeof window !== 'undefined') {
+      if (!document.getElementById('pwa-manifest')) {
+        const manifest = {
+          name: "BMO Learn",
+          short_name: "BMO Learn",
+          start_url: "/",
+          display: "standalone",
+          display_override: ["window-controls-overlay", "minimal-ui"], 
+          background_color: "#09090b",
+          theme_color: "#09090b", 
+          icons: [
+            { src: "/icon.png", sizes: "192x192", type: "image/png" },
+            { src: "/icon.png", sizes: "512x512", type: "image/png" }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.id = 'pwa-manifest'; link.rel = 'manifest'; link.href = manifestURL;
+        document.head.appendChild(link);
+      }
+      
+      if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('activate', (e) => self.clients.claim()); self.addEventListener('fetch', (e) => {});`;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      }
+
+      const handler = (e: any) => {
+        e.preventDefault();
+        setInstallPrompt(e);
       };
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      const manifestURL = URL.createObjectURL(blob);
-      const link = document.createElement('link');
-      link.id = 'pwa-manifest'; link.rel = 'manifest'; link.href = manifestURL;
-      document.head.appendChild(link);
+      window.addEventListener('beforeinstallprompt', handler);
+      return () => window.removeEventListener('beforeinstallprompt', handler);
     }
-  }, []);
+  }, [setInstallPrompt]);
   return null;
+}
+
+const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden p-6 app-no-drag" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><MonitorSmartphone className="text-amber-500"/> Uygulamayı Yükle</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={20}/></button>
+        </div>
+        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">BMO Learn'ü bilgisayarınıza veya telefonunuza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.</p>
+        
+        <div className="space-y-4">
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><MonitorSmartphone size={14}/> Brave / Chrome / Edge</h4>
+            <p className="text-xs text-zinc-500">Adres çubuğunun en sağındaki <strong>İndirme simgesine</strong> tıklayın veya sağ üst menüden <strong>Uygulamayı Yükle</strong> seçeneğine basın.</p>
+          </div>
+          
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><Share size={14}/> iPhone / iPad (Safari)</h4>
+            <p className="text-xs text-zinc-500">Alt menüdeki <strong>Paylaş</strong> ikonuna dokunun ve <strong>Ana Ekrana Ekle</strong> seçeneğine tıklayın.</p>
+          </div>
+          
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><MoreVertical size={14}/> Android</h4>
+            <p className="text-xs text-zinc-500">Tarayıcınızın sağ üst menüsünden <strong>Ana Ekrana Ekle</strong>'yi seçin.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const LandingPage = () => {
@@ -427,13 +484,28 @@ const LandingPage = () => {
 
   return (
     <div className={`min-h-screen flex flex-col relative overflow-hidden bg-zinc-950 p-4 sm:p-8`}>
+      <div className="absolute top-0 left-0 w-full h-10 app-drag-region z-50"></div>
+
       <div className="absolute top-[-10%] left-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-amber-500/10 blur-[80px] md:blur-[120px] rounded-full animate-blob pointer-events-none mix-blend-screen"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-zinc-600/20 blur-[80px] md:blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none mix-blend-screen"></div>
 
-      <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up">
-        <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-4 text-transparent bg-clip-text bg-linear-to-r from-zinc-100 to-zinc-500 drop-shadow-sm text-center">
-          BMO <span className="text-amber-500">Learn</span>
-        </h1>
+      <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up app-no-drag">
+        
+        {/* YENİ: YUMUŞATILMIŞ SİNEMATİK LOGO ANİMASYONU */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center animate-float group cursor-default">
+            {/* Yavaşça nefes alan arka plan ışığı (Cinematic Background Glow) */}
+            <div className="absolute inset-0 bg-amber-500 rounded-full animate-subtle-glow pointer-events-none"></div>
+            {/* Logonun hemen arkasındaki hafif parlaklık */}
+            <div className="absolute inset-4 bg-amber-400/20 rounded-full blur-xl pointer-events-none transition-all duration-700 group-hover:bg-amber-400/40"></div>
+            {/* Logonun kendisi - Hover anında çok yavaş ve kibar bir büyüme (%5) */}
+            <img src="/logo.png" alt="BMO Learn Logo" className="relative w-full h-full object-contain z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-105" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          </div>
+          <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-zinc-100 to-zinc-500 drop-shadow-sm">
+            <span className="text-amber-500">Learn</span>
+          </h1>
+        </div>
+
         <p className={`text-base sm:text-lg md:text-xl font-medium tracking-wide mb-10 md:mb-12 text-zinc-400 text-center`}>
           Sadece odaklan.
         </p>
@@ -473,8 +545,7 @@ const LandingPage = () => {
         )}
       </div>
       
-      {/* İMZA KISMI (LANDING PAGE) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-600 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase opacity-50 hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-600 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase opacity-50 hover:opacity-100 transition-opacity app-no-drag">
         Developed by EHC
       </div>
     </div>
@@ -637,6 +708,8 @@ const AIGeneratorTab = ({ activeVideoId, setActiveTab }: any) => {
   const [aiResponse, setAiResponse] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  
+  const [selectedLevel, setSelectedLevel] = useState<string>(EXAM_LEVELS[0]);
 
   useEffect(() => {
     if (!activeVideoId) return;
@@ -650,7 +723,7 @@ const AIGeneratorTab = ({ activeVideoId, setActiveTab }: any) => {
   const promptTemplate = `You are an educational assistant.
 Detect the language of the video title and produce output in the same language.
 
-LEVEL: midterm exam difficulty
+LEVEL: ${selectedLevel} difficulty
 STYLE: short, clear, exam-focused
 
 TASKS:
@@ -691,7 +764,7 @@ https://www.youtube.com/watch?v=${activeVideoId}`;
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(promptTemplate);
     playSound('success');
-    setSuccessMsg('Prompt kopyalandı! ChatGPT veya Gemini\'ye yapıştırın.');
+    setSuccessMsg('Prompt kopyalandı! Yapay zekaya yapıştırın.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
@@ -720,19 +793,31 @@ https://www.youtube.com/watch?v=${activeVideoId}`;
         <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500"><Sparkles size={20} /></div>
         <div>
           <h2 className="text-base sm:text-lg font-bold text-zinc-100">AI Öğrenme Sihirbazı</h2>
-          <p className="text-xs sm:text-sm text-zinc-500">Yapay zeka ile anında Flashcard ve Quiz oluşturun.</p>
         </div>
       </div>
 
       <div className="mb-6 bg-zinc-950/50 border border-zinc-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
         <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-transparent pointer-events-none"></div>
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
           <span className="text-xs sm:text-sm font-bold text-amber-500 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px]">1</span> Prompt'u Kopyala</span>
           <button onClick={handleCopyPrompt} className="flex items-center gap-1.5 text-xs font-bold bg-amber-500 text-zinc-950 px-3 py-1.5 rounded-lg hover:scale-105 transition-transform active:scale-95 shadow-lg">
             <Copy size={14} /> Kopyala
           </button>
         </div>
-        <p className="text-[10px] sm:text-xs text-zinc-400 mb-3">Bu metni kopyalayın ve en sevdiğiniz yapay zekaya (ChatGPT, Gemini vb.) yapıştırın.</p>
+        
+        <div className="mb-3 flex flex-wrap gap-2">
+          {EXAM_LEVELS.map(level => (
+            <button 
+              key={level} 
+              onClick={() => { setSelectedLevel(level); playSound('click'); }}
+              className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-md border font-semibold transition-colors ${selectedLevel === level ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-amber-500/50'}`}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[10px] sm:text-xs text-zinc-400 mb-3">Bu metni kopyalayın ve en sevdiğiniz yapay zekaya yapıştırın.</p>
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 h-24 overflow-y-auto custom-scrollbar text-[10px] sm:text-xs text-zinc-500 font-mono whitespace-pre-wrap">
           {promptTemplate}
         </div>
@@ -780,7 +865,7 @@ const QuizTab = ({ activeVideoId }: any) => {
           <span className={`text-xs font-bold px-2.5 py-1 rounded-md bg-red-500/10 text-red-500 border border-red-500/20`}>Yanlış: {wrongCount}</span>
         </div>
         <button onClick={() => { resetQuiz(activeVideoId); playSound('click'); }} className="text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors">
-          Reset Quiz
+          Sıfırla
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6 custom-scrollbar">
@@ -907,7 +992,7 @@ const FlashcardsTab = ({ activeVideoId }: any) => {
 // ==========================================
 export default function App() {
   const { 
-    view, globalMuted, notes, flashcards, quiz, todos, activeVideoId, playerConfig, 
+    view, globalMuted, notes, flashcards, quiz, todos, history, activeVideoId, playerConfig, installPrompt,
     setPlayerConfig, setActiveVideoId, initData, addNote, deleteNote, addPomodoroRecord,
     addToHistory, toggleGlobalMute
   } = useStore();
@@ -916,6 +1001,7 @@ export default function App() {
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'notes' | 'flashcards' | 'quiz' | 'pomodoro' | 'ai'>('notes');
   const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [showInstallModal, setShowInstallModal] = useState<boolean>(false); 
   
   const [newNote, setNewNote] = useState<string>('');
   const noteInputRef = useRef<HTMLInputElement>(null); 
@@ -1104,11 +1190,17 @@ export default function App() {
   const handleExportNotes = () => {
     const currentNotes = notes.filter(n => n.videoId === activeVideoId);
     if (currentNotes.length === 0) return alert("İndirilecek not bulunamadı.");
-    let content = `BMO Learn - Video Notları\nVideo ID: ${activeVideoId}\nTarih: ${new Date().toLocaleDateString()}\n-----------------------------------\n\n`;
+    const videoTitle = history.find(h => h.videoId === activeVideoId)?.title || "BMO_Learn_Video";
+    const dateStr = new Date().toLocaleDateString('tr-TR'); 
+    
+    let content = `BMO Learn - Video Notları\nVideo Başlığı: ${videoTitle}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
     currentNotes.forEach(n => { content += `[${formatTime(n.time)}] ${n.text}\n`; });
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `BMOLearn_Notlar_${activeVideoId}.txt`;
+    const a = document.createElement('a'); 
+    const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, '');
+    a.download = `${safeTitle} - ${dateStr}.txt`;
+    
     a.click(); URL.revokeObjectURL(url); playSound('success');
   };
 
@@ -1133,6 +1225,15 @@ export default function App() {
     }
   };
 
+  const handleInstallClick = () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      installPrompt.userChoice.then(() => useStore.setState({ installPrompt: null }));
+    } else {
+      setShowInstallModal(true);
+    }
+  }
+
   const currentNotes = notes.filter(n => n.videoId === activeVideoId);
 
   if (isInitializing) return <SkeletonLoading />;
@@ -1140,11 +1241,14 @@ export default function App() {
   return (
     <>
       <PWAInjector />
+      <AppInstallModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
       <OfflineBanner />
       <BlueLightFilter />
       <div className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden -z-50"><div id="youtube-music-player"></div></div>
       
       <style dangerouslySetInnerHTML={{__html: `
+        .app-drag-region { -webkit-app-region: drag; user-select: none; }
+        .app-no-drag { -webkit-app-region: no-drag; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; }
@@ -1153,6 +1257,19 @@ export default function App() {
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
         .flip-card .card-inner { transform: rotateY(180deg); }
+        
+        /* YENİ: Sinematik Süzülme (Float) ve Işık (Glow) Animasyonları */
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes subtleGlow {
+          0%, 100% { opacity: 0.3; transform: scale(0.9); filter: blur(30px); }
+          50% { opacity: 0.6; transform: scale(1.1); filter: blur(40px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-subtle-glow { animation: subtleGlow 4s ease-in-out infinite; }
+
         @keyframes eq { 0% { height: 4px; } 50% { height: 16px; } 100% { height: 4px; } }
         .animate-eq-1 { animation: eq 0.8s ease-in-out infinite; }
         .animate-eq-2 { animation: eq 1.2s ease-in-out infinite 0.2s; }
@@ -1177,23 +1294,29 @@ export default function App() {
         <div className={`min-h-screen flex flex-col bg-zinc-950 text-zinc-100 transition-colors duration-500 animate-fade-in relative`}>
           <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
 
-          <header className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40 backdrop-blur-xl bg-opacity-80 gap-3`}>
-            <div className="flex items-center gap-3 sm:gap-6">
-              <button onClick={() => { useStore.getState().setView('landing'); playSound('click'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">BMO <span className="text-amber-500">Learn</span></h1>
+          <header className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40 backdrop-blur-xl bg-opacity-80 gap-3 app-drag-region`}>
+            <div className="flex items-center gap-3 sm:gap-6 app-no-drag">
+              <button onClick={() => { useStore.getState().setView('landing'); playSound('click'); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-amber-500/30 group-hover:border-amber-500 transition-colors shadow-[0_0_10px_rgba(245,158,11,0.2)] group-hover:shadow-[0_0_15px_rgba(245,158,11,0.6)]">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight hidden sm:block">BMO <span className="text-amber-500">Learn</span></h1>
               </button>
-              {/* İMZA (Uygulama İçi) */}
               <span className="hidden sm:inline-block text-[10px] uppercase tracking-widest text-zinc-500 font-bold mt-1 border-l border-zinc-800 pl-4">Developed by EHC</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 app-no-drag">
               <div className={`hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-full bg-zinc-950/50 border border-zinc-800 text-xs font-medium mr-2 transition-all`}>
                 <span className="flex items-center gap-1.5 text-amber-500" title="Notlar"><Bookmark size={14}/> {notes.length}</span>
                 <span className={`w-1 h-1 rounded-full text-zinc-500`}></span>
-                <span className="flex items-center gap-1.5 text-blue-400" title="Kartlar"><BookOpen size={14}/> {flashcards.length}</span>
+                <span className="flex items-center gap-1.5 text-amber-500" title="Kartlar"><BookOpen size={14}/> {flashcards.length}</span>
                 <span className={`w-1 h-1 rounded-full text-zinc-500`}></span>
-                <span className="flex items-center gap-1.5 text-green-400" title="Quiz Soruları"><Target size={14}/> {quiz.length}</span>
+                <span className="flex items-center gap-1.5 text-amber-500" title="Quiz Soruları"><Target size={14}/> {quiz.length}</span>
               </div>
+              
+              <button onClick={handleInstallClick} className={`p-2 sm:p-2.5 rounded-full hover:bg-amber-500/10 text-zinc-400 hover:text-amber-500 transition-colors`} title="Uygulamayı Yükle">
+                <Download size={18} />
+              </button>
               
               <button onClick={() => { setShowHistory(true); playSound('click'); }} className={`p-2 sm:p-2.5 rounded-full hover:bg-zinc-500/10 text-zinc-400 transition-colors`} title="Geçmiş">
                 <History size={18} />
@@ -1246,7 +1369,7 @@ export default function App() {
               <div className={`flex border-b border-zinc-800 overflow-x-auto custom-scrollbar`}>
                 <button onClick={() => { setActiveTab('notes'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'notes' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><List size={14} /> <span className="hidden sm:inline">Notlar</span></button>
                 <button onClick={() => { setActiveTab('flashcards'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'flashcards' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><BookOpen size={14} /> <span className="hidden sm:inline">Kartlar</span></button>
-                <button onClick={() => { setActiveTab('quiz'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'quiz' ? `text-green-500 border-b-2 border-green-500 bg-green-500/5` : 'text-zinc-500'}`}><Target size={14} /> <span className="hidden sm:inline">Quiz</span></button>
+                <button onClick={() => { setActiveTab('quiz'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'quiz' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><Target size={14} /> <span className="hidden sm:inline">Quiz</span></button>
                 <button onClick={() => { setActiveTab('pomodoro'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'pomodoro' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><Timer size={14} /> <span className="hidden sm:inline">Odak</span></button>
                 <button onClick={() => { setActiveTab('ai'); playSound('start'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'ai' ? `text-blue-500 border-b-2 border-blue-500 bg-blue-500/5` : 'text-blue-400/50 hover:text-blue-400'}`}><Sparkles size={14} /> AI</button>
               </div>
