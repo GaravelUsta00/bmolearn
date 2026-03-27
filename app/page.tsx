@@ -472,7 +472,7 @@ const LandingPage = () => {
           <form onSubmit={handleStart} className="flex-1 relative group">
             <div className="absolute -inset-1 bg-linear-to-r from-[#FF8C00] to-orange-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
             <div className={`relative flex items-center p-2 pl-4 sm:pl-6 rounded-3xl bg-zinc-900/80 backdrop-blur-md border border-zinc-800/50 shadow-2xl`}>
-              <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="YouTube linki (Video / Playlist) veya Web adresi..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm sm:text-base md:text-lg w-full font-medium placeholder-zinc-600`} autoFocus />
+              <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="YouTube linki veya Web adresi..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm sm:text-base md:text-lg w-full font-medium placeholder-zinc-600`} autoFocus />
               {url && (
                 <button type="button" onClick={() => setUrl('')} className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"><X size={18} /></button>
               )}
@@ -1654,7 +1654,7 @@ export default function App() {
             
             <div className={`flex flex-col w-full lg:w-[65%]`}>
               <form onSubmit={handleDashboardUrlChange} className={`flex gap-2 sm:gap-3 mb-4 sm:mb-5 p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-[20px] bg-zinc-900 border border-zinc-800 shadow-sm focus-within:border-[#FF8C00]/50 transition-colors`}>
-                <input type="text" value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} placeholder="Yeni bir YouTube Linki (Video / Playlist) veya Web Adresi yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs sm:text-sm font-medium w-full`} />
+                <input type="text" value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} placeholder="Yeni bir YouTube Linki veya Web Adresi yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs sm:text-sm font-medium w-full`} />
                 {videoUrlInput && <button type="button" onClick={() => setVideoUrlInput('')} className="p-2 text-zinc-500 hover:text-zinc-300"><X size={16} /></button>}
                 
                 <label className="cursor-pointer px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-md">
