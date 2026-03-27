@@ -9,7 +9,8 @@ import {
   PlayCircle, Coffee, Brain, History, Download, 
   CheckSquare, Square, Keyboard, Eye, WifiOff,
   Sparkles, Target, Copy, CheckCircle2, AlertCircle, Circle,
-  CalendarDays, SkipForward, MonitorSmartphone, Share, MoreVertical
+  CalendarDays, SkipForward, MonitorSmartphone, Share, MoreVertical,
+  Upload, FileText, AlignLeft, Check, Smartphone, FileVideo, File
 } from 'lucide-react';
 
 // ==========================================
@@ -19,22 +20,22 @@ declare global {
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady: () => void;
-    webkitAudioContext: typeof AudioContext;
   }
 }
 
-interface Note { id: number; videoId: string; text: string; time: number; }
-interface Flashcard { id: number; videoId: string; question: string; answer: string; learned?: boolean; }
+interface Note { id: number; contentId: string; text: string; time: number; }
+interface Flashcard { id: number; contentId: string; question: string; answer: string; learned?: boolean; }
 interface Todo { id: number; text: string; completed: boolean; }
-interface HistoryItem { videoId: string; title: string; timestamp: number; }
+interface HistoryItem { contentId: string; title: string; timestamp: number; type: 'video' | 'document'; pId?: string | null; }
 interface QuizQuestion { 
   id: number; 
-  videoId: string; 
+  contentId: string; 
   question: string; 
   options: { A: string; B: string; C: string; D: string }; 
   correct: string; 
   userAnswer?: string; 
 }
+interface ContentConfig { id: string; type: 'video' | 'document'; title: string; url?: string; pId?: string | null; fileType?: string; }
 
 const RADIO_STATIONS = [
   { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop', category: 'Odak & Çalışma' },
@@ -45,7 +46,7 @@ const RADIO_STATIONS = [
   { id: 'Fru_Ss-TqgY', title: 'Karadeniz Akustik', category: 'Yöresel & Akustik' },
 ];
 
-const EXAM_LEVELS = ["KPSS Lisans", "KPSS Ön Lisans", "TYT-AYT", "Vize Sınavı", "Final Sınavı"];
+const EXAM_LEVELS = ["KPSS Lisans", "TYT-AYT", "Vize Sınavı", "Final Sınavı", "Genel Çalışma"];
 
 const formatTime = (seconds: number): string => {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -73,19 +74,24 @@ interface AppState {
   notes: Note[];
   flashcards: Flashcard[];
   quiz: QuizQuestion[];
+  summaries: Record<string, string>;
   todos: Todo[];
   history: HistoryItem[];
   pomodoroHistory: Record<string, number>; 
-  activeVideoId: string;
-  playerConfig: { vId: string; pId: string | null };
+  
+  activeContentId: string;
+  contentConfig: ContentConfig;
   installPrompt: any; 
+  pendingDocReload: { id: string, title: string } | null;
   
   setView: (view: 'landing' | 'app') => void;
-  setPlayerConfig: (config: { vId: string; pId: string | null }) => void;
+  setContentConfig: (config: ContentConfig) => void;
+  updateContentTitle: (title: string) => void;
   toggleGlobalMute: () => void;
   setBlueLight: (val: number) => void;
-  setActiveVideoId: (id: string) => void;
+  setActiveContentId: (id: string) => void;
   setInstallPrompt: (prompt: any) => void;
+  setPendingDocReload: (item: { id: string, title: string } | null) => void;
   
   addNote: (note: Note) => void;
   deleteNote: (id: number) => void;
@@ -93,39 +99,42 @@ interface AppState {
   addFlashcard: (card: Flashcard) => void;
   deleteFlashcard: (id: number) => void;
   toggleFlashcardLearned: (id: number) => void;
-  resetFlashcards: (videoId: string) => void;
+  resetFlashcards: (contentId: string) => void;
   
   addQuizQuestion: (q: QuizQuestion) => void;
   answerQuizQuestion: (id: number, answer: string) => void;
   deleteQuizQuestion: (id: number) => void;
-  resetQuiz: (videoId: string) => void;
+  resetQuiz: (contentId: string) => void;
   
-  replaceVideoAIContent: (videoId: string, newCards: Flashcard[], newQuiz: QuizQuestion[]) => void;
+  replaceContentAI: (contentId: string, newCards: Flashcard[], newQuiz: QuizQuestion[], newSummary: string) => void;
   
   addTodo: (text: string) => void;
   toggleTodo: (id: number) => void;
   deleteTodo: (id: number) => void;
   
   addToHistory: (item: HistoryItem) => void;
-  deleteHistoryItem: (videoId: string) => void;
+  deleteHistoryItem: (contentId: string) => void;
   clearHistory: () => void;
 
   addPomodoroRecord: () => void;
   
-  initData: (notes: Note[], cards: Flashcard[], quiz: QuizQuestion[], todos: Todo[], history: HistoryItem[], pHistory: Record<string, number>) => void;
+  initData: (notes: Note[], cards: Flashcard[], quiz: QuizQuestion[], summaries: Record<string, string>, todos: Todo[], history: HistoryItem[], pHistory: Record<string, number>) => void;
 }
 
 const useStore = create<AppState>((set) => ({
   view: 'landing', globalMuted: false, blueLight: 0,
-  notes: [], flashcards: [], quiz: [], todos: [], history: [], pomodoroHistory: {},
-  activeVideoId: '', playerConfig: { vId: '', pId: null }, installPrompt: null,
+  notes: [], flashcards: [], quiz: [], summaries: {}, todos: [], history: [], pomodoroHistory: {},
+  activeContentId: '', contentConfig: { id: '', type: 'video', title: '' }, installPrompt: null,
+  pendingDocReload: null,
 
   setView: (view) => set({ view }),
-  setPlayerConfig: (config) => set({ playerConfig: config }),
+  setContentConfig: (config) => set({ contentConfig: config }),
+  updateContentTitle: (title) => set((state) => ({ contentConfig: { ...state.contentConfig, title } })),
   toggleGlobalMute: () => set((state) => ({ globalMuted: !state.globalMuted })),
   setBlueLight: (val) => set({ blueLight: val }),
-  setActiveVideoId: (id) => set({ activeVideoId: id }),
+  setActiveContentId: (id) => set({ activeContentId: id }),
   setInstallPrompt: (prompt) => set({ installPrompt: prompt }),
+  setPendingDocReload: (item) => set({ pendingDocReload: item }),
   
   addNote: (note) => set((state) => {
     const newNotes = [...state.notes, note].sort((a, b) => a.time - b.time);
@@ -153,8 +162,8 @@ const useStore = create<AppState>((set) => ({
     localStorage.setItem('bmo_flashcards', JSON.stringify(newCards));
     return { flashcards: newCards };
   }),
-  resetFlashcards: (videoId) => set((state) => {
-    const newCards = state.flashcards.map(c => c.videoId === videoId ? { ...c, learned: false } : c);
+  resetFlashcards: (contentId) => set((state) => {
+    const newCards = state.flashcards.map(c => c.contentId === contentId ? { ...c, learned: false } : c);
     localStorage.setItem('bmo_flashcards', JSON.stringify(newCards));
     return { flashcards: newCards };
   }),
@@ -174,20 +183,25 @@ const useStore = create<AppState>((set) => ({
     localStorage.setItem('bmo_quiz', JSON.stringify(newQuiz));
     return { quiz: newQuiz };
   }),
-  resetQuiz: (videoId) => set((state) => {
-    const newQuiz = state.quiz.map(q => q.videoId === videoId ? { ...q, userAnswer: undefined } : q);
+  resetQuiz: (contentId) => set((state) => {
+    const newQuiz = state.quiz.map(q => q.contentId === contentId ? { ...q, userAnswer: undefined } : q);
     localStorage.setItem('bmo_quiz', JSON.stringify(newQuiz));
     return { quiz: newQuiz };
   }),
   
-  replaceVideoAIContent: (videoId, newCards, newQuiz) => set((state) => {
-    const filteredCards = state.flashcards.filter(c => c.videoId !== videoId);
-    const filteredQuiz = state.quiz.filter(q => q.videoId !== videoId);
+  replaceContentAI: (contentId, newCards, newQuiz, newSummary) => set((state) => {
+    const filteredCards = state.flashcards.filter(c => c.contentId !== contentId);
+    const filteredQuiz = state.quiz.filter(q => q.contentId !== contentId);
     const finalCards = [...filteredCards, ...newCards];
     const finalQuiz = [...filteredQuiz, ...newQuiz];
+    
+    const newSummaries = { ...state.summaries, [contentId]: newSummary };
+
     localStorage.setItem('bmo_flashcards', JSON.stringify(finalCards));
     localStorage.setItem('bmo_quiz', JSON.stringify(finalQuiz));
-    return { flashcards: finalCards, quiz: finalQuiz };
+    localStorage.setItem('bmo_summaries', JSON.stringify(newSummaries));
+    
+    return { flashcards: finalCards, quiz: finalQuiz, summaries: newSummaries };
   }),
 
   addTodo: (text) => set((state) => {
@@ -208,24 +222,28 @@ const useStore = create<AppState>((set) => ({
 
   addToHistory: (item) => set((state) => {
     if(!item.title || item.title.trim() === '') return state; 
-    const filtered = state.history.filter(h => h.videoId !== item.videoId);
+    const filtered = state.history.filter(h => h.contentId !== item.contentId);
     const newHistory = [item, ...filtered].slice(0, 30); 
     localStorage.setItem('bmo_history', JSON.stringify(newHistory));
     return { history: newHistory };
   }),
   
-  deleteHistoryItem: (videoId) => set((state) => {
-    const newHistory = state.history.filter(h => h.videoId !== videoId);
-    const newNotes = state.notes.filter(n => n.videoId !== videoId);
-    const newCards = state.flashcards.filter(c => c.videoId !== videoId);
-    const newQuiz = state.quiz.filter(q => q.videoId !== videoId);
+  deleteHistoryItem: (contentId) => set((state) => {
+    const newHistory = state.history.filter(h => h.contentId !== contentId);
+    const newNotes = state.notes.filter(n => n.contentId !== contentId);
+    const newCards = state.flashcards.filter(c => c.contentId !== contentId);
+    const newQuiz = state.quiz.filter(q => q.contentId !== contentId);
     
+    const newSummaries = { ...state.summaries };
+    delete newSummaries[contentId];
+
     localStorage.setItem('bmo_history', JSON.stringify(newHistory));
     localStorage.setItem('bmo_notes', JSON.stringify(newNotes));
     localStorage.setItem('bmo_flashcards', JSON.stringify(newCards));
     localStorage.setItem('bmo_quiz', JSON.stringify(newQuiz));
+    localStorage.setItem('bmo_summaries', JSON.stringify(newSummaries));
     
-    return { history: newHistory, notes: newNotes, flashcards: newCards, quiz: newQuiz };
+    return { history: newHistory, notes: newNotes, flashcards: newCards, quiz: newQuiz, summaries: newSummaries };
   }),
   
   clearHistory: () => set(() => {
@@ -233,7 +251,8 @@ const useStore = create<AppState>((set) => ({
     localStorage.removeItem('bmo_notes');
     localStorage.removeItem('bmo_flashcards');
     localStorage.removeItem('bmo_quiz');
-    return { history: [], notes: [], flashcards: [], quiz: [] };
+    localStorage.removeItem('bmo_summaries');
+    return { history: [], notes: [], flashcards: [], quiz: [], summaries: {} };
   }),
 
   addPomodoroRecord: () => set((state) => {
@@ -243,101 +262,25 @@ const useStore = create<AppState>((set) => ({
     localStorage.setItem('bmo_pomodoro', JSON.stringify(newRecords));
     return { pomodoroHistory: newRecords };
   }),
-  
-  initData: (notes, cards, quiz, todos, history, pHistory) => set({ notes, flashcards: cards, quiz, todos, history, pomodoroHistory: pHistory })
+
+  initData: (notes, cards, quiz, summaries, todos, history, pHistory) => set({ 
+    notes, flashcards: cards, quiz, summaries, todos, history, pomodoroHistory: pHistory
+  })
 }));
 
 // ==========================================
-// 3. UTILS (Ses, Parse AI, Markdown)
+// 3. UTILS (Markdown Render, Progress)
 // ==========================================
-const playSound = (type: 'click' | 'success' | 'start' | 'break' | 'tick' | 'error' = 'click') => {
-  if (useStore.getState().globalMuted) return; 
-  try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return; 
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    
-    if (type === 'click') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(600, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
-    } else if (type === 'success') {
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(400, ctx.currentTime);
-      osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
-    } else if (type === 'error') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, ctx.currentTime);
-      osc.frequency.setValueAtTime(150, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
-    } else if (type === 'start') {
-      osc.type = 'square'; osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.setValueAtTime(800, ctx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-    } else if (type === 'break') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.setValueAtTime(200, ctx.currentTime + 0.5);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.6);
-    } else if (type === 'tick') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
-      gain.gain.setValueAtTime(0.02, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.05);
-    }
-  } catch (e) { console.log(e); }
-};
-
-const parseAIResponse = (text: string, videoId: string) => {
-  let currentSection = '';
-  const parsedFlashcards: Flashcard[] = [];
-  const parsedQuiz: QuizQuestion[] = [];
-
-  const lines = text.split('\n');
-
-  for (const line of lines) {
-    const cleanLine = line.trim().replace(/^\*\*|\*\*$/g, ''); 
-    if (cleanLine.includes('FLASHCARDS')) { currentSection = 'FLASHCARDS'; continue; }
-    if (cleanLine.includes('QUIZ')) { currentSection = 'QUIZ'; continue; }
-
-    if (currentSection === 'FLASHCARDS') {
-      const parts = cleanLine.split('|');
-      if (parts.length >= 3) {
-        parsedFlashcards.push({
-          id: Date.now() + Math.random(),
-          videoId,
-          question: parts[1].trim(),
-          answer: parts.slice(2).join('|').trim(),
-          learned: false
-        });
-      }
-    } else if (currentSection === 'QUIZ') {
-      const parts = cleanLine.split('|');
-      if (parts.length >= 7) {
-        parsedQuiz.push({
-          id: Date.now() + Math.random(),
-          videoId,
-          question: parts[1].trim(),
-          options: { A: parts[2].trim(), B: parts[3].trim(), C: parts[4].trim(), D: parts[5].trim() },
-          correct: parts[6].trim().toUpperCase().replace(/[^ABCD]/g, ''), 
-        });
-      }
-    }
-  }
-  return { parsedFlashcards, parsedQuiz };
-};
 
 const renderMarkdown = (text: string) => {
   let html = text
     .replace(/</g, "&lt;").replace(/>/g, "&gt;") 
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-500 font-bold">$1</strong>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#FF8C00] font-bold">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em class="text-zinc-300 italic">$1</em>')
-    .replace(/^- (.*)$/gm, '<li class="ml-4 list-disc marker:text-amber-500">$1</li>')
+    .replace(/^- (.*)$/gm, '<li class="ml-4 list-disc marker:text-[#FF8C00] mb-1">$1</li>')
+    .replace(/#{3}\s(.*)$/gm, '<h3 class="text-lg font-bold text-zinc-100 mt-4 mb-2">$1</h3>')
+    .replace(/#{2}\s(.*)$/gm, '<h2 class="text-xl font-bold text-[#FF8C00] mt-5 mb-3">$1</h2>')
+    .replace(/#{1}\s(.*)$/gm, '<h1 class="text-2xl font-black text-zinc-50 mt-6 mb-4 border-b border-zinc-800 pb-2">$1</h1>')
     .replace(/\n/g, '<br />');
   return { __html: html };
 };
@@ -348,12 +291,12 @@ const renderMarkdown = (text: string) => {
 
 const SkeletonLoading = () => (
   <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 space-y-8 animate-pulse">
-    <div className="w-64 h-16 bg-zinc-800 rounded-2xl"></div>
-    <div className="w-full max-w-2xl h-14 bg-zinc-800 rounded-full"></div>
+    <div className="w-64 h-16 bg-zinc-900 rounded-3xl"></div>
+    <div className="w-full max-w-2xl h-14 bg-zinc-900 rounded-full"></div>
     <div className="flex gap-4">
-       <div className="w-32 h-20 bg-zinc-800 rounded-xl"></div>
-       <div className="w-32 h-20 bg-zinc-800 rounded-xl"></div>
-       <div className="w-32 h-20 bg-zinc-800 rounded-xl"></div>
+       <div className="w-32 h-20 bg-zinc-900 rounded-2xl"></div>
+       <div className="w-32 h-20 bg-zinc-900 rounded-2xl"></div>
+       <div className="w-32 h-20 bg-zinc-900 rounded-2xl"></div>
     </div>
   </div>
 );
@@ -371,7 +314,7 @@ const OfflineBanner = () => {
 
   if (!isOffline) return null;
   return (
-    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-9999 animate-fade-in-up">
+    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-9999 animate-fade-in-up shadow-md">
       <WifiOff size={14} /> İnternet bağlantınız koptu. Lütfen bağlantınızı kontrol edin.
     </div>
   );
@@ -381,7 +324,7 @@ const BlueLightFilter = () => {
   const { blueLight } = useStore();
   if (blueLight === 0) return null;
   return (
-    <div className="fixed inset-0 pointer-events-none z-9998 transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 165, 0, 0.3)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
+    <div className="fixed inset-0 pointer-events-none z-9998 transition-opacity duration-500" style={{ backgroundColor: 'rgba(255, 140, 0, 0.25)', opacity: blueLight / 100, mixBlendMode: 'multiply' }}></div>
   );
 }
 
@@ -399,10 +342,10 @@ const PWAInjector = () => {
           display: "standalone",
           display_override: ["window-controls-overlay", "minimal-ui"], 
           background_color: "#09090b",
-          theme_color: "#09090b", 
+          theme_color: "#FF8C00", 
           icons: [
-            { src: "/icon.png", sizes: "192x192", type: "image/png" },
-            { src: "/icon.png", sizes: "512x512", type: "image/png" }
+            { src: "/logo.png", sizes: "192x192", type: "image/png" },
+            { src: "/logo.png", sizes: "512x512", type: "image/png" }
           ]
         };
         const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -433,28 +376,26 @@ const PWAInjector = () => {
 const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden p-6 app-no-drag" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-sm bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden p-6 app-no-drag" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><MonitorSmartphone className="text-amber-500"/> Uygulamayı Yükle</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={20}/></button>
+          <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2"><MonitorSmartphone className="text-[#FF8C00]"/> Ana Ekrana Ekle</h3>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors"><X size={20}/></button>
         </div>
-        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">BMO Learn'ü bilgisayarınıza veya telefonunuza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.</p>
+        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">BMO Learn'ü cihazınıza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.</p>
         
         <div className="space-y-4">
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><MonitorSmartphone size={14}/> Brave / Chrome / Edge</h4>
-            <p className="text-xs text-zinc-500">Adres çubuğunun en sağındaki <strong>İndirme simgesine</strong> tıklayın veya sağ üst menüden <strong>Uygulamayı Yükle</strong> seçeneğine basın.</p>
+          <div className="bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800 shadow-sm">
+            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><Smartphone size={14}/> Android (Chrome / Brave)</h4>
+            <p className="text-xs text-zinc-500">Sağ üstteki tarayıcı menüsüne (⋮) tıklayın ve <strong>Ana Ekrana Ekle</strong> seçeneğine dokunun.</p>
           </div>
-          
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+          <div className="bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800 shadow-sm">
             <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><Share size={14}/> iPhone / iPad (Safari)</h4>
             <p className="text-xs text-zinc-500">Alt menüdeki <strong>Paylaş</strong> ikonuna dokunun ve <strong>Ana Ekrana Ekle</strong> seçeneğine tıklayın.</p>
           </div>
-          
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><MoreVertical size={14}/> Android</h4>
-            <p className="text-xs text-zinc-500">Tarayıcınızın sağ üst menüsünden <strong>Ana Ekrana Ekle</strong>'yi seçin.</p>
+          <div className="bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800 shadow-sm">
+            <h4 className="text-xs font-bold text-zinc-300 mb-2 flex items-center gap-1.5"><MonitorSmartphone size={14}/> Bilgisayar</h4>
+            <p className="text-xs text-zinc-500">Adres çubuğunun sağındaki <strong>Yükle (📥)</strong> simgesine tıklayın.</p>
           </div>
         </div>
       </div>
@@ -463,7 +404,7 @@ const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
 }
 
 const LandingPage = () => {
-  const { setView, setPlayerConfig, history, clearHistory } = useStore();
+  const { setView, setContentConfig, history, clearHistory, addToHistory } = useStore();
   const [url, setUrl] = useState('');
 
   const handleStart = (e?: React.FormEvent) => {
@@ -474,35 +415,52 @@ const LandingPage = () => {
     const pId = extractPlaylistId(url);
 
     if (vId || pId) { 
-      setPlayerConfig({ vId: vId || '', pId }); 
-      playSound('start'); setView('app'); 
+      // Playlist veya Video ID yakalandı
+      setContentConfig({ id: vId || pId || '', type: 'video', pId, title: "YouTube Video" }); 
+      setView('app'); 
     } else { 
-      playSound('error');
-      alert("Lütfen geçerli bir YouTube veya YouTube Shorts linki giriniz.");
+      const id = "web_" + Date.now();
+      setContentConfig({ id, type: 'document', title: "Web Kaynağı", url });
+      // Web dokümanları geçmişe eklenmiyor
+      setView('app');
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const id = "doc_" + Date.now();
+    const objUrl = URL.createObjectURL(file);
+    setContentConfig({ 
+      id, 
+      type: 'document', 
+      title: file.name, 
+      url: objUrl, 
+      fileType: file.type || file.name.split('.').pop() 
+    });
+    
+    addToHistory({ contentId: id, title: file.name, timestamp: Date.now(), type: 'document' });
+    setView('app');
   };
 
   return (
     <div className={`min-h-screen flex flex-col relative overflow-hidden bg-zinc-950 p-4 sm:p-8`}>
       <div className="absolute top-0 left-0 w-full h-10 app-drag-region z-50"></div>
 
-      <div className="absolute top-[-10%] left-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-amber-500/10 blur-[80px] md:blur-[120px] rounded-full animate-blob pointer-events-none mix-blend-screen"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-zinc-600/20 blur-[80px] md:blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none mix-blend-screen"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-[#FF8C00]/10 blur-[80px] md:blur-[120px] rounded-full animate-blob pointer-events-none mix-blend-screen"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-zinc-600/10 blur-[80px] md:blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none mix-blend-screen"></div>
 
       <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up app-no-drag">
         
-        {/* YENİ: YUMUŞATILMIŞ SİNEMATİK LOGO ANİMASYONU */}
         <div className="flex items-center justify-center gap-4 mb-6">
           <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center animate-float group cursor-default">
-            {/* Yavaşça nefes alan arka plan ışığı (Cinematic Background Glow) */}
-            <div className="absolute inset-0 bg-amber-500 rounded-full animate-subtle-glow pointer-events-none"></div>
-            {/* Logonun hemen arkasındaki hafif parlaklık */}
-            <div className="absolute inset-4 bg-amber-400/20 rounded-full blur-xl pointer-events-none transition-all duration-700 group-hover:bg-amber-400/40"></div>
-            {/* Logonun kendisi - Hover anında çok yavaş ve kibar bir büyüme (%5) */}
+            <div className="absolute inset-0 bg-[#FF8C00] rounded-full animate-subtle-glow pointer-events-none"></div>
+            <div className="absolute inset-4 bg-[#FF8C00]/20 rounded-full blur-xl pointer-events-none transition-all duration-700 group-hover:bg-[#FF8C00]/40"></div>
             <img src="/logo.png" alt="BMO Learn Logo" className="relative w-full h-full object-contain z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] transition-transform duration-700 group-hover:scale-105" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </div>
           <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-zinc-100 to-zinc-500 drop-shadow-sm">
-            <span className="text-amber-500">Learn</span>
+            <span className="text-[#FF8C00]">Learn</span>
           </h1>
         </div>
 
@@ -510,34 +468,57 @@ const LandingPage = () => {
           Sadece odaklan.
         </p>
 
-        <form onSubmit={handleStart} className="w-full relative group px-2 sm:px-0">
-          <div className="absolute -inset-1 bg-linear-to-r from-amber-500 to-amber-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-          <div className={`relative flex items-center p-2 pl-4 sm:pl-6 rounded-full bg-zinc-900 border border-zinc-800/50 shadow-2xl`}>
-            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="YouTube bağlantınızı yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm sm:text-base md:text-lg w-full font-medium placeholder-zinc-600`} autoFocus />
-            {url && (
-              <button type="button" onClick={() => setUrl('')} className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"><X size={18} /></button>
-            )}
-            <button type="submit" className={`ml-2 p-3 sm:p-4 rounded-full bg-amber-500 text-zinc-950 shadow-lg transition-transform active:scale-95 hover:scale-105 flex items-center justify-center`}><ArrowRight size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} /></button>
-          </div>
-        </form>
+        <div className="w-full flex flex-col sm:flex-row gap-3 px-2 sm:px-0">
+          <form onSubmit={handleStart} className="flex-1 relative group">
+            <div className="absolute -inset-1 bg-linear-to-r from-[#FF8C00] to-orange-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className={`relative flex items-center p-2 pl-4 sm:pl-6 rounded-3xl bg-zinc-900/80 backdrop-blur-md border border-zinc-800/50 shadow-2xl`}>
+              <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="YouTube linki (Video / Playlist) veya Web adresi..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm sm:text-base md:text-lg w-full font-medium placeholder-zinc-600`} autoFocus />
+              {url && (
+                <button type="button" onClick={() => setUrl('')} className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"><X size={18} /></button>
+              )}
+              <button type="submit" className={`ml-2 p-3 sm:p-4 rounded-2xl bg-[#FF8C00] text-zinc-950 shadow-lg shadow-[#FF8C00]/20 transition-transform active:scale-95 hover:scale-105 flex items-center justify-center`}><ArrowRight size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} /></button>
+            </div>
+          </form>
+          
+          <label className="cursor-pointer flex items-center justify-center gap-2 p-3 sm:p-4 rounded-3xl bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-[#FF8C00]/20 transition-all border border-[#FF8C00]/30 shadow-[0_0_15px_rgba(255,140,0,0.1)] active:scale-95">
+             <Upload size={22} />
+             <span className="font-bold text-sm sm:text-base hidden sm:inline">Dosya Yükle</span>
+             <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" className="hidden" onChange={handleFileUpload} />
+          </label>
+        </div>
 
         {history.length > 0 && (
           <div className="mt-16 w-full px-2 sm:px-0 animate-fade-in">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-              <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><History size={16}/> Son İzlenenler</h3>
-              <button onClick={() => { clearHistory(); playSound('click'); }} className="text-xs font-semibold text-red-500 hover:bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors w-full sm:w-auto">
-                Geçmişi ve Verileri Temizle
+              <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><History size={16}/> Son Çalışmalar</h3>
+              <button onClick={() => { clearHistory(); }} className="text-xs font-semibold text-red-500 hover:bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-xl transition-colors w-full sm:w-auto">
+                Geçmişi Temizle
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {history.slice(0, 3).map((item, idx) => (
-                <div key={idx} onClick={() => { setPlayerConfig({ vId: item.videoId, pId: null }); playSound('success'); setView('app'); }} className={`group cursor-pointer rounded-2xl overflow-hidden border border-zinc-800/50 bg-zinc-950/50 hover:border-amber-500/50 transition-all`}>
-                  <div className="w-full aspect-video bg-black relative overflow-hidden">
-                    <img src={`https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-300" />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                    <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-amber-500 text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all"><Play size={14} fill="currentColor" /></div>
-                  </div>
-                  <div className="p-3"><p className="text-xs font-semibold line-clamp-2 leading-snug text-zinc-300 group-hover:text-amber-500 transition-colors">{item.title}</p></div>
+                <div key={idx} onClick={() => { 
+                  if (item.type === 'video') {
+                    setContentConfig({ id: item.contentId, type: item.type, title: item.title, pId: item.pId }); 
+                    setView('app'); 
+                  } else {
+                    useStore.getState().setPendingDocReload({ id: item.contentId, title: item.title });
+                    setView('app');
+                  }
+                }} className={`group cursor-pointer rounded-[20px] overflow-hidden border border-zinc-800/50 bg-zinc-900/50 backdrop-blur-md hover:border-[#FF8C00]/50 transition-all shadow-lg`}>
+                  {item.type === 'video' ? (
+                    <div className="w-full aspect-video bg-black relative overflow-hidden">
+                      <img src={`https://img.youtube.com/vi/${item.contentId}/hqdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-300" />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                      <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-[#FF8C00] text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg shadow-[#FF8C00]/30"><Play size={14} fill="currentColor" /></div>
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-zinc-950 flex items-center justify-center relative overflow-hidden">
+                      <FileText size={48} className="text-zinc-700 group-hover:text-[#FF8C00] transition-colors duration-300" />
+                      <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-[#FF8C00] text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg shadow-[#FF8C00]/30"><AlignLeft size={14} /></div>
+                    </div>
+                  )}
+                  <div className="p-3"><p className="text-xs font-semibold line-clamp-2 leading-snug text-zinc-300 group-hover:text-[#FF8C00] transition-colors">{item.title}</p></div>
                 </div>
               ))}
             </div>
@@ -545,7 +526,7 @@ const LandingPage = () => {
         )}
       </div>
       
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-600 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase opacity-50 hover:opacity-100 transition-opacity app-no-drag">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-600 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase opacity-50 hover:opacity-100 transition-opacity app-no-drag font-mono pointer-events-none">
         Developed by EHC
       </div>
     </div>
@@ -558,17 +539,17 @@ const SettingsPopover = () => {
   
   return (
     <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)} className={`p-2 sm:p-2.5 rounded-full ${isOpen ? 'bg-zinc-800 text-amber-500' : 'hover:bg-zinc-800 text-zinc-400'} transition-colors`} title="Görünüm Ayarları">
+      <button onClick={() => setIsOpen(!isOpen)} className={`p-2 sm:p-2.5 rounded-full ${isOpen ? 'bg-zinc-800 text-[#FF8C00]' : 'hover:bg-zinc-800 text-zinc-400'} transition-colors`} title="Görünüm Ayarları">
         <Eye size={18} />
       </button>
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute top-12 right-0 w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-4 z-50 animate-scale-in origin-top-right">
+          <div className="absolute top-12 right-0 w-64 bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-[20px] shadow-2xl p-4 z-50 animate-scale-in origin-top-right">
             <h4 className="text-sm font-bold text-zinc-100 mb-4 border-b border-zinc-800 pb-2">Görünüm Ayarları</h4>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-zinc-400 flex justify-between">Mavi Işık Filtresi <span>{blueLight}%</span></label>
-              <input type="range" min="0" max="100" value={blueLight} onChange={(e) => setBlueLight(parseInt(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+              <input type="range" min="0" max="100" value={blueLight} onChange={(e) => setBlueLight(parseInt(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF8C00]" />
               <p className="text-[10px] text-zinc-500 mt-1">Göz yorgunluğunu azaltmak için filtreyi artırın.</p>
             </div>
           </div>
@@ -579,34 +560,52 @@ const SettingsPopover = () => {
 }
 
 const HistoryModal = ({ showHistory, setShowHistory }: any) => {
-  const { history, setPlayerConfig, clearHistory, deleteHistoryItem } = useStore();
+  const { history, setContentConfig, clearHistory, deleteHistoryItem, setPendingDocReload } = useStore();
   if (!showHistory) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setShowHistory(false)}>
-      <div className={`w-full max-w-400 max-h-[85vh] flex flex-col bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in" onClick={() => setShowHistory(false)}>
+      <div className={`w-full max-w-4xl max-h-[85vh] flex flex-col bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
         <div className={`p-4 sm:p-6 border-b border-zinc-800 flex justify-between items-center`}>
-          <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-zinc-100"><History className="text-amber-500" /> Geçmiş Kitaplığı</h2>
+          <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-zinc-100"><History className="text-[#FF8C00]" /> Geçmiş Kitaplığı</h2>
           <div className="flex items-center gap-2 sm:gap-4">
-            <button onClick={() => { clearHistory(); playSound('click'); }} className="text-xs font-semibold text-red-500 hover:bg-red-500/10 px-2 sm:px-3 py-1.5 rounded-lg transition-colors">Tümünü Temizle</button>
-            <button onClick={() => setShowHistory(false)} className={`text-zinc-500 hover:text-white`}><X size={20} /></button>
+            <button onClick={() => { clearHistory(); }} className="text-xs font-semibold text-red-500 hover:bg-red-500/10 px-2 sm:px-3 py-1.5 rounded-xl transition-colors">Tümünü Temizle</button>
+            <button onClick={() => setShowHistory(false)} className={`text-zinc-500 hover:text-white transition-colors`}><X size={20} /></button>
           </div>
         </div>
         <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {history.length === 0 && <div className={`col-span-full text-center py-10 text-zinc-500`}>Henüz izlenmiş video yok.</div>}
-          {history.map((item, idx) => (
-            <div key={idx} className={`relative group cursor-pointer rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-950/50 hover:border-amber-500/50 transition-all`}>
-              <button onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item.videoId); playSound('success'); }} className="absolute top-2 right-2 z-20 p-2 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-md" title="Geçmişi ve Bu Videoya Ait Verileri Sil"><Trash2 size={14} /></button>
-              <div onClick={() => { setPlayerConfig({ vId: item.videoId, pId: null }); setShowHistory(false); playSound('success'); }}>
-                <div className="w-full aspect-video bg-black relative overflow-hidden">
-                  <img src={`https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-300" />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                  <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-amber-500 text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all"><Play size={14} fill="currentColor" /></div>
+          {history.length === 0 ? (
+            <div className={`col-span-full text-center py-10 text-zinc-500`}>Henüz geçmiş kaydı yok.</div>
+          ) : (
+            history.map((item, idx) => (
+              <div key={idx} className={`relative group cursor-pointer rounded-[20px] overflow-hidden border border-zinc-800 bg-zinc-950/50 hover:border-[#FF8C00]/50 transition-all shadow-md`}>
+                <button onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item.contentId); }} className="absolute top-2 right-2 z-20 p-2 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-md" title="Geçmişi ve Verileri Sil"><Trash2 size={14} /></button>
+                <div onClick={() => { 
+                  if (item.type === 'video') {
+                    setContentConfig({ id: item.contentId, type: item.type, title: item.title, pId: item.pId }); 
+                    setShowHistory(false); 
+                  } else {
+                    setPendingDocReload({ id: item.contentId, title: item.title });
+                    setShowHistory(false);
+                  }
+                }}>
+                  {item.type === 'video' ? (
+                    <div className="w-full aspect-video bg-black relative overflow-hidden">
+                      <img src={`https://img.youtube.com/vi/${item.contentId}/hqdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-300" />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                      <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-[#FF8C00] text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg"><Play size={14} fill="currentColor" /></div>
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-zinc-900 flex items-center justify-center relative overflow-hidden">
+                      <FileText size={40} className="text-zinc-700 group-hover:text-[#FF8C00] transition-colors" />
+                      <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-[#FF8C00] text-black opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg"><AlignLeft size={14} /></div>
+                    </div>
+                  )}
+                  <div className="p-3"><p className="text-xs font-semibold line-clamp-2 leading-snug text-zinc-100">{item.title}</p></div>
                 </div>
-                <div className="p-3"><p className="text-xs font-semibold line-clamp-2 leading-snug text-zinc-100">{item.title}</p></div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -616,18 +615,18 @@ const HistoryModal = ({ showHistory, setShowHistory }: any) => {
 const RadioWidget = ({ showMusicWidget, setShowMusicWidget, activeStation, isMusicPlaying, musicVolume, setMusicVolume, toggleRadioPlay, changeStation }: any) => {
   if (!showMusicWidget) return null;
   return (
-    <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-80 md:w-96 rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/50 backdrop-blur-3xl z-50 overflow-hidden flex flex-col animate-scale-in`}>
+    <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-80 md:w-96 rounded-3xl border border-zinc-800 bg-zinc-900/90 shadow-2xl shadow-black/50 backdrop-blur-xl z-50 overflow-hidden flex flex-col animate-scale-in`}>
       <div className={`px-4 sm:px-5 py-3 sm:py-4 flex justify-between items-center border-b border-zinc-800 bg-zinc-950/40`}>
-        <span className="text-sm font-bold flex items-center gap-2 text-zinc-100"><Radio size={16} className="text-amber-500" /> Odak Radyosu</span>
+        <span className="text-sm font-bold flex items-center gap-2 text-zinc-100"><Radio size={16} className="text-[#FF8C00]" /> Odak Radyosu</span>
         <button onClick={() => setShowMusicWidget(false)} className={`text-zinc-500 hover:text-white transition-colors`}><X size={16} /></button>
       </div>
       <div className="p-4 sm:p-5 flex flex-col items-center gap-4 bg-linear-to-b from-transparent to-zinc-950/20">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-900 border-2 border-amber-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.15)] relative">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-900 border-2 border-[#FF8C00]/30 flex items-center justify-center shadow-[0_0_20px_rgba(255,140,0,0.15)] relative">
           {isMusicPlaying ? (
             <div className="flex items-end gap-1 h-5 sm:h-6">
-              <div className="w-1 sm:w-1.5 bg-amber-500 rounded-t-sm animate-eq-1"></div>
-              <div className="w-1 sm:w-1.5 bg-amber-500 rounded-t-sm animate-eq-2"></div>
-              <div className="w-1 sm:w-1.5 bg-amber-500 rounded-t-sm animate-eq-3"></div>
+              <div className="w-1 sm:w-1.5 bg-[#FF8C00] rounded-t-sm animate-eq-1"></div>
+              <div className="w-1 sm:w-1.5 bg-[#FF8C00] rounded-t-sm animate-eq-2"></div>
+              <div className="w-1 sm:w-1.5 bg-[#FF8C00] rounded-t-sm animate-eq-3"></div>
             </div>
           ) : <Music className="text-zinc-500" size={20} />}
         </div>
@@ -636,23 +635,23 @@ const RadioWidget = ({ showMusicWidget, setShowMusicWidget, activeStation, isMus
           <p className={`text-xs text-zinc-500 mt-1`}>{activeStation.category}</p>
         </div>
         <div className="w-full flex items-center gap-3 sm:gap-4 mt-2">
-          <button onClick={toggleRadioPlay} className={`shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-transform active:scale-90 ${isMusicPlaying ? 'bg-zinc-800 text-white border border-zinc-700' : `bg-amber-500 text-zinc-950`}`}>
+          <button onClick={toggleRadioPlay} className={`shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-transform active:scale-90 shadow-lg ${isMusicPlaying ? 'bg-zinc-800 text-white border border-zinc-700' : `bg-[#FF8C00] text-zinc-950 shadow-[#FF8C00]/20`}`}>
             {isMusicPlaying ? <Pause size={18} /> : <Play size={18} className="ml-1" />}
           </button>
-          <div className="flex-1 flex items-center gap-2 sm:gap-3 bg-zinc-900/50 p-2.5 sm:p-3 rounded-2xl border border-zinc-800/50">
+          <div className="flex-1 flex items-center gap-2 sm:gap-3 bg-zinc-950/50 p-2.5 sm:p-3 rounded-2xl border border-zinc-800/50">
             <Volume2 size={16} className="text-zinc-500" />
-            <input type="range" min="0" max="100" value={musicVolume} onChange={(e) => setMusicVolume(parseInt(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+            <input type="range" min="0" max="100" value={musicVolume} onChange={(e) => setMusicVolume(parseInt(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF8C00]" />
           </div>
         </div>
       </div>
       <div className={`border-t border-zinc-800 max-h-40 sm:max-h-48 overflow-y-auto custom-scrollbar p-2`}>
         {RADIO_STATIONS.map((station) => (
-          <button key={station.id} onClick={() => changeStation(station)} className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all ${activeStation.id === station.id ? 'bg-amber-500/10 border border-amber-500/20' : `hover:bg-zinc-800 border border-transparent`}`}>
+          <button key={station.id} onClick={() => changeStation(station)} className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-2xl transition-all ${activeStation.id === station.id ? 'bg-[#FF8C00]/10 border border-[#FF8C00]/20' : `hover:bg-zinc-800 border border-transparent`}`}>
             <div className="flex flex-col items-start text-left">
-              <span className={`text-sm font-semibold ${activeStation.id === station.id ? "text-amber-500" : "text-zinc-100"}`}>{station.title}</span>
+              <span className={`text-sm font-semibold ${activeStation.id === station.id ? "text-[#FF8C00]" : "text-zinc-100"}`}>{station.title}</span>
               <span className={`text-[10px] uppercase tracking-wider text-zinc-500`}>{station.category}</span>
             </div>
-            {activeStation.id === station.id && isMusicPlaying && <PlayCircle size={14} className="text-amber-500" />}
+            {activeStation.id === station.id && isMusicPlaying && <PlayCircle size={14} className="text-[#FF8C00]" />}
           </button>
         ))}
       </div>
@@ -669,7 +668,7 @@ const PomodoroHeatmap = () => {
   });
 
   return (
-    <div className="mt-6 w-full p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl">
+    <div className="mt-6 w-full p-4 bg-zinc-950/50 border border-zinc-800 rounded-[20px] shadow-inner">
       <h3 className="text-[10px] sm:text-xs font-bold text-zinc-400 mb-3 flex items-center gap-1.5 uppercase tracking-wider">
         <CalendarDays size={14}/> 30 Günlük Çalışma Haritası
       </h3>
@@ -677,9 +676,9 @@ const PomodoroHeatmap = () => {
         {days.map(d => {
           const count = pomodoroHistory[d] || 0;
           let bgColor = 'bg-zinc-800';
-          if (count > 0 && count <= 2) bgColor = 'bg-amber-500/40';
-          else if (count > 2 && count <= 5) bgColor = 'bg-amber-500/70';
-          else if (count > 5) bgColor = 'bg-amber-500';
+          if (count > 0 && count <= 2) bgColor = 'bg-[#FF8C00]/40';
+          else if (count > 2 && count <= 5) bgColor = 'bg-[#FF8C00]/70';
+          else if (count > 5) bgColor = 'bg-[#FF8C00]';
           
           return (
             <div 
@@ -693,162 +692,317 @@ const PomodoroHeatmap = () => {
       <div className="flex justify-end gap-1.5 items-center mt-3 text-[10px] text-zinc-500">
         <span>Az</span>
         <div className="w-3 h-3 rounded-sm bg-zinc-800" />
-        <div className="w-3 h-3 rounded-sm bg-amber-500/40" />
-        <div className="w-3 h-3 rounded-sm bg-amber-500/70" />
-        <div className="w-3 h-3 rounded-sm bg-amber-500" />
+        <div className="w-3 h-3 rounded-sm bg-[#FF8C00]/40" />
+        <div className="w-3 h-3 rounded-sm bg-[#FF8C00]/70" />
+        <div className="w-3 h-3 rounded-sm bg-[#FF8C00]" />
         <span>Çok</span>
       </div>
     </div>
   );
 };
 
-const AIGeneratorTab = ({ activeVideoId, setActiveTab }: any) => {
-  const { replaceVideoAIContent } = useStore();
-  const [videoTitle, setVideoTitle] = useState<string>("Yükleniyor...");
+const PomodoroWidget = ({ 
+  showPomodoroWidget, setShowPomodoroWidget, focusDuration, setFocusDuration, 
+  breakDuration, setBreakDuration, timerMode, setTimerMode, timeLeft, setTimeLeft, 
+  isTimerRunning, setIsTimerRunning 
+}: any) => {
+  const { todos, toggleTodo, deleteTodo, addTodo } = useStore();
+
+  if (!showPomodoroWidget) return null;
+  return (
+    <div className={`fixed top-20 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-80 md:w-100 rounded-3xl border border-zinc-800 bg-zinc-900/95 shadow-2xl shadow-black/50 backdrop-blur-xl z-50 overflow-hidden flex flex-col animate-scale-in origin-top-right`}>
+      <div className={`px-4 sm:px-5 py-3 flex justify-between items-center border-b border-zinc-800 bg-zinc-950/40`}>
+        <span className="text-sm font-bold flex items-center gap-2 text-zinc-100"><Timer size={16} className="text-[#FF8C00]" /> Odak ve Görevler</span>
+        <button onClick={() => setShowPomodoroWidget(false)} className={`text-zinc-500 hover:text-white transition-colors`}><X size={16} /></button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto max-h-[75vh] custom-scrollbar pb-4">
+        {/* Timer Section */}
+        <div className="flex flex-col items-center p-4 sm:p-6 border-b border-zinc-800/50">
+          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[10px] sm:text-xs mb-4 ${timerMode === 'break' ? 'bg-blue-500/10 text-blue-500' : 'bg-[#FF8C00]/10 text-[#FF8C00] shadow-[0_0_15px_rgba(255,140,0,0.1)]'}`}>
+            {timerMode === 'break' ? <Coffee size={14} /> : <Brain size={14} />}
+            {timerMode === 'break' ? 'Mola Zamanı' : 'Odaklanma Zamanı'}
+          </div>
+
+          {!isTimerRunning && (
+            <div className="flex gap-4 mb-4 w-full justify-center">
+              <div className="flex flex-col items-center">
+                <span className={`text-[10px] font-semibold mb-1 text-zinc-500`}>ODAK (DK)</span>
+                <div className={`flex items-center gap-2 bg-zinc-950/50 p-1 rounded-full border border-zinc-800`}>
+                  <button onClick={() => { if(focusDuration > 1) { setFocusDuration(focusDuration - 1); if(timerMode === 'focus') setTimeLeft((focusDuration - 1) * 60); }}} className="w-6 h-6 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-xs">-</button>
+                  <span className="font-mono text-sm w-6 text-center">{focusDuration}</span>
+                  <button onClick={() => { if(focusDuration < 120) { setFocusDuration(focusDuration + 1); if(timerMode === 'focus') setTimeLeft((focusDuration + 1) * 60); }}} className="w-6 h-6 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-xs">+</button>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className={`text-[10px] font-semibold mb-1 text-zinc-500`}>MOLA (DK)</span>
+                <div className={`flex items-center gap-2 bg-zinc-950/50 p-1 rounded-full border border-zinc-800`}>
+                  <button onClick={() => { if(breakDuration > 1) { setBreakDuration(breakDuration - 1); if(timerMode === 'break') setTimeLeft((breakDuration - 1) * 60); }}} className="w-6 h-6 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-xs">-</button>
+                  <span className="font-mono text-sm w-6 text-center">{breakDuration}</span>
+                  <button onClick={() => { if(breakDuration < 30) { setBreakDuration(breakDuration + 1); if(timerMode === 'break') setTimeLeft((breakDuration + 1) * 60); }}} className="w-6 h-6 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-xs">+</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={`relative w-32 h-32 sm:w-40 sm:h-40 rounded-full border-8 ${isTimerRunning ? (timerMode === 'break' ? 'border-blue-500' : 'border-[#FF8C00]') : 'border-zinc-800'} flex items-center justify-center mb-5 transition-colors duration-1000 shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
+            <div className={`absolute inset-0 rounded-full border-4 ${timerMode === 'break' ? 'border-blue-500/20' : 'border-[#FF8C00]/20'} m-1.5 transition-colors duration-1000`}></div>
+            <h2 className="text-3xl sm:text-4xl font-mono font-bold tracking-tighter drop-shadow-md">{formatTime(timeLeft)}</h2>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-zinc-950 flex items-center gap-2 transition-transform active:scale-95 text-xs sm:text-sm shadow-lg ${isTimerRunning ? 'bg-zinc-100 text-zinc-900' : (timerMode === 'break' ? 'bg-blue-500 shadow-blue-500/20' : 'bg-[#FF8C00] shadow-[#FF8C00]/20')}`}>
+              {isTimerRunning ? <Pause size={16} /> : <Play size={16} />} 
+              {isTimerRunning ? 'DURAKLAT' : (timerMode === 'break' ? 'MOLAYI BAŞLAT' : 'ODAKLAN')}
+            </button>
+            
+            {timerMode === 'break' && (
+               <button onClick={() => { setIsTimerRunning(false); setTimerMode('focus'); setTimeLeft(focusDuration * 60); }} className="p-2.5 sm:p-3 rounded-2xl border border-zinc-800 text-[#FF8C00] hover:bg-[#FF8C00]/10 transition-colors active:scale-95" title="Molayı Atla ve Odaklan">
+                  <SkipForward size={16} />
+               </button>
+            )}
+
+            <button onClick={() => { setIsTimerRunning(false); setTimeLeft(timerMode === 'focus' ? focusDuration * 60 : breakDuration * 60); }} className={`p-2.5 sm:p-3 rounded-2xl border border-zinc-800 text-zinc-500 hover:text-zinc-100 transition-colors active:scale-95`} title="Sıfırla">
+              <Timer size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Todos Section */}
+        <div className="p-4 sm:p-5 flex flex-col bg-zinc-950/20">
+          <h3 className="text-xs font-bold mb-3 flex items-center gap-2"><List size={14} className="text-[#FF8C00]"/> Günlük Görevler</h3>
+          <div className="space-y-2">
+            {todos.length === 0 ? (
+              <p className={`text-[10px] text-zinc-500 text-center py-2`}>Hedeflerinizi belirleyin ve bitirdikçe işaretleyin.</p>
+            ) : (
+              todos.map(todo => (
+                <div 
+                  key={todo.id} 
+                  onAnimationEnd={() => { if(todo.completed) deleteTodo(todo.id); }}
+                  className={`flex items-center gap-2 p-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 group transition-all shadow-sm overflow-hidden ${todo.completed ? 'animate-todo-complete' : ''}`}
+                >
+                  <button 
+                    onClick={() => { if(!todo.completed) toggleTodo(todo.id); }} 
+                    className={`${todo.completed ? 'text-green-500' : 'text-zinc-500'} hover:text-green-400 transition-colors shrink-0`}
+                  >
+                    {todo.completed ? <CheckSquare size={14} /> : <Square size={14} />}
+                  </button>
+                  <p className={`flex-1 text-xs transition-colors duration-300 ${todo.completed ? 'line-through text-green-500/80 font-semibold' : 'text-zinc-100'}`}>{todo.text}</p>
+                  <button onClick={() => deleteTodo(todo.id)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-500/10 p-1 rounded transition-colors shrink-0"><Trash2 size={12}/></button>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault(); 
+            const todoInput = e.currentTarget.elements.namedItem('todoInput') as HTMLInputElement;
+            if(!todoInput.value.trim()) return; 
+            addTodo(todoInput.value); 
+            todoInput.value = ''; 
+          }} className="mt-3 relative">
+            <input name="todoInput" type="text" placeholder="Yeni görev ekle..." className={`w-full pl-3 pr-8 py-2.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 text-xs outline-none focus:border-[#FF8C00] transition-colors`} />
+            <button type="submit" className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-[#FF8C00] text-zinc-950 shadow-md active:scale-95 transition-transform`}><Plus size={14} /></button>
+          </form>
+
+          <PomodoroHeatmap />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// KOMPAKT AI SİHİRBAZI MODALI (Güçlendirilmiş JSON Algılayıcı ve Kompakt Tasarım)
+const AIModal = ({ isOpen, onClose, activeContentId, contentConfig, setActiveTab }: any) => {
+  const { replaceContentAI } = useStore();
   const [aiResponse, setAiResponse] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   
   const [selectedLevel, setSelectedLevel] = useState<string>(EXAM_LEVELS[0]);
 
-  useEffect(() => {
-    if (!activeVideoId) return;
-    setVideoTitle("Yükleniyor...");
-    fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${activeVideoId}&format=json`)
-      .then(res => res.json())
-      .then(data => setVideoTitle(data.title))
-      .catch(() => setVideoTitle("Video Başlığı Alınamadı"));
-  }, [activeVideoId]);
+  if (!isOpen) return null;
 
-  const promptTemplate = `You are an educational assistant.
-Detect the language of the video title and produce output in the same language.
+  const promptTemplate = `Sen bir eğitim asistanısın. Aşağıdaki kurallara KESİNLİKLE uy:
+1. Gönderilen içeriğin (veya linkin) dili neyse tüm yanıtı O DİLDE ver (Örn: Türkçe ise sadece Türkçe).
+2. Yanıtın SADECE geçerli bir JSON objesi olmalıdır. Ekstra hiçbir metin, açıklama veya "\`\`\`json" gibi işaretler KULLANMA. Doğrudan süslü parantez { ile başla.
+3. Seviye: ${selectedLevel}
 
-LEVEL: ${selectedLevel} difficulty
-STYLE: short, clear, exam-focused
+FORMAT:
+{
+  "summary": "# Başlık\\nDetaylı Markdown özet buraya gelecek.",
+  "cards": [
+    { "question": "Soru 1?", "answer": "Cevap 1" }
+  ],
+  "quiz": [
+    {
+      "question": "Çoktan Seçmeli Soru 1?",
+      "options": { "A": "Seçenek A", "B": "Seçenek B", "C": "Seçenek C", "D": "Seçenek D" },
+      "correct": "A"
+    }
+  ]
+}
 
-TASKS:
-1. Create 8 flashcards from the video context.
-2. Create 10 multiple choice questions.
-
-Follow the format exactly. Do not add any other text.
-
-OUTPUT FORMAT:
-FLASHCARDS
-1|Question|Answer
-2|Question|Answer
-3|Question|Answer
-4|Question|Answer
-5|Question|Answer
-6|Question|Answer
-7|Question|Answer
-8|Question|Answer
-
-QUIZ
-1|Question|A|B|C|D|CorrectLetter
-2|Question|A|B|C|D|CorrectLetter
-3|Question|A|B|C|D|CorrectLetter
-4|Question|A|B|C|D|CorrectLetter
-5|Question|A|B|C|D|CorrectLetter
-6|Question|A|B|C|D|CorrectLetter
-7|Question|A|B|C|D|CorrectLetter
-8|Question|A|B|C|D|CorrectLetter
-9|Question|A|B|C|D|CorrectLetter
-10|Question|A|B|C|D|CorrectLetter
-
-YOUTUBE TITLE:
-${videoTitle}
-
-YOUTUBE LINK:
-https://www.youtube.com/watch?v=${activeVideoId}`;
+BAŞLIK: ${contentConfig.title}
+${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${activeContentId}` : ''}
+${contentConfig.type === 'document' ? 'NOT: Lütfen bu istemi ve analiz edilecek dosyayı bana birlikte gönder.' : ''}`;
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(promptTemplate);
-    playSound('success');
-    setSuccessMsg('Prompt kopyalandı! Yapay zekaya yapıştırın.');
+    setSuccessMsg('Kopyalandı! Yapay zekaya yapıştırın.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const handleParse = () => {
+  const handleParseJSON = () => {
     setErrorMsg('');
     if (!aiResponse.trim()) return setErrorMsg('Lütfen AI cevabını yapıştırın.');
 
-    const { parsedFlashcards, parsedQuiz } = parseAIResponse(aiResponse, activeVideoId);
+    try {
+      // JSON'ı ne olursa olsun cımbızla çeken çok güçlü bir parser metodu
+      const startIndex = aiResponse.indexOf('{');
+      const endIndex = aiResponse.lastIndexOf('}');
+      
+      if (startIndex === -1 || endIndex === -1) throw new Error("JSON objesi bulunamadı");
+      
+      const cleanJsonStr = aiResponse.substring(startIndex, endIndex + 1);
+      const parsed = JSON.parse(cleanJsonStr);
 
-    if (parsedFlashcards.length === 0 && parsedQuiz.length === 0) {
-      playSound('error');
-      return setErrorMsg('Geçersiz format. Lütfen yapay zekadan cevabı tam istenen formatta yeniden oluşturmasını isteyin.');
+      if (!parsed.summary && !parsed.cards && !parsed.quiz) throw new Error("Format uyuşmazlığı");
+
+      const newCards = (parsed.cards || []).map((c: any) => ({
+        id: Date.now() + Math.random(),
+        contentId: activeContentId,
+        question: c.question || "Soru bulunamadı",
+        answer: c.answer || "Cevap bulunamadı",
+        learned: false
+      }));
+
+      const newQuiz = (parsed.quiz || []).map((q: any) => ({
+        id: Date.now() + Math.random(),
+        contentId: activeContentId,
+        question: q.question || "Soru bulunamadı",
+        options: q.options || { A: "A", B: "B", C: "C", D: "D" },
+        correct: q.correct || "A"
+      }));
+
+      replaceContentAI(activeContentId, newCards, newQuiz, parsed.summary || "");
+      setAiResponse('');
+      setActiveTab('summary');
+      onClose();
+    } catch (e) {
+      setErrorMsg('Geçersiz format. Lütfen yapay zekadan sadece JSON istediğinizden emin olun.');
     }
-
-    replaceVideoAIContent(activeVideoId, parsedFlashcards, parsedQuiz);
-    
-    setAiResponse('');
-    playSound('success');
-    if (parsedQuiz.length > 0) setActiveTab('quiz');
-    else setActiveTab('flashcards');
   };
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-y-auto custom-scrollbar p-4 sm:p-6 animate-fade-in relative">
-      <div className="flex items-center gap-3 mb-6 border-b border-zinc-800 pb-4">
-        <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500"><Sparkles size={20} /></div>
-        <div>
-          <h2 className="text-base sm:text-lg font-bold text-zinc-100">AI Öğrenme Sihirbazı</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-lg flex flex-col bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-3 sm:p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/40">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500"><Sparkles size={16} /></div>
+            <h2 className="text-sm font-bold text-zinc-100">Kompakt AI Sihirbazı</h2>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
         </div>
-      </div>
 
-      <div className="mb-6 bg-zinc-950/50 border border-zinc-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-transparent pointer-events-none"></div>
-        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-          <span className="text-xs sm:text-sm font-bold text-amber-500 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px]">1</span> Prompt'u Kopyala</span>
-          <button onClick={handleCopyPrompt} className="flex items-center gap-1.5 text-xs font-bold bg-amber-500 text-zinc-950 px-3 py-1.5 rounded-lg hover:scale-105 transition-transform active:scale-95 shadow-lg">
-            <Copy size={14} /> Kopyala
-          </button>
-        </div>
-        
-        <div className="mb-3 flex flex-wrap gap-2">
-          {EXAM_LEVELS.map(level => (
-            <button 
-              key={level} 
-              onClick={() => { setSelectedLevel(level); playSound('click'); }}
-              className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-md border font-semibold transition-colors ${selectedLevel === level ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-amber-500/50'}`}
-            >
-              {level}
+        <div className="p-5 flex flex-col gap-5">
+          {/* Adım 1: Kompakt Prompt Alanı */}
+          <div className="flex flex-col gap-3 bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800/50">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-[#FF8C00] flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-[#FF8C00]/20 flex items-center justify-center text-[10px]">1</span> Seviye Seç & Kopyala</span>
+              <button onClick={handleCopyPrompt} className="flex items-center gap-1 text-[10px] font-bold bg-[#FF8C00] text-zinc-950 px-3 py-1.5 rounded-lg hover:scale-105 transition-transform active:scale-95 shadow-md">
+                <Copy size={12} /> İsteği Kopyala
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {EXAM_LEVELS.map(level => (
+                <button key={level} onClick={() => setSelectedLevel(level)} className={`text-[10px] px-2.5 py-1 rounded-md border font-semibold transition-colors ${selectedLevel === level ? 'bg-[#FF8C00]/20 border-[#FF8C00] text-[#FF8C00]' : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-[#FF8C00]/50'}`}>
+                  {level}
+                </button>
+              ))}
+            </div>
+            {successMsg && <p className="text-[10px] text-green-400 font-bold flex items-center gap-1"><CheckCircle2 size={12} /> {successMsg}</p>}
+          </div>
+
+          {/* Adım 2: JSON Yapıştır */}
+          <div className="flex flex-col gap-3">
+            <span className="text-xs font-bold text-blue-400 flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px]">2</span> AI Cevabını (JSON) Yapıştır</span>
+            <textarea 
+              value={aiResponse} onChange={(e) => setAiResponse(e.target.value)}
+              placeholder="Yapay zekanın verdiği { ile başlayıp } ile biten cevabı buraya yapıştırın..."
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 outline-none focus:border-blue-500 resize-none custom-scrollbar min-h-35"
+            ></textarea>
+            {errorMsg && <p className="text-[10px] text-red-400 font-bold flex items-center gap-1"><AlertCircle size={12} /> {errorMsg}</p>}
+            <button onClick={handleParseJSON} className="w-full py-3 rounded-xl bg-blue-500 text-zinc-950 font-bold text-xs hover:opacity-90 flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+              <Sparkles size={14} /> İçerikleri Sisteme Aktar
             </button>
-          ))}
+          </div>
         </div>
-
-        <p className="text-[10px] sm:text-xs text-zinc-400 mb-3">Bu metni kopyalayın ve en sevdiğiniz yapay zekaya yapıştırın.</p>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 h-24 overflow-y-auto custom-scrollbar text-[10px] sm:text-xs text-zinc-500 font-mono whitespace-pre-wrap">
-          {promptTemplate}
-        </div>
-        {successMsg && <p className="text-xs text-green-400 font-bold mt-2 flex items-center gap-1 animate-fade-in"><CheckCircle2 size={14} /> {successMsg}</p>}
-      </div>
-
-      <div className="flex-1 flex flex-col bg-zinc-950/50 border border-zinc-800 rounded-2xl p-4 sm:p-5">
-        <span className="text-xs sm:text-sm font-bold text-blue-400 flex items-center gap-2 mb-3"><span className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px]">2</span> AI Cevabını Yapıştır</span>
-        <textarea 
-          value={aiResponse} onChange={(e) => setAiResponse(e.target.value)}
-          placeholder="Yapay zekanın verdiği çıktıyı buraya yapıştırın..."
-          className="flex-1 w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs sm:text-sm text-zinc-200 outline-none focus:border-blue-500 resize-none custom-scrollbar mb-4"
-        ></textarea>
-        {errorMsg && <p className="text-xs text-red-400 font-bold mb-3 flex items-center gap-1 animate-fade-in"><AlertCircle size={14} /> {errorMsg}</p>}
-        <button onClick={handleParse} className="w-full py-3 rounded-xl bg-blue-500 text-zinc-950 font-bold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
-          <Sparkles size={16} /> Materyalleri Oluştur
-        </button>
       </div>
     </div>
   );
 };
 
-const QuizTab = ({ activeVideoId }: any) => {
+const SummaryTab = ({ activeContentId }: any) => {
+  const { summaries, addNote } = useStore();
+  const summary = summaries[activeContentId];
+  
+  const [selectedText, setSelectedText] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
+
+  const handlePointerUp = () => {
+    setTimeout(() => {
+      const text = window.getSelection()?.toString().trim();
+      if (text && text.length > 0) {
+        setSelectedText(text);
+        setShowPopup(true);
+      } else {
+        setShowPopup(false);
+      }
+    }, 50); 
+  };
+
+  const handleAddToNotes = () => {
+    addNote({ id: Date.now(), contentId: activeContentId, text: `> ${selectedText}`, time: 0 });
+    setShowPopup(false);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  if (!summary) {
+    return (
+      <div className={`text-center py-16 text-zinc-500 flex flex-col items-center gap-4 animate-fade-in`}>
+        <div className={`p-4 rounded-full bg-zinc-950/50`}><AlignLeft size={32} className="opacity-50" /></div>
+        <p className="text-xs sm:text-sm">Bu içerik için henüz özet yok.<br/>AI sekmesinden oluşturabilirsiniz.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div onPointerUp={handlePointerUp} className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar text-sm leading-relaxed text-zinc-300 relative animate-fade-in">
+      {showPopup && (
+        <div className="sticky top-0 z-20 flex justify-center mb-4 animate-fade-in-up">
+          <button 
+            onPointerDown={(e) => { e.preventDefault(); handleAddToNotes(); }}
+            className="px-4 py-2 bg-[#FF8C00] text-zinc-950 font-bold rounded-2xl shadow-xl shadow-[#FF8C00]/30 flex items-center gap-2 active:scale-95 transition-transform"
+          >
+            <Bookmark size={16} /> Seçili Metni Notlara Ekle
+          </button>
+        </div>
+      )}
+      <div dangerouslySetInnerHTML={renderMarkdown(summary)} />
+    </div>
+  );
+};
+
+const QuizTab = ({ activeContentId }: any) => {
   const { quiz, answerQuizQuestion, deleteQuizQuestion, resetQuiz } = useStore();
-  const currentQuiz = quiz.filter(q => q.videoId === activeVideoId);
+  const currentQuiz = quiz.filter(q => q.contentId === activeContentId);
 
   if (currentQuiz.length === 0) {
     return (
       <div className={`text-center py-16 text-zinc-500 flex flex-col items-center gap-4 animate-fade-in`}>
         <div className={`p-4 rounded-full bg-zinc-950/50`}><Target size={32} className="opacity-50" /></div>
-        <p className="text-xs sm:text-sm">Bu video için henüz Quiz yok.<br/>AI sekmesinden oluşturabilirsiniz.</p>
+        <p className="text-xs sm:text-sm">Bu içerik için henüz Quiz yok.<br/>AI sekmesinden oluşturabilirsiniz.</p>
       </div>
     );
   }
@@ -861,10 +1015,10 @@ const QuizTab = ({ activeVideoId }: any) => {
     <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in">
       <div className="px-5 py-3 border-b border-zinc-800 bg-zinc-950/30 flex justify-between items-center flex-wrap gap-2">
         <div className="flex gap-2">
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-md bg-green-500/10 text-green-500 border border-green-500/20`}>Doğru: {correctCount}</span>
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-md bg-red-500/10 text-red-500 border border-red-500/20`}>Yanlış: {wrongCount}</span>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-[10px] bg-green-500/10 text-green-500 border border-green-500/20`}>Doğru: {correctCount}</span>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-[10px] bg-red-500/10 text-red-500 border border-red-500/20`}>Yanlış: {wrongCount}</span>
         </div>
-        <button onClick={() => { resetQuiz(activeVideoId); playSound('click'); }} className="text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors">
+        <button onClick={() => resetQuiz(activeContentId)} className="text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-[10px] transition-colors">
           Sıfırla
         </button>
       </div>
@@ -874,16 +1028,16 @@ const QuizTab = ({ activeVideoId }: any) => {
           const isCorrect = q.userAnswer === q.correct;
           
           return (
-            <div key={q.id} className="relative group bg-zinc-950/50 border border-zinc-800 rounded-2xl p-4 sm:p-5">
-              <button onClick={() => { deleteQuizQuestion(q.id); playSound('click'); }} className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
-              <h4 className="text-sm font-semibold text-zinc-100 mb-4 leading-relaxed"><span className="text-amber-500 mr-1">{i+1}.</span> {q.question}</h4>
+            <div key={q.id} className="relative group bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+              <button onClick={() => deleteQuizQuestion(q.id)} className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md"><Trash2 size={12} /></button>
+              <h4 className="text-sm font-semibold text-zinc-100 mb-4 leading-relaxed"><span className="text-[#FF8C00] mr-1">{i+1}.</span> {q.question}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 {['A', 'B', 'C', 'D'].map((opt) => {
                   const optionText = q.options[opt as keyof typeof q.options];
                   const isSelected = q.userAnswer === opt;
                   const isActuallyCorrect = q.correct === opt;
                   
-                  let btnStyle = "bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-amber-500 hover:text-amber-500";
+                  let btnStyle = "bg-zinc-950 border-zinc-700 text-zinc-300 hover:border-[#FF8C00] hover:text-[#FF8C00]";
                   if (isAnswered) {
                     if (isActuallyCorrect) btnStyle = "bg-green-500/20 border-green-500 text-green-500 font-bold";
                     else if (isSelected) btnStyle = "bg-red-500/20 border-red-500 text-red-500";
@@ -893,8 +1047,8 @@ const QuizTab = ({ activeVideoId }: any) => {
                   return (
                     <button 
                       key={opt} disabled={isAnswered}
-                      onClick={() => { answerQuizQuestion(q.id, opt); playSound(q.correct === opt ? 'success' : 'error'); }}
-                      className={`flex items-center gap-3 p-3 rounded-xl border text-left text-xs sm:text-sm transition-all ${btnStyle}`}
+                      onClick={() => answerQuizQuestion(q.id, opt)}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border text-left text-xs sm:text-sm transition-all ${btnStyle}`}
                     >
                       <span className="w-6 h-6 shrink-0 rounded-full bg-black/30 flex items-center justify-center font-bold text-[10px]">{opt}</span>
                       <span className="flex-1">{optionText}</span>
@@ -910,9 +1064,9 @@ const QuizTab = ({ activeVideoId }: any) => {
   );
 };
 
-const FlashcardsTab = ({ activeVideoId }: any) => {
+const FlashcardsTab = ({ activeContentId }: any) => {
   const { flashcards, deleteFlashcard, toggleFlashcardLearned, resetFlashcards } = useStore();
-  const currentCards = flashcards.filter(c => c.videoId === activeVideoId);
+  const currentCards = flashcards.filter(c => c.contentId === activeContentId);
   const learnedCount = currentCards.filter(c => c.learned).length;
 
   const [isStudyMode, setIsStudyMode] = useState(false);
@@ -922,7 +1076,7 @@ const FlashcardsTab = ({ activeVideoId }: any) => {
     return (
       <div className={`text-center py-10 sm:py-16 text-zinc-500 flex flex-col items-center gap-4 animate-fade-in`}>
         <div className={`p-3 sm:p-4 rounded-full bg-zinc-950/50`}><BookOpen size={24} className="sm:w-8 sm:h-8 opacity-50" /></div>
-        <p className="text-xs sm:text-sm">Bu video için henüz Kart yok.<br/>AI sekmesinden oluşturabilirsiniz.</p>
+        <p className="text-xs sm:text-sm">Bu içerik için henüz Kart yok.<br/>AI sekmesinden oluşturabilirsiniz.</p>
       </div>
     );
   }
@@ -932,29 +1086,29 @@ const FlashcardsTab = ({ activeVideoId }: any) => {
     return (
       <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in relative">
         <div className="px-5 py-3 border-b border-zinc-800 bg-zinc-950/30 flex justify-between items-center">
-          <button onClick={() => setIsStudyMode(false)} className="text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors"><ArrowRight className="rotate-180" size={14}/> Geri Dön</button>
+          <button onClick={() => setIsStudyMode(false)} className="text-xs font-bold text-[#FF8C00] hover:text-orange-400 flex items-center gap-1 transition-colors"><ArrowRight className="rotate-180" size={14}/> Geri Dön</button>
           <span className="text-xs font-bold text-zinc-400">Kart {currentIndex + 1} / {currentCards.length}</span>
         </div>
         
         <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar">
           {currentCard && (
-            <div key={currentCard.id} className="relative group perspective-1000 w-full max-w-md h-64 sm:h-80 cursor-pointer" onClick={(e) => { e.currentTarget.classList.toggle('flip-card'); playSound('click'); }}>
+            <div key={currentCard.id} className="relative group perspective-1000 w-full max-w-md h-64 sm:h-80 cursor-pointer" onClick={(e) => { e.currentTarget.classList.toggle('flip-card'); }}>
               <div className="relative w-full h-full transition-transform duration-500 transform-style-3d card-inner">
-                <div className={`absolute w-full h-full backface-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-6 sm:p-8 flex items-center justify-center text-center shadow-xl`}><p className="font-medium text-base sm:text-lg text-zinc-100">{currentCard.question}</p></div>
-                <div className={`absolute w-full h-full backface-hidden rounded-3xl border-2 border-amber-500/50 bg-amber-500/10 p-6 sm:p-8 flex items-center justify-center text-center rotate-y-180 shadow-xl`}><p className={`font-bold text-base sm:text-lg text-amber-500`}>{currentCard.answer}</p></div>
+                <div className={`absolute w-full h-full backface-hidden rounded-4xl border border-zinc-800 bg-zinc-900 p-6 sm:p-8 flex items-center justify-center text-center shadow-2xl backdrop-blur-md`}><p className="font-medium text-base sm:text-lg text-zinc-100">{currentCard.question}</p></div>
+                <div className={`absolute w-full h-full backface-hidden rounded-4xl border border-[#FF8C00]/50 bg-[#FF8C00]/10 p-6 sm:p-8 flex items-center justify-center text-center rotate-y-180 shadow-2xl backdrop-blur-md`}><p className={`font-bold text-base sm:text-lg text-[#FF8C00]`}>{currentCard.answer}</p></div>
               </div>
             </div>
           )}
 
           <div className="flex items-center gap-3 sm:gap-4 mt-6 sm:mt-8 w-full max-w-md">
-            <button onClick={() => { setCurrentIndex(Math.max(0, currentIndex - 1)); playSound('click'); }} disabled={currentIndex === 0} className="px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1">Önceki</button>
+            <button onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} className="px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-2xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1 active:scale-95">Önceki</button>
             <button 
-              onClick={() => { toggleFlashcardLearned(currentCard.id); playSound('success'); }} 
-              className={`p-2.5 sm:p-3 rounded-xl border-2 transition-all ${currentCard.learned ? 'border-green-500 bg-green-500/20 text-green-500' : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-amber-500'}`} title="Öğrendim İşaretle"
+              onClick={() => toggleFlashcardLearned(currentCard.id)} 
+              className={`p-2.5 sm:p-3 rounded-2xl border-2 transition-all active:scale-95 ${currentCard.learned ? 'border-green-500 bg-green-500/20 text-green-500' : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-[#FF8C00]'}`} title="Öğrendim İşaretle"
             >
               {currentCard.learned ? <CheckCircle2 size={20} /> : <Circle size={20} />}
             </button>
-            <button onClick={() => { setCurrentIndex(Math.min(currentCards.length - 1, currentIndex + 1)); playSound('click'); }} disabled={currentIndex === currentCards.length - 1} className="px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1">Sonraki</button>
+            <button onClick={() => setCurrentIndex(Math.min(currentCards.length - 1, currentIndex + 1))} disabled={currentIndex === currentCards.length - 1} className="px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-2xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1 active:scale-95">Sonraki</button>
           </div>
         </div>
       </div>
@@ -966,22 +1120,44 @@ const FlashcardsTab = ({ activeVideoId }: any) => {
       <div className="px-5 py-3 border-b border-zinc-800 bg-zinc-950/30 flex justify-between items-center">
         <span className="text-xs font-bold text-zinc-400">Öğrenilen: {learnedCount}/{currentCards.length}</span>
         <div className="flex gap-2">
-          <button onClick={() => { resetFlashcards(activeVideoId); playSound('click'); }} className="text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors">Sıfırla</button>
-          <button onClick={() => { setIsStudyMode(true); setCurrentIndex(0); playSound('start'); }} className="text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-400 px-3 py-1 rounded-lg flex items-center gap-1 transition-colors"><Play size={12}/> Çalış</button>
+          <button onClick={() => resetFlashcards(activeContentId)} className="text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-[10px] transition-colors">Sıfırla</button>
+          <button onClick={() => { setIsStudyMode(true); setCurrentIndex(0); }} className="text-xs font-bold text-zinc-950 bg-[#FF8C00] hover:bg-orange-400 px-3 py-1 rounded-[10px] flex items-center gap-1 transition-colors"><Play size={12}/> Çalış</button>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar">
-        {currentCards.map(card => (
-          <div key={card.id} className={`relative group perspective-1000 h-24 sm:h-28 cursor-pointer ${card.learned ? 'opacity-60 hover:opacity-100' : ''}`} onClick={(e) => { e.currentTarget.classList.toggle('flip-card'); playSound('click'); }}>
-            <button onClick={(e) => { e.stopPropagation(); deleteFlashcard(card.id); playSound('click'); }} className="absolute -top-2 -right-2 z-20 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg"><Trash2 size={12} /></button>
+        {currentCards.length === 0 ? null : currentCards.map(card => (
+          <div key={card.id} className={`relative group perspective-1000 h-24 sm:h-28 cursor-pointer ${card.learned ? 'opacity-60 hover:opacity-100' : ''}`} onClick={(e) => { e.currentTarget.classList.toggle('flip-card'); }}>
+            <button onClick={(e) => { e.stopPropagation(); deleteFlashcard(card.id); }} className="absolute -top-2 -right-2 z-20 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg"><Trash2 size={12} /></button>
             {card.learned && <div className="absolute top-2 left-2 z-10 text-green-500 bg-black/50 rounded-full"><CheckCircle2 size={16} /></div>}
             
             <div className="relative w-full h-full transition-transform duration-500 transform-style-3d card-inner">
-              <div className={`absolute w-full h-full backface-hidden rounded-2xl border ${card.learned ? 'border-green-500/30' : 'border-zinc-800'} bg-zinc-950/50 p-4 flex items-center justify-center text-center`}><p className="font-medium text-xs sm:text-sm">{card.question}</p></div>
-              <div className={`absolute w-full h-full backface-hidden rounded-2xl border-2 border-amber-500/50 bg-amber-500/5 p-4 flex items-center justify-center text-center rotate-y-180`}><p className={`font-bold text-xs sm:text-sm text-amber-500`}>{card.answer}</p></div>
+              <div className={`absolute w-full h-full backface-hidden rounded-[20px] border ${card.learned ? 'border-green-500/30' : 'border-zinc-800'} bg-zinc-900/80 p-4 flex items-center justify-center text-center shadow-sm`}><p className="font-medium text-xs sm:text-sm">{card.question}</p></div>
+              <div className={`absolute w-full h-full backface-hidden rounded-[20px] border border-[#FF8C00]/50 bg-[#FF8C00]/10 p-4 flex items-center justify-center text-center rotate-y-180 shadow-md`}><p className={`font-bold text-xs sm:text-sm text-[#FF8C00]`}>{card.answer}</p></div>
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const ProgressBar = () => {
+  const { flashcards, quiz, activeContentId } = useStore();
+  const cards = flashcards.filter(c => c.contentId === activeContentId);
+  const quizzes = quiz.filter(q => q.contentId === activeContentId);
+  
+  const total = cards.length + quizzes.length;
+  const completed = cards.filter(c => c.learned).length + quizzes.filter(q => q.userAnswer).length;
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return (
+    <div className="flex flex-col w-28 sm:w-40 gap-1.5 mr-2">
+      <div className="flex justify-between text-[10px] text-zinc-400 font-bold tracking-wider uppercase">
+        <span>İlerleme</span>
+        <span className="text-[#FF8C00]">{percentage}%</span>
+      </div>
+      <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden shadow-inner">
+        <div className="h-full bg-[#FF8C00] transition-all duration-700 shadow-[0_0_10px_rgba(255,140,0,0.8)]" style={{ width: `${percentage}%` }}></div>
       </div>
     </div>
   );
@@ -992,16 +1168,18 @@ const FlashcardsTab = ({ activeVideoId }: any) => {
 // ==========================================
 export default function App() {
   const { 
-    view, globalMuted, notes, flashcards, quiz, todos, history, activeVideoId, playerConfig, installPrompt,
-    setPlayerConfig, setActiveVideoId, initData, addNote, deleteNote, addPomodoroRecord,
-    addToHistory, toggleGlobalMute
+    view, globalMuted, notes, flashcards, quiz, summaries, todos, history, activeContentId, contentConfig, installPrompt, pendingDocReload,
+    setContentConfig, setActiveContentId, initData, addNote, deleteNote, addPomodoroRecord, updateContentTitle,
+    addToHistory, toggleGlobalMute, deleteTodo, setPendingDocReload
   } = useStore();
   
   const [isInitializing, setIsInitializing] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'flashcards' | 'quiz' | 'pomodoro' | 'ai'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'summary' | 'flashcards' | 'quiz'>('notes');
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showInstallModal, setShowInstallModal] = useState<boolean>(false); 
+  const [showAIModal, setShowAIModal] = useState<boolean>(false);
+  const [showPomodoroWidget, setShowPomodoroWidget] = useState<boolean>(false);
   
   const [newNote, setNewNote] = useState<string>('');
   const noteInputRef = useRef<HTMLInputElement>(null); 
@@ -1023,19 +1201,22 @@ export default function App() {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 
   useEffect(() => {
-    document.title = "BMO Learn | Sadece odaklan.";
+    document.title = "BMO Learn v2.1 | Sadece odaklan.";
   }, []);
 
   useEffect(() => {
     const sNotes = localStorage.getItem('bmo_notes');
     const sCards = localStorage.getItem('bmo_flashcards');
     const sQuiz = localStorage.getItem('bmo_quiz');
+    const sSummaries = localStorage.getItem('bmo_summaries');
     const sTodos = localStorage.getItem('bmo_todos');
     const sHistory = localStorage.getItem('bmo_history');
     const sPomodoro = localStorage.getItem('bmo_pomodoro');
+    
     initData(
       sNotes ? JSON.parse(sNotes) : [], sCards ? JSON.parse(sCards) : [],
-      sQuiz ? JSON.parse(sQuiz) : [], sTodos ? JSON.parse(sTodos) : [], 
+      sQuiz ? JSON.parse(sQuiz) : [], sSummaries ? JSON.parse(sSummaries) : {}, 
+      sTodos ? JSON.parse(sTodos) : [], 
       sHistory ? JSON.parse(sHistory) : [], sPomodoro ? JSON.parse(sPomodoro) : {}
     );
     const timer = setTimeout(() => setIsInitializing(false), 500);
@@ -1048,17 +1229,13 @@ export default function App() {
       interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
       if (timerMode === 'focus') {
-        playSound('success'); 
         addPomodoroRecord(); 
         setTimerMode('break'); 
         setTimeLeft(breakDuration * 60);
-        alert("Odaklanma süreniz bitti! Şimdi mola zamanı.");
       } else {
-        playSound('break'); 
         setTimerMode('focus'); 
         setTimeLeft(focusDuration * 60); 
         setIsTimerRunning(false);
-        alert("Mola bitti! Yeni bir odaklanma seansına hazır mısınız?");
       }
     }
     return () => clearInterval(interval);
@@ -1074,7 +1251,7 @@ export default function App() {
         setTimeout(() => noteInputRef.current?.focus(), 100);
       }
       
-      if (e.ctrlKey && e.code === 'Space' && !isInput) {
+      if (e.ctrlKey && e.code === 'Space' && !isInput && contentConfig.type === 'video') {
         e.preventDefault();
         if (playerRef.current?.getPlayerState) {
           const state = playerRef.current.getPlayerState();
@@ -1085,15 +1262,19 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [contentConfig.type]);
 
   useEffect(() => {
     const handleFullscreenChange = () => { 
-      if (document.fullscreenElement) { setIsFocusMode(true); } 
-      else { setIsFocusMode(false); } 
+      const isFull = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFocusMode(isFull); 
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    }
   }, []);
 
   useEffect(() => {
@@ -1105,11 +1286,13 @@ export default function App() {
     if (isInitializing) return; 
     
     const tryInitPlayers = () => {
-      if (!window.YT || !document.getElementById('youtube-main-player')) {
+      if (!window.YT || !document.getElementById('youtube-music-player')) {
         setTimeout(tryInitPlayers, 100);
         return;
       }
-      if (view === 'app') initMainPlayer();
+      if (view === 'app' && contentConfig.type === 'video' && document.getElementById('youtube-main-player')) {
+         initMainPlayer();
+      }
       initMusicPlayer();
     };
 
@@ -1121,15 +1304,33 @@ export default function App() {
     } else {
       tryInitPlayers();
     }
-  }, [view, isInitializing]);
+  }, [view, isInitializing, contentConfig.type]);
 
   useEffect(() => {
-    if (window.YT && playerRef.current?.loadVideoById && view === 'app') {
+    if (contentConfig.type === 'video' && window.YT && playerRef.current?.loadVideoById && view === 'app') {
       setVideoError(false);
-      if (playerConfig.pId) playerRef.current.loadPlaylist({ list: playerConfig.pId, listType: 'playlist' });
-      else if (playerConfig.vId) playerRef.current.loadVideoById(playerConfig.vId);
+      
+      if (contentConfig.pId) {
+         const currentPId = playerRef.current.getPlaylistId ? playerRef.current.getPlaylistId() : null;
+         if (currentPId !== contentConfig.pId) {
+           playerRef.current.loadPlaylist({
+             list: contentConfig.pId,
+             listType: 'playlist',
+             index: 0
+           });
+         }
+      } else if (contentConfig.id) {
+         const currentVId = playerRef.current.getVideoData ? playerRef.current.getVideoData().video_id : null;
+         if (currentVId !== contentConfig.id) {
+           playerRef.current.loadVideoById({
+             videoId: contentConfig.id
+           });
+         }
+      }
+    } else if (contentConfig.type === 'document' && view === 'app') {
+      setActiveContentId(contentConfig.id);
     }
-  }, [playerConfig, view]);
+  }, [contentConfig.id, contentConfig.pId, contentConfig.type, view, setActiveContentId]);
 
   const handleMusicVolumeChange = (val: number) => {
     setMusicVolume(val);
@@ -1138,18 +1339,30 @@ export default function App() {
 
   const initMainPlayer = () => {
     if (playerRef.current?.destroy) playerRef.current.destroy();
-    const playerVars: any = { autoplay: 1, rel: 0, origin: typeof window !== 'undefined' ? window.location.origin : '' };
-    if (playerConfig.pId) { playerVars.listType = 'playlist'; playerVars.list = playerConfig.pId; }
+    
+    const playerVars: any = { 
+      autoplay: 1, 
+      rel: 0, 
+      origin: typeof window !== 'undefined' ? window.location.origin : ''
+    };
+
+    if (contentConfig.pId) { 
+      playerVars.listType = 'playlist'; 
+      playerVars.list = contentConfig.pId; 
+    }
 
     playerRef.current = new window.YT.Player('youtube-main-player', {
-      host: 'https://www.youtube.com', videoId: playerConfig.vId || '', playerVars: playerVars,
+      host: 'https://www.youtube.com', videoId: contentConfig.id || '', playerVars: playerVars,
       events: {
         'onStateChange': (e: any) => {
           if (e.target.getVideoData) {
             const data = e.target.getVideoData();
             if (data.video_id) {
-              setActiveVideoId(data.video_id);
-              if (data.title && e.data === window.YT.PlayerState.PLAYING) addToHistory({ videoId: data.video_id, title: data.title, timestamp: Date.now() });
+              setActiveContentId(data.video_id);
+              if (data.title && e.data === window.YT.PlayerState.PLAYING) {
+                if(useStore.getState().contentConfig.title !== data.title) updateContentTitle(data.title);
+                addToHistory({ contentId: data.video_id, title: data.title, timestamp: Date.now(), type: 'video', pId: contentConfig.pId });
+              }
             }
           }
         },
@@ -1176,52 +1389,82 @@ export default function App() {
   const handleDashboardUrlChange = (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoUrlInput.trim()) return;
+    
     const vId = extractYTId(videoUrlInput);
     const pId = extractPlaylistId(videoUrlInput);
 
-    if (vId || pId) { setPlayerConfig({ vId: vId || '', pId }); playSound('success'); setVideoUrlInput(''); } 
-    else { playSound('error'); alert("Lütfen geçerli bir YouTube linki giriniz."); }
+    if (vId || pId) { 
+      setContentConfig({ id: vId || pId || '', type: 'video', pId, title: "YouTube Video" }); 
+      setVideoUrlInput(''); 
+    } else { 
+      const id = "web_" + Date.now();
+      setContentConfig({ id, type: 'document', title: "Web Kaynağı", url: videoUrlInput });
+      setVideoUrlInput('');
+    }
   };
 
   const jumpToTime = (time: number) => {
-    if (playerRef.current?.seekTo) { playerRef.current.seekTo(time, true); playerRef.current.playVideo(); playSound('click'); }
+    if (contentConfig.type === 'video' && playerRef.current?.seekTo) { 
+      playerRef.current.seekTo(time, true); 
+      playerRef.current.playVideo(); 
+    }
   };
 
   const handleExportNotes = () => {
-    const currentNotes = notes.filter(n => n.videoId === activeVideoId);
+    const currentNotes = notes.filter(n => n.contentId === activeContentId);
     if (currentNotes.length === 0) return alert("İndirilecek not bulunamadı.");
-    const videoTitle = history.find(h => h.videoId === activeVideoId)?.title || "BMO_Learn_Video";
+    const title = history.find(h => h.contentId === activeContentId)?.title || contentConfig.title || "BMO_Learn";
     const dateStr = new Date().toLocaleDateString('tr-TR'); 
     
-    let content = `BMO Learn - Video Notları\nVideo Başlığı: ${videoTitle}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
-    currentNotes.forEach(n => { content += `[${formatTime(n.time)}] ${n.text}\n`; });
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); 
-    const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, '');
-    a.download = `${safeTitle} - ${dateStr}.txt`;
+    let content = `BMO Learn - Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
+    currentNotes.forEach(n => { content += `[${n.time > 0 ? formatTime(n.time) : '-'}] ${n.text}\n`; });
     
-    a.click(); URL.revokeObjectURL(url); playSound('success');
+    navigator.clipboard.writeText(content).catch(() => {});
+
+    try {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const safeTitle = title.replace(/[\\/:*?"<>|]/g, '');
+      
+      const a = document.createElement('a'); 
+      a.href = url;
+      a.download = `${safeTitle} - ${dateStr}.txt`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click(); 
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      alert("Notlar İndiriliyor...\n(İndirme başlamadıysa, notlarınız panoya başarıyla kopyalandı! Bir metin belgesine doğrudan yapıştırabilirsiniz.)");
+    } catch (err) {
+      alert("Dosya indirme işlemi kısıtlandı. Ancak notlarınız panoya başarıyla kopyalandı! Bir metin belgesine yapıştırabilirsiniz.");
+    }
   };
 
   const toggleRadioPlay = () => {
     if (!musicPlayerRef.current?.getPlayerState) return;
-    isMusicPlaying ? musicPlayerRef.current.pauseVideo() : musicPlayerRef.current.playVideo(); playSound('click');
+    isMusicPlaying ? musicPlayerRef.current.pauseVideo() : musicPlayerRef.current.playVideo();
   };
 
   const changeStation = (station: typeof RADIO_STATIONS[0]) => {
     setActiveStation(station);
     if (musicPlayerRef.current?.loadVideoById) { musicPlayerRef.current.loadVideoById(station.id); setIsMusicPlaying(true); }
-    playSound('click');
   };
 
   const toggleFocusMode = async () => {
-    if (!document.fullscreenElement) {
-      try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); setIsFocusMode(true); } catch (e) { }
-      playSound('click');
+    const doc = document as any;
+    const docEl = document.documentElement as any;
+
+    if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
+      try { 
+        if (docEl.requestFullscreen) await docEl.requestFullscreen(); 
+        else if (docEl.webkitRequestFullscreen) await docEl.webkitRequestFullscreen();
+      } catch (e) { console.error("Tam ekran başlatılamadı:", e); }
     } else {
-      try { if (document.exitFullscreen) await document.exitFullscreen(); setIsFocusMode(false); } catch (e) { }
-      playSound('click');
+      try { 
+        if (doc.exitFullscreen) await doc.exitFullscreen(); 
+        else if (doc.webkitExitFullscreen) await doc.webkitExitFullscreen();
+      } catch (e) { console.error("Tam ekrandan çıkılamadı:", e); }
     }
   };
 
@@ -1234,7 +1477,7 @@ export default function App() {
     }
   }
 
-  const currentNotes = notes.filter(n => n.videoId === activeVideoId);
+  const currentNotes = notes.filter(n => n.contentId === activeContentId);
 
   if (isInitializing) return <SkeletonLoading />;
 
@@ -1246,6 +1489,52 @@ export default function App() {
       <BlueLightFilter />
       <div className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden -z-50"><div id="youtube-music-player"></div></div>
       
+      {/* DOSYA YENİDEN YÜKLEME MODALI */}
+      {pendingDocReload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl relative text-center">
+            <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-100 mb-2">Dokümanı Yeniden Yükle</h3>
+            <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+              Güvenlik ve performans nedeniyle dosya içerikleri tarayıcıda saklanmaz. Geçmişteki notlarınıza ve AI özetinize ulaşmak için lütfen <strong className="text-zinc-200">"{pendingDocReload.title}"</strong> adlı dosyanızı tekrar seçin.
+            </p>
+            
+            <div className="relative w-full">
+              <input 
+                type="file" 
+                id="doc-reload-upload"
+                accept=".pdf,.doc,.docx,.ppt,.pptx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if(!file) return;
+                  const objUrl = URL.createObjectURL(file);
+                  setContentConfig({ 
+                    id: pendingDocReload.id, 
+                    type: 'document', 
+                    title: pendingDocReload.title, 
+                    url: objUrl, 
+                    fileType: file.type || file.name.split('.').pop() 
+                  });
+                  setPendingDocReload(null);
+                }}
+                className="hidden"
+              />
+              <label htmlFor="doc-reload-upload" className="flex items-center justify-center w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm rounded-xl cursor-pointer transition-colors shadow-lg shadow-orange-500/20 active:scale-95">
+                Dosyayı Seç ve Devam Et
+              </label>
+            </div>
+            <button 
+              onClick={() => setPendingDocReload(null)} 
+              className="mt-4 text-sm font-semibold text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              İptal
+            </button>
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{__html: `
         .app-drag-region { -webkit-app-region: drag; user-select: none; }
         .app-no-drag { -webkit-app-region: no-drag; }
@@ -1258,15 +1547,8 @@ export default function App() {
         .rotate-y-180 { transform: rotateY(180deg); }
         .flip-card .card-inner { transform: rotateY(180deg); }
         
-        /* YENİ: Sinematik Süzülme (Float) ve Işık (Glow) Animasyonları */
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes subtleGlow {
-          0%, 100% { opacity: 0.3; transform: scale(0.9); filter: blur(30px); }
-          50% { opacity: 0.6; transform: scale(1.1); filter: blur(40px); }
-        }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        @keyframes subtleGlow { 0%, 100% { opacity: 0.3; transform: scale(0.9); filter: blur(30px); } 50% { opacity: 0.6; transform: scale(1.1); filter: blur(40px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-subtle-glow { animation: subtleGlow 4s ease-in-out infinite; }
 
@@ -1277,15 +1559,20 @@ export default function App() {
         @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
         .animate-blob { animation: blob 10s infinite alternate; }
         .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes hypeComplete { 0% { transform: scale(1); opacity: 1; border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 0 rgba(245, 158, 11, 0); } 30% { transform: scale(1.02) translateX(10px); background-color: rgba(245, 158, 11, 0.2); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); opacity: 1; } 100% { transform: scale(0.9) translateX(50px); opacity: 0; filter: blur(5px); } }
-        .animate-hype-complete { animation: hypeComplete 0.8s ease-in forwards; pointer-events: none; }
+        
+        /* GÜNCEL GÖREV SİLME (TİK) ANİMASYONU - Zarifçe sağa doğru kaybolma */
+        @keyframes taskComplete {
+          0% { transform: scale(1); opacity: 1; }
+          40% { transform: scale(1.05); opacity: 1; color: #10b981; }
+          100% { transform: translateX(50px) scale(0.9); opacity: 0; filter: blur(2px); }
+        }
+        .animate-todo-complete { animation: taskComplete 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: none; }
       `}} />
 
       {view === 'landing' && <LandingPage />}
@@ -1293,218 +1580,201 @@ export default function App() {
       {view === 'app' && (
         <div className={`min-h-screen flex flex-col bg-zinc-950 text-zinc-100 transition-colors duration-500 animate-fade-in relative`}>
           <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
+          <AIModal isOpen={showAIModal} onClose={() => setShowAIModal(false)} activeContentId={activeContentId} contentConfig={contentConfig} setActiveTab={setActiveTab} />
+          
+          <PomodoroWidget 
+            showPomodoroWidget={showPomodoroWidget} 
+            setShowPomodoroWidget={setShowPomodoroWidget} 
+            focusDuration={focusDuration} setFocusDuration={setFocusDuration} 
+            breakDuration={breakDuration} setBreakDuration={setBreakDuration} 
+            timerMode={timerMode} setTimerMode={setTimerMode} 
+            timeLeft={timeLeft} setTimeLeft={setTimeLeft} 
+            isTimerRunning={isTimerRunning} setIsTimerRunning={setIsTimerRunning} 
+          />
+          <RadioWidget 
+            showMusicWidget={showMusicWidget} 
+            setShowMusicWidget={setShowMusicWidget} 
+            activeStation={activeStation} isMusicPlaying={isMusicPlaying} 
+            musicVolume={musicVolume} setMusicVolume={handleMusicVolumeChange} 
+            toggleRadioPlay={toggleRadioPlay} changeStation={changeStation} 
+          />
 
-          <header className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40 backdrop-blur-xl bg-opacity-80 gap-3 app-drag-region`}>
+          <header className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-40 backdrop-blur-xl gap-3 app-drag-region`}>
             <div className="flex items-center gap-3 sm:gap-6 app-no-drag">
-              <button onClick={() => { useStore.getState().setView('landing'); playSound('click'); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-amber-500/30 group-hover:border-amber-500 transition-colors shadow-[0_0_10px_rgba(245,158,11,0.2)] group-hover:shadow-[0_0_15px_rgba(245,158,11,0.6)]">
+              <button onClick={() => useStore.getState().setView('landing')} className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#FF8C00]/30 group-hover:border-[#FF8C00] transition-colors shadow-[0_0_10px_rgba(255,140,0,0.2)] group-hover:shadow-[0_0_15px_rgba(255,140,0,0.6)]">
                   <img src="/logo.png" alt="Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight hidden sm:block">BMO <span className="text-amber-500">Learn</span></h1>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight hidden sm:block">BMO <span className="text-[#FF8C00]">Learn</span></h1>
               </button>
-              <span className="hidden sm:inline-block text-[10px] uppercase tracking-widest text-zinc-500 font-bold mt-1 border-l border-zinc-800 pl-4">Developed by EHC</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 app-no-drag">
+              
+              <div className="hidden md:block mr-2 border-r border-zinc-800 pr-4">
+                 <ProgressBar />
+              </div>
+
               <div className={`hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-full bg-zinc-950/50 border border-zinc-800 text-xs font-medium mr-2 transition-all`}>
-                <span className="flex items-center gap-1.5 text-amber-500" title="Notlar"><Bookmark size={14}/> {notes.length}</span>
+                <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Notlar"><Bookmark size={14}/> {notes.length}</span>
                 <span className={`w-1 h-1 rounded-full text-zinc-500`}></span>
-                <span className="flex items-center gap-1.5 text-amber-500" title="Kartlar"><BookOpen size={14}/> {flashcards.length}</span>
+                <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Kartlar"><BookOpen size={14}/> {flashcards.length}</span>
                 <span className={`w-1 h-1 rounded-full text-zinc-500`}></span>
-                <span className="flex items-center gap-1.5 text-amber-500" title="Quiz Soruları"><Target size={14}/> {quiz.length}</span>
+                <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Quiz Soruları"><Target size={14}/> {quiz.length}</span>
               </div>
               
-              <button onClick={handleInstallClick} className={`p-2 sm:p-2.5 rounded-full hover:bg-amber-500/10 text-zinc-400 hover:text-amber-500 transition-colors`} title="Uygulamayı Yükle">
+              <button onClick={handleInstallClick} className={`p-2 sm:p-2.5 rounded-full hover:bg-[#FF8C00]/10 text-zinc-400 hover:text-[#FF8C00] transition-colors`} title="Ana Ekrana Ekle">
                 <Download size={18} />
               </button>
               
-              <button onClick={() => { setShowHistory(true); playSound('click'); }} className={`p-2 sm:p-2.5 rounded-full hover:bg-zinc-500/10 text-zinc-400 transition-colors`} title="Geçmiş">
+              <button onClick={() => setShowHistory(true)} className={`p-2 sm:p-2.5 rounded-full hover:bg-zinc-500/10 text-zinc-400 transition-colors`} title="Geçmiş">
                 <History size={18} />
               </button>
               <SettingsPopover />
               <div className={`hidden sm:block w-px h-5 border-zinc-800 mx-1`}></div>
 
-              <button onClick={() => { setShowMusicWidget(!showMusicWidget); playSound('click'); }} className={`p-2 sm:p-2.5 rounded-full transition-all ${showMusicWidget ? 'bg-amber-500/20 text-amber-500' : `hover:bg-zinc-500/10 text-zinc-400`}`} title="Odak Radyosu">
+              <button onClick={() => setShowPomodoroWidget(!showPomodoroWidget)} className={`p-2 sm:p-2.5 rounded-full transition-all ${showPomodoroWidget || isTimerRunning ? 'bg-[#FF8C00]/20 text-[#FF8C00]' : `hover:bg-zinc-500/10 text-zinc-400`}`} title="Odak ve Görevler">
+                <Timer size={18} className={isTimerRunning ? 'animate-pulse' : ''} />
+              </button>
+
+              <button onClick={() => setShowMusicWidget(!showMusicWidget)} className={`p-2 sm:p-2.5 rounded-full transition-all ${showMusicWidget ? 'bg-[#FF8C00]/20 text-[#FF8C00]' : `hover:bg-zinc-500/10 text-zinc-400`}`} title="Odak Radyosu">
                 {isMusicPlaying ? <Radio className="animate-pulse" size={18} /> : <Music size={18} />}
               </button>
-              <button onClick={() => { toggleGlobalMute(); playSound('click'); }} className={`p-2.5 rounded-full hover:bg-zinc-500/10 ${globalMuted ? 'text-red-400' : 'text-zinc-400'}`} title="Tüm Sesleri Sustur (Mute)">
+              <button onClick={toggleGlobalMute} className={`p-2.5 rounded-full hover:bg-zinc-500/10 ${globalMuted ? 'text-red-400' : 'text-zinc-400'}`} title="Tüm Sesleri Sustur (Mute)">
                 {globalMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
               
-              <button onClick={toggleFocusMode} className={`p-2.5 rounded-full hover:bg-zinc-500/10 ${isFocusMode ? 'text-amber-500' : 'text-zinc-400'}`} title="Tam Ekran (F11)">
+              <button onClick={toggleFocusMode} className={`p-2.5 rounded-full hover:bg-zinc-500/10 ${isFocusMode ? 'text-[#FF8C00]' : 'text-zinc-400'}`} title="Tam Ekran (F11)">
                 {isFocusMode ? <Minimize size={18} /> : <Maximize size={18} />}
               </button>
             </div>
           </header>
 
-          <RadioWidget 
-            showMusicWidget={showMusicWidget} setShowMusicWidget={setShowMusicWidget}
-            activeStation={activeStation} isMusicPlaying={isMusicPlaying} musicVolume={musicVolume}
-            setMusicVolume={handleMusicVolumeChange} toggleRadioPlay={toggleRadioPlay} changeStation={changeStation}
-          />
-
-          <main className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 max-w-400 mx-auto w-full`}>
+          <main className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 max-w-400 mx-auto w-full relative z-0`}>
             
             <div className={`flex flex-col w-full lg:w-[65%]`}>
-              <form onSubmit={handleDashboardUrlChange} className={`flex gap-2 sm:gap-3 mb-4 sm:mb-5 p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm focus-within:border-amber-500/50 transition-colors`}>
-                <input type="text" value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} placeholder="Yeni bir YouTube Linki yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs sm:text-sm font-medium`} />
+              <form onSubmit={handleDashboardUrlChange} className={`flex gap-2 sm:gap-3 mb-4 sm:mb-5 p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-[20px] bg-zinc-900 border border-zinc-800 shadow-sm focus-within:border-[#FF8C00]/50 transition-colors`}>
+                <input type="text" value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} placeholder="Yeni bir YouTube Linki (Video / Playlist) veya Web Adresi yapıştırın..." className={`flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs sm:text-sm font-medium w-full`} />
                 {videoUrlInput && <button type="button" onClick={() => setVideoUrlInput('')} className="p-2 text-zinc-500 hover:text-zinc-300"><X size={16} /></button>}
-                <button type="submit" className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-zinc-950 bg-amber-500 font-bold text-xs sm:text-sm hover:scale-105 transition-transform active:scale-95`}>Değiştir</button>
+                
+                <label className="cursor-pointer px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-md">
+                  <Upload size={16} /> <span className="hidden sm:inline">Dosya</span>
+                  <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" className="hidden" onChange={(e) => {
+                     const file = e.target.files?.[0];
+                     if(!file) return;
+                     const id = "doc_" + Date.now();
+                     const objUrl = URL.createObjectURL(file);
+                     setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType: file.type || file.name.split('.').pop() });
+                     addToHistory({ contentId: id, title: file.name, timestamp: Date.now(), type: 'document' });
+                     setVideoUrlInput('');
+                  }} />
+                </label>
+
+                <button type="submit" className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl text-zinc-950 bg-[#FF8C00] font-bold text-xs sm:text-sm hover:scale-105 transition-transform active:scale-95 shadow-md shadow-[#FF8C00]/20`}>Aç</button>
               </form>
 
-              <div className={`relative w-full aspect-video bg-black shadow-2xl transition-all duration-500 overflow-hidden rounded-2xl sm:rounded-3xl border border-zinc-800/50`}>
-                {videoError ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-500 text-sm gap-3 bg-zinc-950">
-                    <VolumeX size={32} className="opacity-50" />
+              {/* === EN BÜYÜK DEĞİŞİKLİK: DOM ÇAKISMASINI ÖNLEYEN KESİN ÇÖZÜM YÖNTEMİ === */}
+              <div className={`relative w-full aspect-video bg-zinc-950 shadow-2xl transition-all duration-500 overflow-hidden rounded-2xl sm:rounded-4xl border border-zinc-800/50`}>
+                
+                {/* 1. YOUTUBE OYNATICI KATMani (Z-index: 10) - Asla Silinmez, Sadece Görünmez Olur! */}
+                <div className={`absolute inset-0 w-full h-full z-10 ${contentConfig.type === 'video' && !videoError ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                  <div id="youtube-main-player" className="w-full h-full"></div>
+                </div>
+
+                {/* 2. DOKÜMAN / HATA KATMANI (Z-index: 20) - Youtube'un üstüne biner */}
+                {contentConfig.type === 'document' && (
+                  <div className="absolute inset-0 w-full h-full z-20 bg-zinc-950 flex flex-col">
+                    {contentConfig.url ? (
+                      (contentConfig.fileType === 'application/pdf' || String(contentConfig.fileType).includes('pdf')) ? (
+                        <iframe src={contentConfig.url} className="w-full h-full bg-zinc-100" />
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 gap-4 bg-zinc-900 px-6">
+                          <FileText size={64} className="text-[#FF8C00]" />
+                          <h3 className="text-xl sm:text-2xl font-bold text-zinc-100">Doküman Aktif</h3>
+                          <p className="text-sm text-center max-w-md text-zinc-400">
+                            <strong className="text-[#FF8C00]">{contentConfig.title}</strong> sisteme entegre edildi.<br/><br/>
+                            Word veya PowerPoint formatı tarayıcıda doğrudan önizlenemez ancak sağ paneldeki Notları alabilir ve AI Sihirbazından özet çıkartabilirsiniz.
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 gap-4">
+                        <FileText size={48} className="opacity-50 text-[#FF8C00]" />
+                        <p className="text-sm font-bold">Doküman formatı tarayıcıda doğrudan açılamıyor.</p>
+                        <p className="text-xs">Öğrenme araçlarını kullanmak için AI Sihirbazından özet çıkarabilirsiniz.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Video Hata Ekranı Katmanı */}
+                {contentConfig.type === 'video' && videoError && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-zinc-500 text-sm gap-3 bg-zinc-950">
+                    <VolumeX size={32} className="opacity-50 text-red-500" />
                     <p>Bu video oynatılamıyor (Silinmiş veya kısıtlanmış olabilir).</p>
                   </div>
-                ) : (
-                  <div id="youtube-main-player" className="absolute top-0 left-0 w-full h-full"></div>
                 )}
+
               </div>
             </div>
 
-            <div className={`flex flex-col w-full lg:w-[35%] h-125 md:h-150 lg:h-auto bg-zinc-900 rounded-2xl sm:rounded-3xl border border-zinc-800 shadow-xl overflow-hidden transition-all duration-500`}>
+            <div className={`flex flex-col w-full lg:w-[35%] h-125 md:h-150 lg:h-auto bg-zinc-900/90 backdrop-blur-xl rounded-2xl sm:rounded-4xl border border-zinc-800 shadow-2xl overflow-hidden transition-all duration-500`}>
               
-              <div className={`flex border-b border-zinc-800 overflow-x-auto custom-scrollbar`}>
-                <button onClick={() => { setActiveTab('notes'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'notes' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><List size={14} /> <span className="hidden sm:inline">Notlar</span></button>
-                <button onClick={() => { setActiveTab('flashcards'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'flashcards' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><BookOpen size={14} /> <span className="hidden sm:inline">Kartlar</span></button>
-                <button onClick={() => { setActiveTab('quiz'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'quiz' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><Target size={14} /> <span className="hidden sm:inline">Quiz</span></button>
-                <button onClick={() => { setActiveTab('pomodoro'); playSound('click'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'pomodoro' ? `text-amber-500 border-b-2 border-amber-500 bg-amber-500/5` : 'text-zinc-500'}`}><Timer size={14} /> <span className="hidden sm:inline">Odak</span></button>
-                <button onClick={() => { setActiveTab('ai'); playSound('start'); }} className={`flex-1 shrink-0 py-3 px-2 sm:py-4 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold transition-all ${activeTab === 'ai' ? `text-blue-500 border-b-2 border-blue-500 bg-blue-500/5` : 'text-blue-400/50 hover:text-blue-400'}`}><Sparkles size={14} /> AI</button>
+              <div className={`flex border-b border-zinc-800 p-2 items-center justify-between`}>
+                <div className="flex overflow-x-auto custom-scrollbar flex-1 gap-1">
+                  <button onClick={() => setActiveTab('notes')} className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${activeTab === 'notes' ? `text-zinc-950 bg-[#FF8C00] shadow-md shadow-[#FF8C00]/20` : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'}`}><List size={14} /> <span className="hidden sm:inline">Notlar</span></button>
+                  <button onClick={() => setActiveTab('summary')} className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${activeTab === 'summary' ? `text-zinc-950 bg-[#FF8C00] shadow-md shadow-[#FF8C00]/20` : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'}`}><AlignLeft size={14} /> <span className="hidden sm:inline">Özet</span></button>
+                  <button onClick={() => setActiveTab('flashcards')} className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${activeTab === 'flashcards' ? `text-zinc-950 bg-[#FF8C00] shadow-md shadow-[#FF8C00]/20` : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'}`}><BookOpen size={14} /> <span className="hidden sm:inline">Kartlar</span></button>
+                  <button onClick={() => setActiveTab('quiz')} className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${activeTab === 'quiz' ? `text-zinc-950 bg-[#FF8C00] shadow-md shadow-[#FF8C00]/20` : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'}`}><Target size={14} /> <span className="hidden sm:inline">Quiz</span></button>
+                </div>
+                
+                <button onClick={() => setShowAIModal(true)} className="ml-2 shrink-0 px-3 py-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 hover:bg-blue-500 hover:text-zinc-950 text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+                  <Sparkles size={14} /> <span className="hidden lg:inline">AI Sihirbazı</span>
+                </button>
               </div>
+
+              {activeTab === 'summary' && <SummaryTab activeContentId={activeContentId} />}
 
               {activeTab === 'notes' && (
                 <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in relative">
                   {currentNotes.length > 0 && (
-                    <button onClick={handleExportNotes} className={`absolute top-4 right-4 z-10 p-2 rounded-lg bg-zinc-800/50 hover:bg-amber-500 hover:text-black text-zinc-400 transition-all border border-zinc-700/50 backdrop-blur-sm`} title="Notları İndir (TXT)">
+                    <button onClick={handleExportNotes} className={`absolute top-4 right-4 z-10 p-2 rounded-lg bg-zinc-800/50 hover:bg-[#FF8C00] hover:text-black text-zinc-400 transition-all border border-zinc-700/50 backdrop-blur-sm`} title="Notları İndir (TXT)">
                       <Download size={14} className="sm:w-4 sm:h-4" />
                     </button>
                   )}
                   <div className="flex-1 overflow-y-auto p-4 sm:p-5 pt-12 space-y-3 custom-scrollbar">
-                    {currentNotes.length === 0 && (
-                      <div className={`text-center py-10 sm:py-16 text-zinc-500 flex flex-col items-center gap-4`}><div className={`p-3 sm:p-4 rounded-full bg-zinc-950/50`}><Bookmark size={24} className="sm:w-8 sm:h-8 opacity-50" /></div><p className="text-xs sm:text-sm">Bu video için henüz not yok.</p></div>
+                    {currentNotes.length === 0 ? (
+                      <div className={`text-center py-10 sm:py-16 text-zinc-500 flex flex-col items-center gap-4`}><div className={`p-3 sm:p-4 rounded-full bg-zinc-950/50`}><Bookmark size={24} className="sm:w-8 sm:h-8 opacity-50" /></div><p className="text-xs sm:text-sm">Bu içerik için henüz not yok.</p></div>
+                    ) : (
+                      currentNotes.map(note => (
+                        <div key={note.id} className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-[20px] bg-zinc-950/50 border border-transparent hover:border-zinc-800 transition-all shadow-sm`}>
+                          {note.time > 0 && (
+                            <button onClick={() => jumpToTime(note.time)} className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-lg bg-[#FF8C00]/10 text-[#FF8C00] text-[10px] sm:text-xs font-mono font-bold hover:bg-[#FF8C00]/20`}>
+                              {formatTime(note.time)}
+                            </button>
+                          )}
+                          <p className="flex-1 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={renderMarkdown(note.text)}></p>
+                          <button onClick={() => deleteNote(note.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-500"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button>
+                        </div>
+                      ))
                     )}
-                    {currentNotes.map(note => (
-                      <div key={note.id} className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-zinc-950/50 border border-transparent hover:border-zinc-800 transition-all`}>
-                        <button onClick={() => jumpToTime(note.time)} className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-lg bg-amber-500/10 text-amber-500 text-[10px] sm:text-xs font-mono font-bold hover:bg-amber-500/20`}>
-                          {formatTime(note.time)}
-                        </button>
-                        <p className="flex-1 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={renderMarkdown(note.text)}></p>
-                        <button onClick={() => { deleteNote(note.id); playSound('click'); }} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-500"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button>
-                      </div>
-                    ))}
                   </div>
                   <div className={`p-4 sm:p-5 border-t border-zinc-800`}>
                     <form onSubmit={(e) => {
                       e.preventDefault(); if(!newNote.trim()) return;
-                      const time = playerRef.current?.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
-                      addNote({ id: Date.now(), videoId: activeVideoId, text: newNote, time });
-                      setNewNote(''); playSound('success');
+                      const time = contentConfig.type === 'video' && playerRef.current?.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
+                      addNote({ id: Date.now(), contentId: activeContentId, text: newNote, time });
+                      setNewNote('');
                     }} className="relative">
-                      <input ref={noteInputRef} type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Not al... (**kalın** veya - liste desteği var)" className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-2xl bg-zinc-950/50 border border-zinc-800 focus:border-amber-500 outline-none text-xs sm:text-sm`} />
-                      <button type="submit" className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-xl bg-linear-to-r from-amber-400 to-amber-600 text-zinc-950`}><Plus size={16} className="sm:w-4.5 sm:h-4.5" /></button>
+                      <input ref={noteInputRef} type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Not al... (**kalın** veya - liste desteği var)" className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-[20px] bg-zinc-950/50 border border-zinc-800 focus:border-[#FF8C00] outline-none text-xs sm:text-sm transition-colors`} />
+                      <button type="submit" className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-2xl bg-linear-to-r from-orange-400 to-[#FF8C00] text-zinc-950 shadow-md active:scale-95 transition-transform`}><Plus size={16} className="sm:w-4.5 sm:h-4.5" /></button>
                     </form>
                   </div>
                 </div>
               )}
 
-              {activeTab === 'flashcards' && <FlashcardsTab activeVideoId={activeVideoId} />}
-              {activeTab === 'quiz' && <QuizTab activeVideoId={activeVideoId} />}
-
-              {activeTab === 'pomodoro' && (
-                <div className="flex flex-col flex-1 h-full overflow-y-auto custom-scrollbar relative animate-fade-in">
-                  <div className="flex flex-col items-center p-4 sm:p-8 border-b border-zinc-800/50">
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs sm:text-sm mb-4 sm:mb-6 ${timerMode === 'break' ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                      {timerMode === 'break' ? <Coffee size={16} /> : <Brain size={16} />}
-                      {timerMode === 'break' ? 'Mola Zamanı' : 'Odaklanma Zamanı'}
-                    </div>
-
-                    {!isTimerRunning && (
-                      <div className="flex gap-4 sm:gap-8 mb-6 w-full justify-center">
-                        <div className="flex flex-col items-center">
-                          <span className={`text-[10px] sm:text-xs font-semibold mb-2 text-zinc-500`}>ODAK (DK)</span>
-                          <div className={`flex items-center gap-2 sm:gap-3 bg-zinc-900/50 p-1 sm:p-1.5 rounded-full border border-zinc-800`}>
-                            <button onClick={() => { if(focusDuration > 1) { setFocusDuration(focusDuration - 1); if(timerMode === 'focus') setTimeLeft((focusDuration - 1) * 60); }}} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center">-</button>
-                            <span className="font-mono text-base sm:text-lg w-6 text-center">{focusDuration}</span>
-                            <button onClick={() => { if(focusDuration < 120) { setFocusDuration(focusDuration + 1); if(timerMode === 'focus') setTimeLeft((focusDuration + 1) * 60); }}} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center">+</button>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className={`text-[10px] sm:text-xs font-semibold mb-2 text-zinc-500`}>MOLA (DK)</span>
-                          <div className={`flex items-center gap-2 sm:gap-3 bg-zinc-900/50 p-1 sm:p-1.5 rounded-full border border-zinc-800`}>
-                            <button onClick={() => { if(breakDuration > 1) { setBreakDuration(breakDuration - 1); if(timerMode === 'break') setTimeLeft((breakDuration - 1) * 60); }}} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center">-</button>
-                            <span className="font-mono text-base sm:text-lg w-6 text-center">{breakDuration}</span>
-                            <button onClick={() => { if(breakDuration < 30) { setBreakDuration(breakDuration + 1); if(timerMode === 'break') setTimeLeft((breakDuration + 1) * 60); }}} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center">+</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={`relative w-40 h-40 sm:w-48 sm:h-48 rounded-full border-8 ${isTimerRunning ? (timerMode === 'break' ? 'border-blue-500' : 'border-amber-500') : 'border-zinc-800'} flex items-center justify-center mb-6 sm:mb-8 transition-colors duration-1000 shadow-2xl`}>
-                      <div className={`absolute inset-0 rounded-full border-4 ${timerMode === 'break' ? 'border-blue-500/20' : 'border-amber-500/20'} m-2 transition-colors duration-1000`}></div>
-                      <h2 className="text-4xl sm:text-5xl font-mono font-bold tracking-tighter">{formatTime(timeLeft)}</h2>
-                    </div>
-
-                    <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                      <button onClick={() => { setIsTimerRunning(!isTimerRunning); playSound('click'); }} className={`px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold text-zinc-950 flex items-center gap-2 transition-transform active:scale-95 text-sm sm:text-base ${isTimerRunning ? 'bg-zinc-100 text-zinc-900' : (timerMode === 'break' ? 'bg-blue-500' : 'bg-amber-500')}`}>
-                        {isTimerRunning ? <Pause size={18} /> : <Play size={18} />} 
-                        {isTimerRunning ? 'DURAKLAT' : (timerMode === 'break' ? 'MOLAYI BAŞLAT' : 'ODAKLAN')}
-                      </button>
-                      
-                      {timerMode === 'break' && (
-                         <button onClick={() => { setIsTimerRunning(false); setTimerMode('focus'); setTimeLeft(focusDuration * 60); playSound('click'); }} className="p-3 sm:p-4 rounded-2xl border border-zinc-800 text-amber-500 hover:bg-amber-500/10 transition-colors" title="Molayı Atla ve Odaklan">
-                            <SkipForward size={18} />
-                         </button>
-                      )}
-
-                      <button onClick={() => { setIsTimerRunning(false); setTimeLeft(timerMode === 'focus' ? focusDuration * 60 : breakDuration * 60); playSound('click'); }} className={`p-3 sm:p-4 rounded-2xl border border-zinc-800 text-zinc-500 hover:text-zinc-100 transition-colors`} title="Sıfırla">
-                        <Timer size={18} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 sm:p-6 flex-1 flex flex-col bg-black/10 min-h-62.5">
-                    <h3 className="text-xs sm:text-sm font-bold mb-3 sm:mb-4 flex items-center gap-2"><List size={16} className="text-amber-500"/> Günlük Görevler</h3>
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 sm:pr-2 custom-scrollbar">
-                      {useStore.getState().todos.length === 0 && <p className={`text-[10px] sm:text-xs text-zinc-500 text-center py-4`}>Hedeflerinizi belirleyin ve bitirdikçe işaretleyin.</p>}
-                      {useStore.getState().todos.map(todo => (
-                        <div key={todo.id} className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-zinc-800 bg-zinc-950/50 group transition-all ${todo.completed ? 'animate-hype-complete' : ''}`}>
-                          <button 
-                            onClick={() => { 
-                              if(!todo.completed) {
-                                useStore.getState().toggleTodo(todo.id); playSound('success'); 
-                                setTimeout(() => useStore.getState().deleteTodo(todo.id), 800);
-                              }
-                            }} 
-                            className={`${todo.completed ? 'text-amber-500' : 'text-zinc-500'} hover:text-amber-400`}
-                          >
-                            {todo.completed ? <CheckSquare size={16} className="sm:w-4.5 sm:h-4.5" /> : <Square size={16} className="sm:w-4.5 sm:h-4.5" />}
-                          </button>
-                          <p className={`flex-1 text-xs sm:text-sm ${todo.completed ? 'line-through text-amber-500/80 font-semibold' : 'text-zinc-100'}`}>{todo.text}</p>
-                          <button onClick={() => { useStore.getState().deleteTodo(todo.id); playSound('click'); }} className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-500/10 p-1 sm:p-1.5 rounded"><Trash2 size={14}/></button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <PomodoroHeatmap />
-
-                    <form onSubmit={(e) => {
-                      e.preventDefault(); 
-                      const todoInput = e.currentTarget.elements.namedItem('todoInput') as HTMLInputElement;
-                      if(!todoInput.value.trim()) return; 
-                      useStore.getState().addTodo(todoInput.value); 
-                      todoInput.value = ''; 
-                      playSound('click');
-                    }} className="mt-3 sm:mt-4 relative">
-                      <input name="todoInput" type="text" placeholder="Yeni görev ekle..." className={`w-full pl-3 sm:pl-4 pr-10 py-2.5 sm:py-3 rounded-xl bg-zinc-950/50 border border-zinc-800 text-xs sm:text-sm outline-none focus:border-amber-500`} />
-                      <button type="submit" className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-1 sm:p-1.5 rounded-lg bg-amber-500 text-zinc-950`}><Plus size={16} /></button>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'ai' && <AIGeneratorTab activeVideoId={activeVideoId} setActiveTab={setActiveTab} />}
+              {activeTab === 'flashcards' && <FlashcardsTab activeContentId={activeContentId} />}
+              {activeTab === 'quiz' && <QuizTab activeContentId={activeContentId} />}
 
             </div>
           </main>
