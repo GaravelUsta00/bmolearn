@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { EXAM_LEVELS } from '@/constants';
 import type { ContentConfig, StudyTab, Setter } from '@/types';
 import { newId } from '@/lib/id';
+import { parseAIResponse } from '@/lib/aiImport';
 
 interface AIModalProps {
   isOpen: boolean;
@@ -21,6 +22,11 @@ export const AIModal = ({ isOpen, onClose, activeContentId, contentConfig, setAc
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>(EXAM_LEVELS[0]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const closeWithReset = () => {
+    setImportWarnings([]);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -55,42 +61,67 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
 
   const handleParseJSON = () => {
     setErrorMsg('');
-    if (!aiResponse.trim()) return setErrorMsg('Lütfen AI cevabını yapıştırın.');
-    try {
-      let cleanJsonStr = aiResponse;
-      const startIndex = cleanJsonStr.indexOf('{');
-      const endIndex = cleanJsonStr.lastIndexOf('}');
-      if (startIndex === -1 || endIndex === -1) throw new Error('JSON objesi bulunamadı');
+    const result = parseAIResponse(aiResponse);
+    if (!result.ok) return setErrorMsg(result.error);
 
-      cleanJsonStr = cleanJsonStr.substring(startIndex, endIndex + 1);
-      cleanJsonStr = cleanJsonStr.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
-      const parsed = JSON.parse(cleanJsonStr);
+    const newCards = result.cards.map((c) => ({
+      id: newId(),
+      contentId: activeContentId,
+      question: c.question,
+      answer: c.answer,
+      learned: false,
+    }));
+    const newQuiz = result.quiz.map((q) => ({
+      id: newId(),
+      contentId: activeContentId,
+      question: q.question,
+      options: q.options,
+      correct: q.correct,
+    }));
 
-      if (!parsed.summary && !parsed.cards && !parsed.quiz) throw new Error('Format uyuşmazlığı');
-
-      const newCards = (parsed.cards || []).map((c: any) => ({
-        id: newId(),
-        contentId: activeContentId,
-        question: c.question || 'Soru bulunamadı',
-        answer: c.answer || 'Cevap bulunamadı',
-        learned: false,
-      }));
-      const newQuiz = (parsed.quiz || []).map((q: any) => ({
-        id: newId(),
-        contentId: activeContentId,
-        question: q.question || 'Soru bulunamadı',
-        options: q.options || { A: 'A', B: 'B', C: 'C', D: 'D' },
-        correct: q.correct || 'A',
-      }));
-
-      replaceContentAI(activeContentId, newCards, newQuiz, parsed.summary || '');
-      setAiResponse('');
-      setActiveTab('summary');
-      onClose();
-    } catch (e) {
-      setErrorMsg('Geçersiz format. Lütfen sadece JSON formatını yapıştırın.');
-    }
+    replaceContentAI(activeContentId, newCards, newQuiz, result.summary);
+    setAiResponse('');
+    setActiveTab('summary');
+    // Atlanan/kısaltılan öğe varsa kullanıcı görsün diye pencere açık kalır.
+    if (result.warnings.length) setImportWarnings(result.warnings);
+    else onClose();
   };
+
+  if (importWarnings.length) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-plate/60 p-4 animate-fade"
+        onClick={closeWithReset}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-import-title"
+          className="w-full max-w-md rounded-sm border border-rule bg-page p-6 text-ink shadow-page"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 id="ai-import-title" className="font-serif text-xl">
+            İçe aktarıldı
+          </h2>
+          <p className="mt-2 text-sm text-mute">Bazı öğeler alınamadı:</p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+            {importWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={closeWithReset}
+              className="min-h-11 rounded-sm bg-ink px-5 text-sm text-page"
+            >
+              Özeti gör
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-plate/60 p-4 animate-fade" onClick={onClose}>

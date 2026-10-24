@@ -2,6 +2,7 @@
 
 import { AlertCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { documentFileType } from '@/lib/safeInput';
 
 export const DocReloadModal = () => {
   const { pendingDocReload, setContentConfig, setPendingDocReload } = useStore();
@@ -25,16 +26,17 @@ export const DocReloadModal = () => {
                 type="file"
                 id="doc-reload-upload"
                 accept=".pdf"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   const objUrl = URL.createObjectURL(file);
+                  const fileType = await documentFileType(file);
                   setContentConfig({
                     id: pendingDocReload.id,
                     type: 'document',
                     title: pendingDocReload.title,
                     url: objUrl,
-                    fileType: file.type || file.name.split('.').pop(),
+                    fileType,
                   });
                   setPendingDocReload(null);
                 }}

@@ -2,7 +2,7 @@
 // - eski sayı/ondalıklı id'ler ve yeni UUID'ler kabul edilir,
 // - bilinmeyen alanlar korunur (looseObject),
 // - geçmişte `id` alanı olmayan eski kayıtlar kabul edilir (initData dönüştürür).
-import { z } from 'zod';
+import { z } from '@/lib/zod';
 import type { DataKey } from '@/lib/storageKeys';
 
 const Id = z.union([z.number(), z.string()]);

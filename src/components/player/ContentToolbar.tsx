@@ -5,6 +5,7 @@ import { X, Upload } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 import type { Setter } from '@/types';
+import { documentFileType, toHttpsUrl } from '@/lib/safeInput';
 
 interface ContentToolbarProps {
   videoUrlInput: string;
@@ -28,19 +29,19 @@ export const ContentToolbar = ({ videoUrlInput, setVideoUrlInput, setShowPlaylis
       if (pId) setShowPlaylistSidebar(true);
     } else {
       const id = 'web_' + Date.now();
-      setContentConfig({ id, type: 'document', title: 'Web Kaynağı', url: videoUrlInput });
+      setContentConfig({ id, type: 'document', title: 'Web Kaynağı', url: toHttpsUrl(videoUrlInput) });
       setVideoUrlInput('');
       setPlaylistItems([]);
     }
   };
 
-  const handleDashboardFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDashboardFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const id = 'doc_' + Date.now();
     const objUrl = URL.createObjectURL(file);
-    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-    setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType: ext });
+    const fileType = await documentFileType(file);
+    setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType });
     setPlaylistItems([]);
   };
 

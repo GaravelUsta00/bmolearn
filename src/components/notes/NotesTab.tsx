@@ -4,7 +4,7 @@ import { type RefObject } from 'react';
 import { Plus, Trash2, Bookmark, Download } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { formatTime } from '@/lib/format';
-import { renderMarkdown } from '@/lib/markdown';
+import { Markdown } from '@/components/ui/Markdown';
 import type { Setter } from '@/types';
 import { newId } from '@/lib/id';
 
@@ -99,10 +99,9 @@ export const NotesTab = ({
                   {formatTime(note.time)}
                 </button>
               )}
-              <p
-                className="flex-1 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap"
-                dangerouslySetInnerHTML={renderMarkdown(note.text)}
-              ></p>
+              <Markdown variant="note" className="min-w-0 flex-1 break-words text-xs leading-relaxed sm:text-sm">
+                {note.text}
+              </Markdown>
               <button
                 onClick={() => deleteNote(note.id)}
                 className="opacity-0 group-hover:opacity-100 p-1.5 text-ribbon hover:bg-ribbon/10 rounded-sm"

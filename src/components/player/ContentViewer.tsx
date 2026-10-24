@@ -23,7 +23,7 @@ export const ContentViewer = ({ videoError }: ContentViewerProps) => {
       {contentConfig.type === 'document' && (
         <div className="absolute inset-0 w-full h-full z-20 bg-paper flex flex-col">
           {contentConfig.url ? (
-            contentConfig.fileType === 'application/pdf' || String(contentConfig.fileType).includes('pdf') ? (
+            contentConfig.fileType === 'pdf' ? (
               <iframe src={contentConfig.url} className="w-full h-full" />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-ink gap-4 bg-page px-6">

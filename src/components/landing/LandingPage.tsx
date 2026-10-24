@@ -7,6 +7,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Bookshelf } from '@/components/landing/Bookshelf';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 import type { HistoryItem } from '@/types';
+import { documentFileType, toHttpsUrl } from '@/lib/safeInput';
 
 // Yükleme koreografisi yalnızca ilk açılışta oynar (docs/DESIGN.md §7.1).
 let hasPlayedIntro = false;
@@ -37,19 +38,19 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
     } else {
       // Web adresi dalı Adım 8'de kaldırılacak (ANALYSIS B8); şimdilik davranış aynı.
       const id = 'web_' + Date.now();
-      setContentConfig({ id, type: 'document', title: 'Web Kaynağı', url });
+      setContentConfig({ id, type: 'document', title: 'Web Kaynağı', url: toHttpsUrl(url) });
       setPlaylistItems([]);
       setView('app');
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const id = 'doc_' + Date.now();
     const objUrl = URL.createObjectURL(file);
-    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-    setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType: ext });
+    const fileType = await documentFileType(file);
+    setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType });
     addToHistory({ contentId: id, title: file.name, timestamp: Date.now(), type: 'document' });
     setPlaylistItems([]);
     setView('app');

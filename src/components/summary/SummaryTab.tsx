@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Bookmark, AlignLeft } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { renderMarkdown } from '@/lib/markdown';
+import { Markdown } from '@/components/ui/Markdown';
 import { newId } from '@/lib/id';
 
 interface SummaryTabProps {
@@ -64,7 +64,7 @@ export const SummaryTab = ({ activeContentId }: SummaryTabProps) => {
           </button>
         </div>
       )}
-      <div dangerouslySetInnerHTML={renderMarkdown(summary)} />
+      <Markdown className="md-summary text-ink">{summary}</Markdown>
     </div>
   );
 };
