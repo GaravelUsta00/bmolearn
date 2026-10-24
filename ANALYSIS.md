@@ -335,7 +335,7 @@ Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/
 | `src/components/pwa/PWAInjector.tsx:19-20` | manifest ikonları `/logo.png` | ✅ | Adım 10 yer tutucu ikonlar | 10 |
 | `src/lib/notifications.ts:17` | bildirim `icon: '/logo.png'` | ✅ | İkon geçici olarak kaldırılır, Adım 10'da yer tutucu | 3d, 10 |
 | `README.md` | create-next-app metni + `# bmolearn` | ✅ | BeLearn README (taslak 3d, tam 10) | 3d, 10 |
-| `package.json:2` | `"name": "bmo-learn"` | ❌ | Öneri: `belearn` (açık karar) | 3b |
+| `package.json:2` | `"name": "bmo-learn"` | ❌ | `belearn` (karar #7) | 3b |
 | `src/store/useStore.ts` (30 satır), `src/hooks/useAppInit.ts` (9 satır) | `'bmo_*'` localStorage anahtarları | ❌ | **Değişmez/silinmez.** Adım 4'te `belearn_*`'e kopyalanır; `bmo_*` yalnızca okunur | 4 |
 | `public/logo.png`, `public/icon.png` | BMO logosu | ✅ | Kullanım kaldırılır; dosyalar Adım 10'da yer tutucularla değişir | 3, 10 |
 | Dal adı `refactor/bmo-optimizasyon`, klasör `bmolearn` | — | ❌ | Değiştirilmiyor (geçmişi bozmamak için) | — |
@@ -394,4 +394,15 @@ Bildirim metinleri ("Odaklanma Bitti!" vb.) "BMO" içermiyor; ses tonu Adım 7'd
 - **`taskComplete` işlevsel:** Tamamlanan görev bugün animasyon bitince (`onAnimationEnd`) siliniyor; animasyon kaldırılınca silme akışı açık mantığa taşınmalı (Adım 7).
 - **Raf ve hidrasyon:** Geçmiş istemcide yüklendiği için raf ilk HTML'de yok. Sabit yükseklik ayrılmazsa yerleşim kayar (Adım 3e).
 - **Tema anahtarı geçişi:** Inline tema script'i Adım 3'te `bmo_theme`, Adım 4'ten sonra önce `belearn_theme` sonra `bmo_theme` okur.
-- **Origin sınırı:** `bmo_*` → `belearn_*` migrasyonu yalnızca **aynı adreste** veri bulur. Yeni adreste eski veriler yoktur; taşıma yalnızca yedek dosyasıyla mümkündür. Bunun için eski adresteki uygulamanın da "yedeği indir" özelliğine sahip olması gerekir (PLAN açık karar #1).
+- **Origin sınırı:** `bmo_*` → `belearn_*` migrasyonu yalnızca **aynı adreste** veri bulur. **Karar #1:** eski adres bırakılıyor ve BeLearn sıfırdan yayınlanıyor; adresler arası taşıma yapılmayacak. Migrasyon yalnızca yerel/aynı adres verisi için basit bir güvenlik ağı olarak kalır (PLAN Adım 4).
+- **Pomodoro kontrolü (karar #6):** Üst çubuktaki "Odaklan" pomodoroyu doğrudan başlatır; yanındaki ayar panelinde odak/mola süreleri ve hazır ayarlar bulunur (DESIGN §8.2.1). Widget ile aynı state kullanılır. Bugün süreler her yenilemede 25/5'e dönüyor; Adım 7'de kalıcı hale gelecek.
+
+### 8.5 Yanıtlanan kararlar (2026-10-24)
+
+1. Eski adres bırakılıyor, sıfırdan yayın → Adım 4 sadeleştirildi.
+2. Üst çubuk: playlist koşullu, "Ayarlar" menüsü (mavi ışık, PWA, yedek), sayaçlar sekmelere → 3f, 4a, 9.
+3. Landing: en fazla 12 sırt + "Tüm geçmiş"; temizleme yalnızca modalda ve onaylı → 3e, 9.
+4. ilovepdf bağlantısı kalkar; yalnızca "Desteklenmeyen dosya" uyarısı → 3e, 8.
+5. Modal/toast/popover: 150 ms solma → 3c (token), 6–9.
+6. "Odaklan" + süre ayar paneli → 3f (arayüz), 7 (kalıcılık).
+7. `package.json` adı `belearn` → 3b.

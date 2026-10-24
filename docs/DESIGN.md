@@ -126,9 +126,11 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 2. **Kitaplık sırtları:** sırayla yükselerek gelir (kademeli 40 ms); üzerine gelince/odaklanınca 6–8px yukarı kalkar.
 3. **Kart çevirme:** 3B `rotateY(180deg)`, ~450 ms, **state tabanlı** (`flipped`), DOM'a doğrudan müdahale yok.
 4. **Sekme geçişleri:** aktif alt çizginin kayması + içerik ≤ 150 ms opaklık.
+5. **Modal, widget, popover ve toast açılış/kapanışı:** yalnızca **150 ms opaklık geçişi** (solma), `ease-out`. Ölçek, kayma ya da zıplama yok. Arka plan örtüsü de aynı geçişle gelir. (Karar #5)
 
+- Süreler token'dır: `--dur-fade: 150ms`, `--dur-flip: 450ms`, `--dur-rise: 600ms`.
 - `prefers-reduced-motion: reduce` durumunda hepsi kapalı (anında son durum).
-- Kaldırılacak mevcut animasyonlar: `float`, `subtleGlow`, `blob`, `eq-*` (radyo ekolayzeri → durum metni "Çalıyor"), `animate-bounce`, `animate-pulse` (zamanlayıcı/radyo ikonları), `scaleIn`, `fadeIn`, `fadeInUp` (koreografi dışı), `taskComplete`.
+- Kaldırılacak mevcut animasyonlar: `float`, `subtleGlow`, `blob`, `eq-*` (radyo ekolayzeri → durum metni "Çalıyor"), `animate-bounce`, `animate-pulse` (zamanlayıcı/radyo ikonları), `scaleIn` ve `fadeIn` (→ madde 5'teki 150 ms solma), `fadeInUp` (koreografi dışı), `taskComplete`.
 - ⚠️ `taskComplete` bugün işlevsel: tamamlanan görev **animasyon bitince** (`onAnimationEnd`) siliniyor. Animasyon kaldırılırken silme akışı açık bir mantığa taşınmalı (bkz. PLAN Adım 7).
 
 ## 8. Bileşen kuralları
@@ -139,17 +141,40 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 2. Çok büyük, sola hizalı başlık: "Sadece *odaklan.*" ("odaklan." italik + `ribbon`). Ortalanmış jenerik hero yok.
 3. Tek cümle: "Bir YouTube videosu, oynatma listesi ya da PDF aç. Notların, özetin, kartların ve soruların yanında beklesin."
 4. Tek kaynak girişi: alt çizgili input (placeholder: "YouTube bağlantısı ya da PDF") + "Aç" düğmesi; altında metin bağlantısı "ya da PDF yükle".
-5. Geçmiş varsa "Son çalışmalar": kitaplık rafı (dikey sırtlar, başlık dikey yazılı, üstüne gelince kalkar, altta ince tahta çizgisi). Playlist sırtında "Koleksiyon · N video" (DM Mono etiket). PDF sırtında "PDF" etiketi.
+5. Geçmiş varsa "Son çalışmalar": kitaplık rafı (dikey sırtlar, başlık dikey yazılı, üstüne gelince kalkar, altta ince tahta çizgisi). **En fazla 12 sırt**; rafın sağında küçük bir "Tüm geçmiş" metin bağlantısı Geçmiş modalını açar. Playlist sırtında "Koleksiyon · N video" (DM Mono etiket). PDF sırtında "PDF" etiketi. Landing'de "Geçmişi temizle" düğmesi yok; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı. (Karar #3)
 6. Altta tek satır: "Notların ve ilerlemen yalnızca bu cihazda saklanır."
 
-Özellik tanıtımı, kitap animasyonu, ek bölüm ve çoklu sütun **yok**. Geçmiş, localStorage'dan istemcide yüklendiği için raf hidrasyondan sonra §7.2 animasyonuyla belirir (yerleşim kaymasını önlemek için rafa sabit yükseklik ayrılır).
+Özellik tanıtımı, kitap animasyonu, ek bölüm ve çoklu sütun **yok**. "Sadece PDF desteklenir" metni ve dış dönüştürme bağlantısı da yok; PDF olmayan bir dosya seçilirse yalnızca "Desteklenmeyen dosya: yalnızca PDF açılabilir" uyarısı gösterilir (Karar #4). Geçmiş, localStorage'dan istemcide yüklendiği için raf hidrasyondan sonra §7.2 animasyonuyla belirir (yerleşim kaymasını önlemek için rafa sabit yükseklik ayrılır).
 
 ### 8.2 Üst çubuk (çalışma ekranı)
 
 İnce, tek satır, `page` zemin, altta `rule` çizgi.
 - **Sol:** "BeLearn" (Landing'e döner).
-- **Sağ:** pomodoro süresi (DM Mono) + "Odaklan", tema, geçmiş, radyo, ses, tam ekran. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili.
-- Mevcut işlevler kaybolmaz: playlist aç/kapa, uygulamayı yükle (PWA), görünüm ayarları (mavi ışık), ilerleme yüzdesi ve not/kart/soru sayaçları. Bunların yeri için PLAN'daki açık karara bakın; varsayılan öneri: playlist düğmesi yalnızca playlist varken görünür, diğerleri tek bir "Ayarlar" menüsünde.
+- **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · geçmiş · radyo · ses · tam ekran · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
+- **Ayarlar menüsü:** mavi ışık filtresi, uygulamayı yükle (PWA), Adım 4'ten itibaren "Yedeği indir / Yedeği yükle". (Karar #2)
+- İlerleme yüzdesi ve not/kart/soru sayaçları üst çubukta **yok**; sağ paneldeki sekme sayaçlarında gösterilir. (Karar #2)
+- Mobilde (< 640 px) yalnızca logo, pomodoro kontrolü ve bir "Menü" düğmesi görünür; diğer düğmeler menüde listelenir (dokunma hedefi ≥ 44 px).
+
+#### 8.2.1 Pomodoro kontrolü (Karar #6)
+
+Tek bir bölünmüş kontrol:
+
+```
+ 24:58   [ Odaklan ]  ▾
+ mono    ink çizgili   ayar paneli
+```
+
+- **Kalan süre:** DM Mono, `tabular-nums`. Çalışırken `ink`, duraklatılmışken `mute`. Mod metinle belirtilir: "ODAK" / "MOLA" etiketi (renk değil).
+- **Ana düğme:** "Odaklan" pomodoroyu **doğrudan başlatır**. Çalışırken metni "Duraklat", molada "Molayı başlat" olur.
+- **▾ Ayar paneli** (popover, 150 ms solma):
+  - "Odak" süresi: dakika, 1–120, `−`/`+` adımlayıcı + sayı girişi.
+  - "Mola" süresi: dakika, 1–30, aynı şekilde.
+  - Hazır ayarlar (çip, tam yuvarlak): `25 / 5`, `50 / 10`, `90 / 15`.
+  - "Sıfırla" ve (molada) "Molayı atla".
+  - "Görevler ve 30 günlük harita →" bağlantısı mevcut Pomodoro widget'ını açar.
+- Süre alanları zamanlayıcı **çalışırken kilitlidir** (bugünkü davranış). Değişiklik, durmuş sayaca anında yansır.
+- Üst çubuk paneli ile widget **aynı state'i** kullanır; iki yerde ayrı süre tutulmaz. Süreler Adım 7'de kalıcı hale gelir (`belearn_pomodoro_settings`).
+- Erişilebilirlik: süre değişimi `aria-live="polite"` ile duyurulmaz (her saniye gürültü olur). Yalnızca mod değişimi ve bitiş duyurulur. Adımlayıcılar `aria-label="Odak süresini 1 dakika azalt"` gibi açık etiketler taşır.
 
 ### 8.3 Video ve playlist
 
@@ -170,7 +195,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 ### 8.5 Widget'lar ve modallar
 
 Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
-- `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `ink` (bulanıklık yok).
+- `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `ink` (bulanıklık yok). Açılış/kapanış yalnızca 150 ms solma (§7.5).
 - Başlık Literata, etiketler DM Mono.
 - Pomodoro: büyük DM Mono sayaç; "Odak" ve "Mola" modları renkle değil **metinle** ayrılır (mavi yok). Isı haritası `ribbon` opaklık basamaklarıyla.
 - Radyo: çalma durumu metinle ("Çalıyor" / "Duraklatıldı"); ekolayzer animasyonu yok.

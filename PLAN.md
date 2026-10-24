@@ -30,7 +30,7 @@ Dal: `refactor/bmo-optimizasyon`.
 
 **Alt commit'ler (sırayla):**
 1. **3a `chore(deps)`: Next güvenlik yükseltmesi, tek başına.** `next` ve `eslint-config-next` → 16.4.x. `node_modules/next/dist/docs/` içindeki 16.2 → 16.4 değişiklikleri okunur. `npm audit` tekrar alınır. **Kapı:** build + otomatik duman testi + test listesi yeşil olmadan 3b'ye geçilmez (bu commit'te görsel değişiklik yok, ekran görüntüleri Adım 2 ile piksel eşit olmalı).
-2. **3b `chore`:** `errors.txt` silinir; `package.json` adı `belearn` (öneri, bkz. açık kararlar).
+2. **3b `chore`:** `errors.txt` silinir; `package.json` adı `bmo-learn` → `belearn` (karar #7).
 3. **3c `feat(design)`: Tasarım altyapısı.**
    - globals.css: DESIGN §3 token'ları, `@theme inline`, `data-theme`, `@custom-variant dark`, radius ve gölge token'ları, odak halkası, `prefers-reduced-motion`.
    - `ThemeStyles.tsx` kaldırılır; `--filter-warm` istisnası eklenir.
@@ -43,15 +43,18 @@ Dal: `refactor/bmo-optimizasyon`.
    - README'nin ilk bölümü BeLearn olarak güncellenir; tam README Adım 10'da.
 5. **3e `feat(landing)`: Landing yeniden tasarımı** (DESIGN §8.1).
    - Placeholder "YouTube bağlantısı ya da PDF".
-   - Kitaplık rafı: geçmiş sırtları, Koleksiyon etiketi.
+   - Kitaplık rafı: en fazla 12 sırt, Koleksiyon etiketi; rafın sağında "Tüm geçmiş" metin bağlantısı Geçmiş modalını açar (karar #3).
    - Raftan PDF açınca mevcut "yeniden yükle" akışı korunur.
-   - "Geçmişi Temizle" düğmesinin yeri açık karara göre belirlenir.
+   - Landing'deki "Geçmişi Temizle" düğmesi kalkar; "Tümünü temizle" yalnızca Geçmiş modalında (onay Adım 9'da) (karar #3).
+   - "Sadece PDF desteklenir" metni ve ilovepdf.com bağlantısı kalkar (karar #4).
    - Yükleme koreografisi; `SkeletonLoading` kaldırılır.
    - Web adresi **mantığı** Adım 8'de kaldırılır. Bu adımda yalnızca metin ve placeholder değişir; arada YouTube dışı bir girdi bugünkü gibi "Desteklenmeyen Format" gösterir.
 6. **3f `feat(header)`: Üst çubuk** (DESIGN §8.2).
-   - Pomodoro süresi + Odaklan, tema (Gece/Gündüz), geçmiş, radyo, ses, tam ekran.
-   - Playlist, PWA yükleme, mavi ışık, ilerleme ve sayaçlar açık karara göre konumlanır.
-   - `SettingsPopover` yeni sisteme taşınır.
+   - Pomodoro kontrolü (DESIGN §8.2.1): kalan süre (DM Mono) + "Odaklan"/"Duraklat" + açılır ayar paneli (odak dk, mola dk, hazır ayarlar, "Görevler ve harita" bağlantısı). Mevcut `usePomodoroTimer` state'ini kullanır; widget ile aynı kaynak (karar #6).
+   - Tema (Gece/Gündüz), geçmiş, radyo, ses, tam ekran.
+   - Playlist düğmesi yalnızca playlist varken görünür (karar #2).
+   - "Ayarlar" menüsü: mavi ışık filtresi, uygulamayı yükle (PWA); Adım 4a'dan itibaren "Yedeği indir / yükle" (karar #2). `SettingsPopover` bu menüye dönüşür.
+   - İlerleme yüzdesi ve not/kart/soru sayaçları üst çubuktan kalkar, sağ paneldeki sekme sayaçlarına taşınır (karar #2; panelin tam tasarımı Adım 9).
 7. **3g `style`: Geçiş boyaması.** Henüz yeniden tasarlanmamış tüm bileşenlerde mekanik token değişimi:
    - turuncu → `ribbon`
    - cam → `page`
@@ -88,7 +91,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ## Adım 4 — Yedek, state ve depolama (`belearn_*`)
 
-**Amaç:** Kullanıcının veriyi yeni adrese taşıyabilmesi; dayanıklı, doğrulanan, versiyonlanan kalıcı state.
+**Amaç:** Dayanıklı, doğrulanan, versiyonlanan kalıcı state ve kullanıcının kendi verisini yedekleyebilmesi.
+
+> **Karar #1 (2026-10-24):** Eski adres tamamen bırakılıyor; BeLearn yeni adreste sıfırdan yayınlanacak. Bu yüzden adresler arası taşıma (eski siteye yedek düğmesi ya da taşıma sayfası) **yapılmaz**. Yedek özelliği genel amaçlı bir yedek/geri yükleme olarak kalır. `bmo_*` → `belearn_*` kopyası yalnızca aynı adreste (yerel geliştirme, `localhost`) veri bulunursa çalışan basit bir güvenlik ağıdır: kopyala → doğrula → başarısızsa kopyayı geri al. Salt okunur geri dönüş modu kapsamdan çıkarıldı.
 
 **Alt commit'ler:**
 1. **4a — İLK commit: "Yedeği indir / Yedeği yükle"** (depolamaya henüz dokunmadan).
@@ -98,7 +103,7 @@ Dal: `refactor/bmo-optimizasyon`.
 2. **4b — Store slice'ları:** content, study, history, pomodoro, ui. Görünümler arası korunan UI state'i (`newNote`, `videoUrlInput`, `activeTab`…) `ui` slice'ına taşınır (K8).
 3. **4c — Persist + `belearn_*` + migrasyon:**
    - zustand `persist` + özel storage adaptörü; anahtarlar `belearn_notes`, `belearn_flashcards`, … `belearn_theme`, ayrıca `belearn_meta` (`{ version, migratedFrom, migratedAt }`).
-   - **İlk açılış migrasyonu:** hiçbir `belearn_*` yoksa ve `bmo_*` varsa, `bmo_*` → `belearn_*` **kopyalanır** (silinmez), okunup zod ile doğrulanır, kayıt sayıları karşılaştırılır. Başarısızsa `belearn_*` geri alınır ve uygulama `bmo_*`'dan salt okunur açılır, kullanıcı uyarılır.
+   - **İlk açılış migrasyonu:** hiçbir `belearn_*` yoksa ve `bmo_*` varsa, `bmo_*` → `belearn_*` **kopyalanır** (silinmez), okunup zod ile doğrulanır, kayıt sayıları karşılaştırılır. Başarısızsa yazılan `belearn_*` anahtarları geri alınır, uygulama boş açılır ve kullanıcıya "eski veriler aktarılamadı; yedek dosyasıyla yükleyebilirsin" uyarısı gösterilir.
    - `bmo_*` bundan sonra **hiç yazılmaz**.
 4. **4d — Doğrulama ve dayanıklılık:**
    - Okumada zod; bozuk anahtar `belearn_backup_<anahtar>_<zaman>` altına alınıp sıfırlanır ve uyarı gösterilir (S7).
@@ -122,7 +127,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Riskler:**
 - **Veri kaybı** (en yüksek risk) → kopyala-doğrula-geri al akışı ve 4a yedeği önce.
 - Persist hidrasyonu ile ilk render arasındaki fark.
-- Farklı adresteki (origin) veriye bu migrasyon **erişemez** (açık karar #1).
+- Farklı adresteki (origin) veriye bu migrasyon erişemez; karar #1 gereği bu kabul edildi.
 
 **Zorluk:** Zor.
 
@@ -198,6 +203,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - `endsAt` zaman damgası tabanlı sayaç (B4).
 - Zamanlayıcı state'i store'a ya da izole bir bileşene taşınır; `App`'in saniyelik render'ı biter (P1). Üst çubuktaki sayaç yalnızca kendini render eder.
 - Yerel tarih anahtarı; **eski UTC kayıtlar olduğu gibi kalır** (migrasyon yok).
+- Odak ve mola süreleri kalıcı hale gelir (`belearn_pomodoro_settings`; bugün her yenilemede 25/5'e dönüyor). Üst çubuk paneli ve widget aynı ayarı kullanır (karar #6).
 - Interval temizliği; bildirim izni ilk "Odaklan"da istenir; tek global başlık yanıp sönme kontrolcüsü (B5).
 - `taskComplete` animasyonu kaldırılırken görev tamamlama ve silme akışı açık mantığa taşınır (işlev korunur).
 - **Bileşenler yeniden yazılır:** `PomodoroWidget`, `PomodoroHeatmap` (`ribbon` basamakları), `PomodoroToast` (DESIGN §8.5; Odak/Mola metinle ayrılır, mavi yok).
@@ -230,6 +236,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - `URL.revokeObjectURL` (B10).
 - Tek `openDocument()` akışı; çalışma ekranından yüklenen PDF de geçmişe eklenir (B14).
 - **Web adresi dalı kaldırılır** (B8): Landing ve `ContentToolbar`'daki "Web Kaynağı" mantığı gider; YouTube olmayan bir bağlantı için "Yalnızca YouTube bağlantısı ya da PDF açılabilir" mesajı.
+- PDF olmayan dosya için yalnızca "Desteklenmeyen dosya: yalnızca PDF açılabilir" uyarısı; dönüştürme bağlantısı yok (karar #4).
 - **Bileşenler yeniden yazılır:** PDF görünümü ve `DocReloadModal` (saklanan PDF varsa hiç gösterilmez).
 
 **Dosyalar:** `src/components/player/{PdfViewer,DocReloadModal,ContentToolbar}.tsx`, `src/lib/idb.ts`, `src/lib/openDocument.ts`, `src/components/landing/*`.
@@ -330,17 +337,14 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Açık kararlar (Adım 3'ten önce yanıt bekleniyor)
+## Kararlar (2026-10-24, yanıtlandı)
 
-1. **Eski adresten veri taşıma.** `bmo_*` → `belearn_*` migrasyonu yalnızca aynı adreste çalışır; yeni adreste eski veri görünmez. Kullanıcıların veriyi taşıyabilmesi için eski adresteki sitenin de "yedeği indir" düğmesine sahip olması gerekir. Seçenekler:
-   - (a) 4a commit'i eski adrese de yayınlanır;
-   - (b) eski adreste yalnızca "verini indir ve BeLearn'e git" yazan küçük bir taşıma sayfası yayınlanır;
-   - (c) taşıma yapılmaz, kullanıcılar sıfırdan başlar.
-
-   Eski adres hâlâ sizin kontrolünüzde mi?
-2. **Üst çubukta yeri belirtilmeyen işlevler:** playlist aç/kapa, uygulamayı yükle (PWA), mavi ışık filtresi, ilerleme yüzdesi, not/kart/soru sayaçları. Öneri: playlist düğmesi yalnızca playlist varken görünür; PWA, mavi ışık ve "Verilerini taşı" tek bir "Ayarlar" menüsünde; ilerleme ve sayaçlar sağ paneldeki sekme sayaçlarına taşınır (üst çubuktan kalkar).
-3. **Landing'de "Geçmişi Temizle" ve tüm geçmiş.** Yeni Landing yalnızca 6 öğe içeriyor. Öneri: raf en fazla 12 sırt gösterir; rafın sağında küçük bir "Tüm geçmiş" metin bağlantısı Geçmiş modalını açar; "Tümünü temizle" yalnızca modalda ve onaylı.
-4. **Kaldırılan Landing metinleri.** "Sadece PDF formatı desteklenmektedir" ve ilovepdf.com dönüştürme bağlantısı Landing'den kalkıyor. Dönüştürme bağlantısı yalnızca "Desteklenmeyen dosya" mesajında kalsın mı?
-5. **Modal ve toast açılışı.** DESIGN §7'de izin verilen hareketler arasında yok. Öneri: animasyonsuz açılsın; istenirse ≤ 150 ms opaklık geçişi eklenebilir.
-6. **Üst çubuktaki "Odaklan" düğmesi** pomodoroyu doğrudan başlatsın mı, yoksa widget'ı mı açsın? Öneri: doğrudan başlatsın; widget süre ayarı ve görevler için kalsın.
-7. **`package.json` adı** `bmo-learn` → `belearn` (görünmez, öneri: evet). Dal ve klasör adları değişmiyor.
+| # | Konu | Karar | Adım |
+|---|---|---|---|
+| 1 | Eski adresten veri taşıma | Eski adres tamamen bırakılıyor; BeLearn yeni adreste sıfırdan yayınlanacak. Adresler arası taşıma yapılmayacak. Yedek özelliği genel amaçlı kalıyor; `bmo_*` kopyası yalnızca aynı adreste çalışan basit bir güvenlik ağı | 4 |
+| 2 | Üst çubukta yeri belirtilmeyen işlevler | Öneri kabul: playlist düğmesi yalnızca playlist varken görünür; mavi ışık, PWA yükleme ve yedek tek bir "Ayarlar" menüsünde; ilerleme ve sayaçlar sekme sayaçlarına taşınır | 3f, 4a, 9 |
+| 3 | Landing'de geçmiş | Öneri kabul: en fazla 12 sırt + "Tüm geçmiş" bağlantısı; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı | 3e, 9 |
+| 4 | ilovepdf bağlantısı | Kaldırılır; PDF olmayan dosyada yalnızca "Desteklenmeyen dosya" uyarısı | 3e, 8 |
+| 5 | Modal ve toast açılışı | 150 ms opaklık geçişi (solma); `prefers-reduced-motion`'da kapalı | 3c (token), 6–9 |
+| 6 | Üst çubuktaki "Odaklan" | Pomodoroyu doğrudan başlatır; yanında odak ve mola süresi ayar paneli (DESIGN §8.2.1). Süreler Adım 7'de kalıcı hale gelir | 3f, 7 |
+| 7 | `package.json` adı | `bmo-learn` → `belearn` | 3b |
