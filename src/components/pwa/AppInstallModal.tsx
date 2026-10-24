@@ -22,7 +22,7 @@ export const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
           </button>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
-          BMO Learn&apos;ü cihazınıza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.
+          BeLearn&apos;ü cihazınıza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.
         </p>
         <div className="space-y-4">
           <div className="bg-[var(--card-muted)] p-4 rounded-2xl border border-[var(--border)] shadow-sm">

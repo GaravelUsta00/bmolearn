@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Play, ArrowRight, History, Upload, FileText, AlignLeft, ExternalLink, ListVideo } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { Logo } from '@/components/ui/Logo';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 
 export const LandingPage = () => {
@@ -48,22 +49,9 @@ export const LandingPage = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-blue-500 opacity-5 blur-[80px] md:blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none mix-blend-multiply dark:mix-blend-screen"></div>
 
       <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up">
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center animate-float group cursor-default">
-            <div className="absolute inset-0 bg-[#FF8C00] rounded-full animate-subtle-glow pointer-events-none"></div>
-            <img
-              src="/logo.png"
-              alt="BMO Learn Logo"
-              className="relative w-full h-full object-contain z-10 drop-shadow-xl transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
-          <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-[var(--text)] drop-shadow-sm">
-            BMO <span className="text-[#FF8C00]">Learn</span>
-          </h1>
-        </div>
+        <h1 className="mb-6 text-5xl sm:text-6xl md:text-8xl">
+          <Logo />
+        </h1>
 
         <p
           className={`text-base sm:text-lg md:text-xl font-medium tracking-wide mb-10 md:mb-12 text-[var(--text-muted)] text-center`}

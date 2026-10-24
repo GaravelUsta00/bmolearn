@@ -14,7 +14,7 @@ export const NotificationManager = {
       audio.play().catch(() => {});
 
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        if (window.self === window.top) new Notification(title, { body, icon: '/logo.png' });
+        if (window.self === window.top) new Notification(title, { body, icon: '/icons/icon-192.png' });
       }
 
       let isOriginal = false;

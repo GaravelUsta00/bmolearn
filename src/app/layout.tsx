@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Literata, DM_Mono } from 'next/font/google';
-import { THEME_INIT_SCRIPT } from '@/constants/theme';
+import { THEME_COLORS, THEME_INIT_SCRIPT } from '@/constants/theme';
 import './globals.css';
 
 const literata = Literata({
@@ -19,8 +19,19 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'BMO Learn',
-  description: 'Developed by EHC',
+  title: 'BeLearn · Sadece odaklan.',
+  description:
+    'Bir YouTube videosu, oynatma listesi ya da PDF aç. Notların, özetin, kartların ve soruların yanında beklesin.',
+  applicationName: 'BeLearn',
+  authors: [{ name: 'EHC' }],
+  other: { google: 'notranslate' },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: THEME_COLORS.light.paper },
+    { media: '(prefers-color-scheme: dark)', color: THEME_COLORS.dark.paper },
+  ],
 };
 
 export default function RootLayout({

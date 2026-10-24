@@ -18,6 +18,7 @@ import {
   ListVideo,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { Logo } from '@/components/ui/Logo';
 import { ProgressBar } from '@/components/layout/ProgressBar';
 import { SettingsPopover } from '@/components/layout/SettingsPopover';
 import type { Setter } from '@/types';
@@ -72,19 +73,7 @@ export const AppHeader = ({
           onClick={() => useStore.getState().setView('landing')}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
         >
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#FF8C00]/30 group-hover:border-[#FF8C00] transition-colors shadow-[0_0_10px_rgba(255,140,0,0.2)]">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight hidden sm:block text-[var(--text)]">
-            BMO <span className="text-[#FF8C00]">Learn</span>
-          </h1>
+          <Logo className="text-xl sm:text-2xl" />
         </button>
       </div>
 

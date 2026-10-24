@@ -32,9 +32,9 @@ export const NotesTab = ({
   const handleExportNotes = () => {
     const currentNotes = notes.filter((n) => n.contentId === activeContentId);
     if (currentNotes.length === 0) return alert('İndirilecek not bulunamadı.');
-    const title = history.find((h) => h.contentId === activeContentId)?.title || 'BMO_Learn';
+    const title = history.find((h) => h.contentId === activeContentId)?.title || 'BeLearn';
     const dateStr = new Date().toLocaleDateString('tr-TR');
-    let content = `BMO Learn - Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
+    let content = `BeLearn — Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
     currentNotes.forEach((n) => {
       content += `[${n.time > 0 ? formatTime(n.time) : '-'}] ${n.text}\n`;
     });
