@@ -12,7 +12,6 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 
 import { AppHeader } from '@/components/layout/AppHeader';
 import { StudyPanel } from '@/components/layout/StudyPanel';
-import { SkeletonLoading } from '@/components/ui/SkeletonLoading';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { BlueLightFilter } from '@/components/ui/BlueLightFilter';
 import { PWAInjector } from '@/components/pwa/PWAInjector';
@@ -50,8 +49,6 @@ export default function App() {
   useKeyboardShortcuts({ contentConfig, playerRef: player.playerRef, noteInputRef, setActiveTab });
   const { isFocusMode, toggleFocusMode } = useFullscreen();
 
-  if (isInitializing) return <SkeletonLoading />;
-
   return (
     <>
       <PWAInjector />
@@ -70,14 +67,14 @@ export default function App() {
       />
 
       <DocReloadModal />
+      <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
 
-      {view === 'landing' && <LandingPage />}
+      {view === 'landing' && <LandingPage onShowHistory={() => setShowHistory(true)} />}
 
       {view === 'app' && (
         <div
           className={`min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-400 animate-fade-in relative overflow-x-hidden`}
         >
-          <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
           <AIModal
             isOpen={showAIModal}
             onClose={() => setShowAIModal(false)}

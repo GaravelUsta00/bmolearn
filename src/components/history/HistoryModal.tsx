@@ -22,7 +22,7 @@ interface HistoryModalProps {
 }
 
 export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps) => {
-  const { history, setContentConfig, clearHistory, deleteHistoryItem, setPendingDocReload } = useStore();
+  const { history, setContentConfig, clearHistory, deleteHistoryItem, setPendingDocReload, setView } = useStore();
   const [selectedPlaylist, setSelectedPlaylist] = useState<HistoryItem | null>(null);
 
   useEffect(() => {
@@ -109,6 +109,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                       pId: selectedPlaylist.pId,
                     });
                     setShowHistory(false);
+                    setView('app');
                   }}
                   className="w-full sm:w-auto px-5 py-3 bg-[#FF8C00] hover:bg-[#ea580c] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#FF8C00]/20 active:scale-95 transition-all flex justify-center items-center gap-2"
                 >
@@ -126,6 +127,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                     onClick={() => {
                       setContentConfig({ id: v.contentId, type: 'video', title: v.title, pId: selectedPlaylist.pId });
                       setShowHistory(false);
+                      setView('app');
                     }}
                     className={`w-full text-left p-3 sm:p-4 rounded-2xl border ${v.contentId === selectedPlaylist.contentId ? 'border-[#FF8C00]/50 bg-[var(--primary-muted)]' : 'border-[var(--border)] bg-[var(--card-solid)] hover:border-[#FF8C00]/30 hover:bg-[var(--hover-bg)]'} transition-all flex items-center gap-4 group shadow-sm`}
                   >
@@ -195,6 +197,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                       } else if (item.type === 'video') {
                         setContentConfig({ id: item.contentId, type: 'video', title: item.title, pId: item.pId });
                         setShowHistory(false);
+                        setView('app');
                       } else {
                         setContentConfig({
                           id: item.contentId,
@@ -205,6 +208,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                         });
                         setPendingDocReload({ id: item.contentId, title: item.title });
                         setShowHistory(false);
+                        setView('app');
                       }
                     }}
                   >

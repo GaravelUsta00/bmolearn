@@ -136,32 +136,34 @@
 /* ============================================================
    Temel
    ============================================================ */
-html {
-  background-color: var(--paper);
-}
+@layer base {
+  html {
+    background-color: var(--paper);
+  }
 
-body {
-  background-color: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-literata), Georgia, serif;
-  font-optical-sizing: auto;
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-literata), Georgia, serif;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+  }
 
-h1,
-h2,
-h3,
-h4 {
-  text-wrap: balance;
-}
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--ribbon);
-  outline-offset: 2px;
-}
+  :focus-visible {
+    outline: 2px solid var(--ribbon);
+    outline-offset: 2px;
+  }
 
-::selection {
-  background: color-mix(in srgb, var(--ribbon) 22%, transparent);
+  ::selection {
+    background: color-mix(in srgb, var(--ribbon) 22%, transparent);
+  }
 }
 
 /* ============================================================
@@ -205,6 +207,47 @@ h4 {
   to {
     opacity: 1;
   }
+}
+
+/* 1. Sayfa yükleniyor: başlık maske altından yükselir, ardından fade-up */
+@keyframes rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise var(--dur-rise) var(--ease-rise) backwards;
+}
+.animate-fade-up {
+  animation: fade-up 500ms var(--ease-rise) backwards;
+}
+
+/* 2. Kitaplık sırtları sırayla yükselir ('backwards': bitince hover dönüşümü serbest kalır) */
+@keyframes spine-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-spine {
+  animation: spine-rise 500ms var(--ease-rise) backwards;
 }
 
 /* GEÇİCİ: eski animasyonlar — kullanıldıkları bileşenler yeniden boyanınca kaldırılır (3e/3g) */
