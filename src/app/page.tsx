@@ -10,7 +10,6 @@ import { useYouTubePlayers } from '@/hooks/useYouTubePlayers';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useFullscreen } from '@/hooks/useFullscreen';
 
-import { ThemeStyles } from '@/components/layout/ThemeStyles';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { StudyPanel } from '@/components/layout/StudyPanel';
 import { SkeletonLoading } from '@/components/ui/SkeletonLoading';
@@ -55,7 +54,6 @@ export default function App() {
 
   return (
     <>
-      <ThemeStyles />
       <PWAInjector />
       <AppInstallModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
       <OfflineBanner />

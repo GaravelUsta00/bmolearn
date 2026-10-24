@@ -86,8 +86,8 @@ export const useStore = create<AppState>((set) => ({
   setTheme: (theme) =>
     set(() => {
       localStorage.setItem('bmo_theme', theme);
-      if (theme === 'light') document.documentElement.classList.add('light-theme');
-      else document.documentElement.classList.remove('light-theme');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
       return { theme };
     }),
   setContentConfig: (config) => set({ contentConfig: config }),

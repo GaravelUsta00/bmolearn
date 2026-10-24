@@ -65,9 +65,9 @@ export const AppHeader = ({
 
   return (
     <header
-      className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--card)] sticky top-0 z-40 backdrop-blur-xl gap-3 app-drag-region`}
+      className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--card)] sticky top-0 z-40 backdrop-blur-xl gap-3`}
     >
-      <div className="flex items-center gap-3 sm:gap-6 app-no-drag">
+      <div className="flex items-center gap-3 sm:gap-6">
         <button
           onClick={() => useStore.getState().setView('landing')}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
@@ -88,7 +88,7 @@ export const AppHeader = ({
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 app-no-drag">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="hidden md:block mr-2 border-r border-[var(--border)] pr-4">
           <ProgressBar />
         </div>

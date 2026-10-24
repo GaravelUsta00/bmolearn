@@ -43,11 +43,11 @@ export const LandingPage = () => {
     <div
       className={`min-h-screen flex flex-col relative overflow-hidden bg-[var(--bg)] p-4 sm:p-8 transition-colors duration-500`}
     >
-      <div className="absolute top-0 left-0 w-full h-10 app-drag-region z-50"></div>
+      <div className="absolute top-0 left-0 w-full h-10 z-50"></div>
       <div className="absolute top-[-10%] left-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-[#FF8C00] opacity-10 blur-[80px] md:blur-[120px] rounded-full animate-blob pointer-events-none mix-blend-multiply dark:mix-blend-screen"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] md:w-[50vw] h-[80vw] md:h-[50vw] bg-blue-500 opacity-5 blur-[80px] md:blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none mix-blend-multiply dark:mix-blend-screen"></div>
 
-      <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up app-no-drag">
+      <div className="flex-1 flex flex-col items-center justify-center z-10 w-full max-w-3xl mx-auto animate-fade-in-up">
         <div className="flex items-center justify-center gap-4 mb-6">
           <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center animate-float group cursor-default">
             <div className="absolute inset-0 bg-[#FF8C00] rounded-full animate-subtle-glow pointer-events-none"></div>

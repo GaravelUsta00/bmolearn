@@ -1,26 +1,348 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Tema tek kaynaktan: <html data-theme="light|dark"> (docs/DESIGN.md §4) */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ============================================================
+   Renk token'ları (docs/DESIGN.md §3)
+   Değerler src/constants/theme.ts ile senkron tutulur (manifest/meta için).
+   ============================================================ */
+:root,
+[data-theme='light'] {
+  --paper: #e8e6dd;
+  --page: #f4f2eb;
+  --page-2: #ece9df;
+  --ink: #26231f;
+  --mute: #66615a;
+  --rule: #cbc8bb;
+  --ribbon: #8f2d2d;
+  --ok: #33604a;
+  --plate: #1a1816;
+  --shadow: rgba(38, 35, 31, 0.26);
+
+  --spine-1: #3e5f4c;
+  --spine-2: #8f2d2d;
+  --spine-3: #7c5a18;
+  --spine-4: #3b3834;
+  --spine-5: #5b3a4e;
+  --spine-ink: #f4f2eb;
+
+  /* İşlevsel istisna: mavi ışık filtresi (marka rengi değildir) */
+  --filter-warm: rgba(255, 140, 0, 0.25);
+
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme='dark'] {
+  --paper: #141210;
+  --page: #1d1a17;
+  --page-2: #181613;
+  --ink: #ece6da;
+  --mute: #9a958b;
+  --rule: #2e2a25;
+  --ribbon: #d2604a;
+  --ok: #7fb596;
+  --plate: #0e0c0b;
+  --shadow: rgba(0, 0, 0, 0.6);
+
+  --spine-1: #3f6652;
+  --spine-2: #8e3a38;
+  --spine-3: #7d5f22;
+  --spine-4: #4a4640;
+  --spine-5: #6a4559;
+  --spine-ink: #ece6da;
+
+  color-scheme: dark;
 }
 
+/* JavaScript kapalıysa işletim sistemi tercihi */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme]) {
+    --paper: #141210;
+    --page: #1d1a17;
+    --page-2: #181613;
+    --ink: #ece6da;
+    --mute: #9a958b;
+    --rule: #2e2a25;
+    --ribbon: #d2604a;
+    --ok: #7fb596;
+    --plate: #0e0c0b;
+    --shadow: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-page: var(--page);
+  --color-page-2: var(--page-2);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-rule: var(--rule);
+  --color-ribbon: var(--ribbon);
+  --color-ok: var(--ok);
+  --color-plate: var(--plate);
+  --color-spine-1: var(--spine-1);
+  --color-spine-2: var(--spine-2);
+  --color-spine-3: var(--spine-3);
+  --color-spine-4: var(--spine-4);
+  --color-spine-5: var(--spine-5);
+  --color-spine-ink: var(--spine-ink);
+
+  --font-serif: var(--font-literata), Georgia, serif;
+  --font-sans: var(--font-literata), Georgia, serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, monospace;
+
+  --shadow-page: 0 1px 2px var(--shadow);
+
+  --animate-fade: fade var(--dur-fade) ease-out both;
+}
+
+:root {
+  --dur-fade: 150ms;
+  --dur-flip: 450ms;
+  --dur-rise: 600ms;
+  --ease-rise: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ============================================================
+   GEÇİCİ: eski değişken adları → yeni token'lar.
+   Henüz yeniden boyanmamış bileşenler için; Adım 3g'de kaldırılır.
+   ============================================================ */
+:root {
+  --bg: var(--paper);
+  --bg-secondary: var(--page-2);
+  --card: var(--page);
+  --card-solid: var(--page);
+  --card-muted: var(--page-2);
+  --text: var(--ink);
+  --text-secondary: var(--ink);
+  --text-muted: var(--mute);
+  --border: var(--rule);
+  --border-hover: var(--mute);
+  --primary: var(--ribbon);
+  --primary-hover: var(--ribbon);
+  --primary-muted: color-mix(in srgb, var(--ribbon) 12%, transparent);
+  --hover-bg: color-mix(in srgb, var(--ink) 5%, transparent);
+  --shadow-color: var(--shadow);
+  --danger: var(--ribbon);
+  --danger-muted: color-mix(in srgb, var(--ribbon) 10%, transparent);
+  --success: var(--ok);
+  --success-muted: color-mix(in srgb, var(--ok) 12%, transparent);
+  --info: var(--ink);
+  --info-muted: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* ============================================================
+   Temel
+   ============================================================ */
+html {
+  background-color: var(--paper);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-literata), Georgia, serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ribbon);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ribbon) 22%, transparent);
+}
+
+/* ============================================================
+   Yardımcılar
+   ============================================================ */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 2px;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+.flip-card .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* ============================================================
+   Hareket (docs/DESIGN.md §7)
+   ============================================================ */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* GEÇİCİ: eski animasyonlar — kullanıldıkları bileşenler yeniden boyanınca kaldırılır (3e/3g) */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes subtleGlow {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+    filter: blur(30px);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+    filter: blur(40px);
+  }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-subtle-glow {
+  animation: subtleGlow 4s ease-in-out infinite;
+}
+@keyframes eq {
+  0% {
+    height: 4px;
+  }
+  50% {
+    height: 16px;
+  }
+  100% {
+    height: 4px;
+  }
+}
+.animate-eq-1 {
+  animation: eq 0.8s ease-in-out infinite;
+}
+.animate-eq-2 {
+  animation: eq 1.2s ease-in-out infinite 0.2s;
+}
+.animate-eq-3 {
+  animation: eq 0.9s ease-in-out infinite 0.4s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+.animate-blob {
+  animation: blob 10s infinite alternate;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* İşlevsel: tamamlanan görev animasyon bitince silinir (Adım 7'de mantığa taşınacak) */
+@keyframes taskComplete {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.05);
+    opacity: 1;
+    color: var(--ok);
+  }
+  100% {
+    transform: translateX(50px) scale(0.9);
+    opacity: 0;
+  }
+}
+.animate-todo-complete {
+  animation: taskComplete 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

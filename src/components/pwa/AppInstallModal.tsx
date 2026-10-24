@@ -10,7 +10,7 @@ export const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm bg-[var(--card)] backdrop-blur-xl border border-[var(--border)] rounded-3xl shadow-2xl overflow-hidden p-6 app-no-drag"
+        className="w-full max-w-sm bg-[var(--card)] backdrop-blur-xl border border-[var(--border)] rounded-3xl shadow-2xl overflow-hidden p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
