@@ -1,8 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useStore } from '@/store/useStore';
-import type { StudyTab } from '@/types';
 
 import { useAppInit } from '@/hooks/useAppInit';
 import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
@@ -29,19 +28,33 @@ import { ContentViewer } from '@/components/player/ContentViewer';
 import { PlaylistSidebar } from '@/components/player/PlaylistSidebar';
 
 export default function App() {
-  const { view, activeContentId, contentConfig, playlistItems } = useStore();
-
-  // Görünümler arası (landing <-> app) korunması gereken UI state'i burada tutulur.
-  const [activeTab, setActiveTab] = useState<StudyTab>('notes');
-  const [showHistory, setShowHistory] = useState<boolean>(false);
-  const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
-  const [showAIModal, setShowAIModal] = useState<boolean>(false);
-  const [showPomodoroWidget, setShowPomodoroWidget] = useState<boolean>(false);
-  const [showPlaylistSidebar, setShowPlaylistSidebar] = useState<boolean>(false);
-  const [showMusicWidget, setShowMusicWidget] = useState<boolean>(false);
-  const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
-  const [newNote, setNewNote] = useState<string>('');
-  const [videoUrlInput, setVideoUrlInput] = useState<string>('');
+  // Görünümler arası (landing <-> app) korunan arayüz durumu store'un ui slice'ında (ANALYSIS K8).
+  const {
+    view,
+    activeContentId,
+    contentConfig,
+    playlistItems,
+    activeTab,
+    setActiveTab,
+    showHistory,
+    setShowHistory,
+    showInstallModal,
+    setShowInstallModal,
+    showAIModal,
+    setShowAIModal,
+    showPomodoroWidget,
+    setShowPomodoroWidget,
+    showPlaylistSidebar,
+    setShowPlaylistSidebar,
+    showMusicWidget,
+    setShowMusicWidget,
+    copyFeedback,
+    setCopyFeedback,
+    newNote,
+    setNewNote,
+    videoUrlInput,
+    setVideoUrlInput,
+  } = useStore();
   const noteInputRef = useRef<HTMLInputElement>(null);
   const sidebarVisible = showPlaylistSidebar && playlistItems.length > 0;
 
