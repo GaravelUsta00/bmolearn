@@ -409,6 +409,42 @@ Commit'ler: `cb228f6` (4a) · `0da59cf` (4b) · `61fc95a` (4c) · `9d4a086` (4d)
 - **K14:** Next, sayfaya boş bir `role="alert"` öğesi ekliyor (route announcer). Testlerde ve ileride erişilebilirlik denetiminde `role="alert"` seçicileri bu yüzden metne göre süzülmeli.
 - **K15:** Ayarlar açılır menüsü, "Yedeği yükle" ile açılan pencerenin arkasında açık kalıyor (dosya seçimi dışarı tıklama sayılmıyor). İşlevi etkilemiyor; ortak `<Modal>` ile Adım 9'da düzeltilecek.
 
+### Adım 5: güvenlik sertleştirme
+
+Commit'ler: `efd5337` (5a: markdown, AI şeması, hata ekranı, girdi doğrulama) · `9ea2438` (5b: CSP ve başlıklar, yerel ses, SECURITY.md) · `6051cfb` (`next dev`'in yeniden yazdığı AGENTS.md).
+
+**Yöntem:** Güvenlik testi Edge ile, önce `CSP_REPORT_ONLY=1` build'inde (ihlaller toplandı), sonra zorunlu CSP ile koşuldu. İhlaller `securitypolicyviolation` olayıyla toplandı; `alert`/diyalog ve sayfa hataları izlendi.
+
+| Senaryo | Sonuç |
+|---|---|
+| H1 Başlıklar: CSP, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options; `X-Powered-By` yok | ✅ |
+| F1–F5 CSP altında: YouTube oynatıcısı, radyo, `img.youtube.com` küçük resimleri, yerel ses (200 `audio/wav`, çalınabiliyor) | ✅ |
+| P1 Gerçek PDF blob iframe'de açılıyor · P2 HTML içerikli `sahte.pdf` açılmıyor ("Desteklenmeyen Format") | ✅ |
+| U1 `javascript:` adresi hiçbir `src`/`href`'e yazılmıyor | ✅ |
+| X1 AI özetinde `<img onerror>`, `<script>`, `javascript:`/`data:` bağlantıları düz metin; betik çalışmıyor | ✅ |
+| X2 Yalnızca `https:` bağlantı korunuyor, `rel="noopener noreferrer nofollow"` | ✅ |
+| X3 Not metnindeki HTML düz metin; `**kalın**` çalışıyor | ✅ |
+| J1 Nesne şıklı ve doğru cevabı olmayan sorular atlanıp raporlanıyor, çökme yok | ✅ |
+| J2 `correct` normalize: `b` → B, `Cevap: C` → C, şık metni `dört` → D (dizi şıklar) | ✅ |
+| J3 Quiz sekmesi 3 geçerli soruyu gösteriyor · J4 150 kart → 100 + uyarı · J5 JSON yoksa anlaşılır hata | ✅ |
+| CSP ihlali (Report-Only) | 1: `script-src ← eval` (zod 4'ün `new Function` yoklaması) → `jitless` ile giderildi |
+| CSP ihlali (zorunlu, üretim) / geliştirme modu | ✅ yok / ✅ yok |
+| Güvenlik testi toplam | **20/20** |
+| Duman testi v2 · depolama testi | **45/45** · **20/20** |
+
+**Çözülen bulgular:** S1, S2, S4, S5, S6, B12. S3 kısmen çözüldü: imza kontrolü var, iframe'in kaldırılması (pdf.js) Adım 8'de.
+
+**Kararlar ve ödünleşimler:**
+- **`script-src 'unsafe-inline'`.** Statik prerender edilen sayfada Next'in satır içi script'leri için gerekli; nonce, sayfanın her istekte sunucuda render edilmesini (Proxy) gerektiriyor. Asıl XSS savunması, hiçbir kullanıcı/AI içeriğinin HTML olarak render edilmemesi (SECURITY.md).
+- **CSP kipi derleme anında belirleniyor** (`next.config.ts` → routes manifest). Report-Only denemesi için `CSP_REPORT_ONLY=1 npm run build`.
+- **AI içe aktarma uyarıları:** Atlanan ya da kısaltılan öğe varsa pencere kapanmadan "İçe aktarıldı" özeti gösteriliyor; uyarı yoksa davranış eskisi gibi.
+- **Bildirim sesi** uygulama içinde üretildi (iki notalı, 0,6 sn, WAV); lisans gerektirmiyor.
+
+**Adım 5 sırasında bulunan ek konular:**
+- **K16:** zod 4, eval desteğini `new Function` ile yokluyor; katı CSP'de ihlal raporu üretiyor. Proje genelinde `src/lib/zod.ts` (`jitless`) üzerinden içe aktarılmalı. Doğrudan `from 'zod'` kullanılmamalı.
+- **K17:** `next dev` 16.4, `AGENTS.md`'deki `nextjs-agent-rules` bloğunu kendisi yeniden yazıyor. Değişiklik commit'lenmezse her `dev` çalıştırmasında yeniden oluşuyor.
+- **K18:** YouTube IFrame API, iframe hazır olmadan `postMessage` denediğinde konsola "target origin … does not match" uyarısı basıyor (geliştirme modunda görüldü). İşlevsel değil; Adım 6'da oynatıcı yaşam döngüsüyle birlikte ele alınacak.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.

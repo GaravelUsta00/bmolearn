@@ -137,7 +137,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 5 — Güvenlik sertleştirme
+## Adım 5 — Güvenlik sertleştirme ✅
+
+> **Tamamlandı (2026-10-24):** Güvenlik testi 20/20 (zorunlu CSP), duman 45/45, depolama 20/20. CSP ödünleşimi (`'unsafe-inline'` script) ve zod `jitless` kararı: [SECURITY.md](SECURITY.md), [ANALYSIS.md §7, Adım 5](ANALYSIS.md#adım-5-güvenlik-sertleştirme).
 
 **Amaç:** Güvenilmez girdinin güvenli işlenmesi ve tarayıcı korumaları.
 
