@@ -72,6 +72,16 @@
   }
 }
 
+/* Varsayılan Tailwind paleti, köşe ve gölge ölçekleri kapalı: DESIGN dışı sınıf CSS üretmez */
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+  --radius-sm: 2px;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-page: var(--page);
@@ -103,34 +113,6 @@
   --dur-flip: 450ms;
   --dur-rise: 600ms;
   --ease-rise: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-/* ============================================================
-   GEÇİCİ: eski değişken adları → yeni token'lar.
-   Henüz yeniden boyanmamış bileşenler için; Adım 3g'de kaldırılır.
-   ============================================================ */
-:root {
-  --bg: var(--paper);
-  --bg-secondary: var(--page-2);
-  --card: var(--page);
-  --card-solid: var(--page);
-  --card-muted: var(--page-2);
-  --text: var(--ink);
-  --text-secondary: var(--ink);
-  --text-muted: var(--mute);
-  --border: var(--rule);
-  --border-hover: var(--mute);
-  --primary: var(--ribbon);
-  --primary-hover: var(--ribbon);
-  --primary-muted: color-mix(in srgb, var(--ribbon) 12%, transparent);
-  --hover-bg: color-mix(in srgb, var(--ink) 5%, transparent);
-  --shadow-color: var(--shadow);
-  --danger: var(--ribbon);
-  --danger-muted: color-mix(in srgb, var(--ribbon) 10%, transparent);
-  --success: var(--ok);
-  --success-muted: color-mix(in srgb, var(--ok) 12%, transparent);
-  --info: var(--ink);
-  --info-muted: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 /* ============================================================
@@ -248,113 +230,6 @@
 }
 .animate-spine {
   animation: spine-rise 500ms var(--ease-rise) backwards;
-}
-
-/* GEÇİCİ: eski animasyonlar — kullanıldıkları bileşenler yeniden boyanınca kaldırılır (3e/3g) */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-@keyframes subtleGlow {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.9);
-    filter: blur(30px);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.1);
-    filter: blur(40px);
-  }
-}
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-.animate-subtle-glow {
-  animation: subtleGlow 4s ease-in-out infinite;
-}
-@keyframes eq {
-  0% {
-    height: 4px;
-  }
-  50% {
-    height: 16px;
-  }
-  100% {
-    height: 4px;
-  }
-}
-.animate-eq-1 {
-  animation: eq 0.8s ease-in-out infinite;
-}
-.animate-eq-2 {
-  animation: eq 1.2s ease-in-out infinite 0.2s;
-}
-.animate-eq-3 {
-  animation: eq 0.9s ease-in-out infinite 0.4s;
-}
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
-}
-.animate-blob {
-  animation: blob 10s infinite alternate;
-}
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.animate-scale-in {
-  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* İşlevsel: tamamlanan görev animasyon bitince silinir (Adım 7'de mantığa taşınacak) */

@@ -28,7 +28,7 @@ import { ContentViewer } from '@/components/player/ContentViewer';
 import { PlaylistSidebar } from '@/components/player/PlaylistSidebar';
 
 export default function App() {
-  const { view, activeContentId, contentConfig } = useStore();
+  const { view, activeContentId, contentConfig, playlistItems } = useStore();
 
   // Görünümler arası (landing <-> app) korunması gereken UI state'i burada tutulur.
   const [activeTab, setActiveTab] = useState<StudyTab>('notes');
@@ -42,6 +42,7 @@ export default function App() {
   const [newNote, setNewNote] = useState<string>('');
   const [videoUrlInput, setVideoUrlInput] = useState<string>('');
   const noteInputRef = useRef<HTMLInputElement>(null);
+  const sidebarVisible = showPlaylistSidebar && playlistItems.length > 0;
 
   const isInitializing = useAppInit();
   const pomodoro = usePomodoroTimer();
@@ -72,9 +73,7 @@ export default function App() {
       {view === 'landing' && <LandingPage onShowHistory={() => setShowHistory(true)} />}
 
       {view === 'app' && (
-        <div
-          className={`min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-400 animate-fade-in relative overflow-x-hidden`}
-        >
+        <div className="min-h-screen flex flex-col bg-paper text-ink relative overflow-x-hidden">
           <AIModal
             isOpen={showAIModal}
             onClose={() => setShowAIModal(false)}
@@ -122,36 +121,45 @@ export default function App() {
             toggleFocusMode={toggleFocusMode}
           />
 
+          {/* Grid: araç çubuğu 1. satırda; video, oynatma listesi ve panel 2. satırda aynı hizadan başlar (T3) */}
           <main
-            className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 w-full max-w-[1700px] mx-auto relative z-0`}
+            className={`flex-1 flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 lg:p-6 w-full max-w-[1700px] mx-auto relative z-0 lg:grid lg:grid-rows-[auto_1fr] ${sidebarVisible ? 'lg:grid-cols-[minmax(0,1fr)_22%_28%]' : 'lg:grid-cols-[minmax(0,1fr)_35%]'}`}
           >
-            <div className={`flex flex-col flex-1 transition-all duration-500 ease-in-out w-full`}>
+            <div className="lg:col-start-1 lg:row-start-1">
               <ContentToolbar
                 videoUrlInput={videoUrlInput}
                 setVideoUrlInput={setVideoUrlInput}
                 setShowPlaylistSidebar={setShowPlaylistSidebar}
               />
+            </div>
+            <div className="lg:col-start-1 lg:row-start-2">
               <ContentViewer videoError={player.videoError} />
             </div>
 
-            <PlaylistSidebar
-              showPlaylistSidebar={showPlaylistSidebar}
-              handlePlaylistVideoSelect={player.handlePlaylistVideoSelect}
-            />
+            {sidebarVisible && (
+              <div className="lg:row-start-2">
+                <PlaylistSidebar
+                  showPlaylistSidebar={showPlaylistSidebar}
+                  handlePlaylistVideoSelect={player.handlePlaylistVideoSelect}
+                />
+              </div>
+            )}
 
-            <StudyPanel
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              setShowAIModal={setShowAIModal}
-              showPlaylistSidebar={showPlaylistSidebar}
-              newNote={newNote}
-              setNewNote={setNewNote}
-              noteInputRef={noteInputRef}
-              copyFeedback={copyFeedback}
-              setCopyFeedback={setCopyFeedback}
-              jumpToTime={player.jumpToTime}
-              playerRef={player.playerRef}
-            />
+            <div className="lg:row-start-2">
+              <StudyPanel
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                setShowAIModal={setShowAIModal}
+                showPlaylistSidebar={showPlaylistSidebar}
+                newNote={newNote}
+                setNewNote={setNewNote}
+                noteInputRef={noteInputRef}
+                copyFeedback={copyFeedback}
+                setCopyFeedback={setCopyFeedback}
+                jumpToTime={player.jumpToTime}
+                playerRef={player.playerRef}
+              />
+            </div>
           </main>
         </div>
       )}

@@ -45,36 +45,32 @@ export const ContentToolbar = ({ videoUrlInput, setVideoUrlInput, setShowPlaylis
   };
 
   return (
-    <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-5">
+    <div className="flex gap-2 sm:gap-3">
       <form
         onSubmit={handleDashboardUrlChange}
-        className={`flex-1 flex p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-sm focus-within:border-[#FF8C00]/50 transition-colors`}
+        className={`flex-1 flex p-1.5 sm:p-2 pl-4 sm:pl-5 rounded-sm bg-page border border-rule shadow-page focus-within:border-ribbon/50 transition-colors`}
       >
         <input
           type="text"
           value={videoUrlInput}
           onChange={(e) => setVideoUrlInput(e.target.value)}
           placeholder="Yeni bir link yapıştırın..."
-          className={`flex-1 bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm font-medium w-full`}
+          className={`flex-1 bg-transparent border-none outline-none text-ink text-xs sm:text-sm font-medium w-full`}
         />
         {videoUrlInput && (
-          <button
-            type="button"
-            onClick={() => setVideoUrlInput('')}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text)]"
-          >
+          <button type="button" onClick={() => setVideoUrlInput('')} className="p-2 text-mute hover:text-ink">
             <X size={16} />
           </button>
         )}
         <button
           type="submit"
-          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl text-white bg-[#FF8C00] font-bold text-xs sm:text-sm hover:scale-105 transition-transform active:scale-95 shadow-md shadow-[#FF8C00]/20`}
+          className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-sm text-page bg-ribbon font-bold text-xs sm:text-sm transition-transform`}
         >
           Değiştir
         </button>
       </form>
 
-      <label className="cursor-pointer shrink-0 px-4 flex items-center justify-center gap-2 rounded-3xl bg-[var(--card)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[#FF8C00] hover:border-[#FF8C00]/50 transition-all">
+      <label className="cursor-pointer shrink-0 px-4 flex items-center justify-center gap-2 rounded-sm bg-page border border-rule text-mute hover:text-ribbon hover:border-ribbon/50 transition-all">
         <Upload size={18} />
         <span className="hidden sm:inline text-xs font-bold">PDF Yükle</span>
         <input type="file" accept=".pdf" className="hidden" onChange={handleDashboardFileUpload} />

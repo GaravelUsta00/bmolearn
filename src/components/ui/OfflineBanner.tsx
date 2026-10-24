@@ -19,7 +19,7 @@ export const OfflineBanner = () => {
 
   if (!isOffline) return null;
   return (
-    <div className="fixed top-0 left-0 w-full bg-[var(--danger)] text-white text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-50 animate-fade-in-up shadow-md">
+    <div className="fixed top-0 left-0 w-full bg-ribbon text-page text-xs font-bold py-1.5 flex items-center justify-center gap-2 z-50 animate-fade shadow-page">
       <WifiOff size={14} /> İnternet bağlantınız koptu. Lütfen bağlantınızı kontrol edin.
     </div>
   );

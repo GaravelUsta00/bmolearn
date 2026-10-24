@@ -11,21 +11,21 @@ export const PomodoroHeatmap = () => {
     return d.toISOString().split('T')[0];
   });
   return (
-    <div className="mt-6 w-full p-4 bg-[var(--card-solid)] border border-[var(--border)] rounded-[20px] shadow-sm">
-      <h3 className="text-[10px] sm:text-xs font-bold text-[var(--text-muted)] mb-3 flex items-center gap-1.5 uppercase tracking-wider">
+    <div className="mt-6 w-full p-4 bg-page border border-rule rounded-sm shadow-page">
+      <h3 className="text-[10px] sm:text-xs font-bold text-mute mb-3 flex items-center gap-1.5 uppercase tracking-wider">
         <CalendarDays size={14} /> 30 Günlük Harita
       </h3>
       <div className="flex flex-wrap gap-1.5">
         {days.map((d) => {
           const count = pomodoroHistory[d] || 0;
-          let bgColor = 'bg-[var(--border)]';
-          if (count > 0 && count <= 2) bgColor = 'bg-[#FF8C00]/40';
-          else if (count > 2 && count <= 5) bgColor = 'bg-[#FF8C00]/70';
-          else if (count > 5) bgColor = 'bg-[#FF8C00]';
+          let bgColor = 'bg-rule';
+          if (count > 0 && count <= 2) bgColor = 'bg-ribbon/40';
+          else if (count > 2 && count <= 5) bgColor = 'bg-ribbon/70';
+          else if (count > 5) bgColor = 'bg-ribbon';
           return (
             <div
               key={d}
-              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm ${bgColor} transition-colors hover:ring-1 hover:ring-[var(--text)]`}
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm ${bgColor} transition-colors hover:ring-1 hover:ring-ink`}
               title={`${d}: ${count} Pomodoro`}
             />
           );

@@ -17,10 +17,8 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
 
   if (currentCards.length === 0)
     return (
-      <div
-        className={`text-center py-10 sm:py-16 text-[var(--text-muted)] flex flex-col items-center gap-4 animate-fade-in`}
-      >
-        <div className={`p-3 sm:p-4 rounded-full bg-[var(--card-solid)]`}>
+      <div className={`text-center py-10 sm:py-16 text-mute flex flex-col items-center gap-4 animate-fade`}>
+        <div className={`p-3 sm:p-4 rounded-full bg-page`}>
           <BookOpen size={24} className="sm:w-8 sm:h-8 opacity-50" />
         </div>
         <p className="text-xs sm:text-sm">
@@ -34,19 +32,19 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
   if (isStudyMode) {
     const currentCard = currentCards[currentIndex];
     return (
-      <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in relative">
-        <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--card-muted)] flex justify-between items-center">
+      <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade relative">
+        <div className="px-5 py-3 border-b border-rule bg-page-2 flex justify-between items-center">
           <button
             onClick={() => setIsStudyMode(false)}
-            className="text-xs font-bold text-[#FF8C00] hover:text-orange-400 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-ribbon hover:text-ribbon/80 flex items-center gap-1 transition-colors"
           >
             <ArrowRight className="rotate-180" size={14} /> Geri Dön
           </button>
-          <span className="text-xs font-bold text-[var(--text-muted)]">
+          <span className="text-xs font-bold text-mute">
             Kart {currentIndex + 1} / {currentCards.length}
           </span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar bg-[var(--bg)]">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar bg-paper">
           {currentCard && (
             <div
               key={currentCard.id}
@@ -57,14 +55,14 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
             >
               <div className="relative w-full h-full transition-transform duration-500 transform-style-3d card-inner">
                 <div
-                  className={`absolute w-full h-full backface-hidden rounded-[20px] sm:rounded-3xl border border-[var(--border)] bg-[var(--card-solid)] p-6 sm:p-8 flex items-center justify-center text-center shadow-xl`}
+                  className={`absolute w-full h-full backface-hidden rounded-sm border border-rule bg-page p-6 sm:p-8 flex items-center justify-center text-center shadow-page`}
                 >
-                  <p className="font-medium text-base sm:text-lg text-[var(--text)]">{currentCard.question}</p>
+                  <p className="font-medium text-base sm:text-lg text-ink">{currentCard.question}</p>
                 </div>
                 <div
-                  className={`absolute w-full h-full backface-hidden rounded-[20px] sm:rounded-3xl border border-[#FF8C00]/50 bg-[var(--primary-muted)] p-6 sm:p-8 flex items-center justify-center text-center rotate-y-180 shadow-xl`}
+                  className={`absolute w-full h-full backface-hidden rounded-sm border border-ribbon/50 bg-ribbon/10 p-6 sm:p-8 flex items-center justify-center text-center rotate-y-180 shadow-page`}
                 >
-                  <p className={`font-bold text-base sm:text-lg text-[#FF8C00]`}>{currentCard.answer}</p>
+                  <p className={`font-bold text-base sm:text-lg text-ribbon`}>{currentCard.answer}</p>
                 </div>
               </div>
             </div>
@@ -73,13 +71,13 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
             <button
               onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--card-solid)] border border-[var(--border)] hover:bg-[var(--hover-bg)] text-[var(--text)] rounded-2xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1 active:scale-95 shadow-sm"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 bg-page border border-rule hover:bg-ink/5 text-ink rounded-sm font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1"
             >
               Önceki
             </button>
             <button
               onClick={() => toggleFlashcardLearned(currentCard.id)}
-              className={`p-2.5 sm:p-3 rounded-2xl border-2 transition-all active:scale-95 ${currentCard.learned ? 'border-[var(--success)] bg-[var(--success-muted)] text-[var(--success)]' : 'border-[var(--border)] bg-[var(--card-solid)] text-[var(--text-muted)] hover:border-[#FF8C00]'}`}
+              className={`p-2.5 sm:p-3 rounded-sm border-2 transition-all ${currentCard.learned ? 'border-ok bg-ok/10 text-ok' : 'border-rule bg-page text-mute hover:border-ribbon'}`}
               title="Öğrendim İşaretle"
             >
               {currentCard.learned ? <CheckCircle2 size={20} /> : <Circle size={20} />}
@@ -87,7 +85,7 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
             <button
               onClick={() => setCurrentIndex(Math.min(currentCards.length - 1, currentIndex + 1))}
               disabled={currentIndex === currentCards.length - 1}
-              className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--card-solid)] border border-[var(--border)] hover:bg-[var(--hover-bg)] text-[var(--text)] rounded-2xl font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1 active:scale-95 shadow-sm"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 bg-page border border-rule hover:bg-ink/5 text-ink rounded-sm font-bold text-xs sm:text-sm disabled:opacity-30 transition-colors flex-1"
             >
               Sonraki
             </button>
@@ -98,15 +96,15 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in">
-      <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--card-muted)] flex justify-between items-center">
-        <span className="text-xs font-bold text-[var(--text-muted)]">
+    <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade">
+      <div className="px-5 py-3 border-b border-rule bg-page-2 flex justify-between items-center">
+        <span className="text-xs font-bold text-mute">
           Öğrenilen: {learnedCount}/{currentCards.length}
         </span>
         <div className="flex gap-2">
           <button
             onClick={() => resetFlashcards(activeContentId)}
-            className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text)] bg-[var(--card-solid)] border border-[var(--border)] hover:bg-[var(--hover-bg)] px-3 py-1 rounded-[10px] transition-colors"
+            className="text-xs font-bold text-mute hover:text-ink bg-page border border-rule hover:bg-ink/5 px-3 py-1 rounded-sm transition-colors"
           >
             Sıfırla
           </button>
@@ -115,13 +113,13 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
               setIsStudyMode(true);
               setCurrentIndex(0);
             }}
-            className="text-xs font-bold text-white bg-[#FF8C00] hover:bg-[#ea580c] px-3 py-1 rounded-[10px] flex items-center gap-1 transition-colors shadow-md"
+            className="text-xs font-bold text-page bg-ribbon hover:bg-ribbon/90 px-3 py-1 rounded-sm flex items-center gap-1 transition-colors"
           >
             <Play size={12} /> Çalış
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar bg-[var(--bg)]">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar bg-paper">
         {currentCards.map((card) => (
           <div
             key={card.id}
@@ -135,25 +133,25 @@ export const FlashcardsTab = ({ activeContentId }: FlashcardsTabProps) => {
                 e.stopPropagation();
                 deleteFlashcard(card.id);
               }}
-              className="absolute -top-2 -right-2 z-20 p-1.5 rounded-full bg-[var(--danger)] text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+              className="absolute -top-2 -right-2 z-20 p-1.5 rounded-full bg-ribbon text-page opacity-0 group-hover:opacity-100 transition-all"
             >
               <Trash2 size={12} />
             </button>
             {card.learned && (
-              <div className="absolute top-2 left-2 z-10 text-[var(--success)] bg-[var(--bg)] rounded-full shadow-sm">
+              <div className="absolute top-2 left-2 z-10 text-ok bg-paper rounded-full shadow-page">
                 <CheckCircle2 size={16} />
               </div>
             )}
             <div className="relative w-full h-full transition-transform duration-500 transform-style-3d card-inner">
               <div
-                className={`absolute w-full h-full backface-hidden rounded-[20px] border ${card.learned ? 'border-[var(--success)]' : 'border-[var(--border)]'} bg-[var(--card-solid)] p-4 flex items-center justify-center text-center shadow-sm`}
+                className={`absolute w-full h-full backface-hidden rounded-sm border ${card.learned ? 'border-ok' : 'border-rule'} bg-page p-4 flex items-center justify-center text-center shadow-page`}
               >
-                <p className="font-medium text-xs sm:text-sm text-[var(--text)]">{card.question}</p>
+                <p className="font-medium text-xs sm:text-sm text-ink">{card.question}</p>
               </div>
               <div
-                className={`absolute w-full h-full backface-hidden rounded-[20px] border border-[#FF8C00]/50 bg-[var(--primary-muted)] p-4 flex items-center justify-center text-center rotate-y-180 shadow-md`}
+                className={`absolute w-full h-full backface-hidden rounded-sm border border-ribbon/50 bg-ribbon/10 p-4 flex items-center justify-center text-center rotate-y-180 shadow-page`}
               >
-                <p className={`font-bold text-xs sm:text-sm text-[#FF8C00]`}>{card.answer}</p>
+                <p className={`font-bold text-xs sm:text-sm text-ribbon`}>{card.answer}</p>
               </div>
             </div>
           </div>

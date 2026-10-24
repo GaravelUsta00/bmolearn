@@ -41,9 +41,7 @@ export const StudyPanel = ({
   ];
 
   return (
-    <div
-      className={`flex flex-col mt-[68px] h-125 md:h-150 lg:h-auto bg-[var(--card)] backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-[var(--border)] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${showPlaylistSidebar && playlistItems.length > 0 ? 'w-full lg:w-[28%]' : 'w-full lg:w-[35%]'}`}
-    >
+    <div className="flex w-full flex-col h-125 md:h-150 lg:h-full bg-page rounded-sm border border-rule shadow-page overflow-hidden">
       <div className="flex items-end justify-between gap-2 border-b border-rule px-3">
         <div role="tablist" aria-label="Çalışma paneli" className="custom-scrollbar flex flex-1 gap-4 overflow-x-auto">
           {tabs.map((t) => (

@@ -33,8 +33,8 @@ export const SummaryTab = ({ activeContentId }: SummaryTabProps) => {
 
   if (!summary)
     return (
-      <div className={`text-center py-16 text-[var(--text-muted)] flex flex-col items-center gap-4 animate-fade-in`}>
-        <div className={`p-4 rounded-full bg-[var(--card-solid)]`}>
+      <div className={`text-center py-16 text-mute flex flex-col items-center gap-4 animate-fade`}>
+        <div className={`p-4 rounded-full bg-page`}>
           <AlignLeft size={32} className="opacity-50" />
         </div>
         <p className="text-xs sm:text-sm">
@@ -48,16 +48,16 @@ export const SummaryTab = ({ activeContentId }: SummaryTabProps) => {
   return (
     <div
       onPointerUp={handlePointerUp}
-      className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar text-sm leading-relaxed text-[var(--text-secondary)] relative animate-fade-in"
+      className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar text-sm leading-relaxed text-ink relative animate-fade"
     >
       {showPopup && (
-        <div className="sticky top-0 z-20 flex justify-center mb-4 animate-fade-in-up">
+        <div className="sticky top-0 z-20 flex justify-center mb-4 animate-fade">
           <button
             onPointerDown={(e) => {
               e.preventDefault();
               handleAddToNotes();
             }}
-            className="px-4 py-2 bg-[#FF8C00] text-white font-bold rounded-2xl shadow-xl shadow-[#FF8C00]/30 flex items-center gap-2 active:scale-95 transition-transform"
+            className="px-4 py-2 bg-ribbon text-page font-bold rounded-sm flex items-center gap-2 transition-transform"
           >
             <Bookmark size={16} /> Seçili Metni Notlara Ekle
           </button>

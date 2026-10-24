@@ -61,27 +61,25 @@ export const NotesTab = ({
   const currentNotes = notes.filter((n) => n.contentId === activeContentId);
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in relative">
+    <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade relative">
       {currentNotes.length > 0 && (
         <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
           <button
             onClick={handleExportNotes}
-            className={`p-2 rounded-lg bg-[var(--card-solid)] hover:bg-[#FF8C00] hover:text-white text-[var(--text-muted)] transition-all border border-[var(--border)] backdrop-blur-sm shadow-md`}
+            className={`p-2 rounded-sm bg-page hover:bg-ribbon hover:text-page text-mute transition-all border border-rule`}
             title="Notları İndir (TXT)"
           >
             <Download size={14} className="sm:w-4 sm:h-4" />
           </button>
           {copyFeedback && (
-            <span className="text-[10px] bg-[var(--success)] text-white px-2 py-1 rounded-md font-bold shadow-md">
-              Kopyalandı!
-            </span>
+            <span className="text-[10px] bg-ok text-page px-2 py-1 rounded-sm font-bold shadow-page">Kopyalandı!</span>
           )}
         </div>
       )}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 pt-12 space-y-3 custom-scrollbar">
         {currentNotes.length === 0 ? (
-          <div className={`text-center py-10 sm:py-16 text-[var(--text-muted)] flex flex-col items-center gap-4`}>
-            <div className={`p-3 sm:p-4 rounded-full bg-[var(--card-solid)]`}>
+          <div className={`text-center py-10 sm:py-16 text-mute flex flex-col items-center gap-4`}>
+            <div className={`p-3 sm:p-4 rounded-full bg-page`}>
               <Bookmark size={24} className="sm:w-8 sm:h-8 opacity-50" />
             </div>
             <p className="text-xs sm:text-sm">Bu içerik için henüz not yok.</p>
@@ -90,12 +88,12 @@ export const NotesTab = ({
           currentNotes.map((note) => (
             <div
               key={note.id}
-              className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-[20px] bg-[var(--card-solid)] border border-transparent hover:border-[var(--border)] transition-all shadow-sm`}
+              className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-sm bg-page border border-transparent hover:border-rule transition-all shadow-page`}
             >
               {note.time > 0 && (
                 <button
                   onClick={() => jumpToTime(note.time)}
-                  className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-lg bg-[var(--primary-muted)] text-[#FF8C00] text-[10px] sm:text-xs font-mono font-bold hover:bg-[#FF8C00]/20`}
+                  className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-sm bg-ribbon/10 text-ribbon text-[10px] sm:text-xs font-mono font-bold hover:bg-ribbon/20`}
                 >
                   {formatTime(note.time)}
                 </button>
@@ -106,7 +104,7 @@ export const NotesTab = ({
               ></p>
               <button
                 onClick={() => deleteNote(note.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 text-[var(--danger)] hover:bg-[var(--danger-muted)] rounded-lg"
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-ribbon hover:bg-ribbon/10 rounded-sm"
               >
                 <Trash2 size={14} className="sm:w-4 sm:h-4" />
               </button>
@@ -114,7 +112,7 @@ export const NotesTab = ({
           ))
         )}
       </div>
-      <div className={`p-4 sm:p-5 border-t border-[var(--border)] bg-[var(--bg)]`}>
+      <div className={`p-4 sm:p-5 border-t border-rule bg-paper`}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -134,11 +132,11 @@ export const NotesTab = ({
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Not al... (**kalın** veya - liste desteği var)"
-            className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-[20px] bg-[var(--card-solid)] border border-[var(--border)] focus:border-[#FF8C00] outline-none text-xs sm:text-sm text-[var(--text)] transition-colors shadow-sm`}
+            className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-sm bg-page border border-rule focus:border-ribbon outline-none text-xs sm:text-sm text-ink transition-colors shadow-page`}
           />
           <button
             type="submit"
-            className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-2xl bg-[#FF8C00] text-white shadow-md active:scale-95 hover:scale-105 transition-transform`}
+            className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-sm bg-ribbon text-page transition-transform`}
           >
             <Plus size={16} className="sm:w-4.5 sm:h-4.5" />
           </button>
