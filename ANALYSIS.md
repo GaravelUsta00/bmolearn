@@ -13,19 +13,25 @@
 - **Yapı (refactor öncesi):** Her şey `app/page.tsx` içinde: tema CSS'i (`ThemeStyles`), tipler, sabitler, zustand store, yardımcılar, 17 bileşen ve tüm orkestrasyonu yapan ~650 satırlık `App` bileşeni (YouTube oynatıcıları, pomodoro zamanlayıcısı, kısayollar, tam ekran).
 - **Render:** `page.tsx` `"use client"`. Statik olarak prerender ediliyor; ilk HTML yalnızca skeleton içeriyor.
 
-### localStorage anahtarları (değiştirilmeyecek)
+### localStorage anahtarları
 
-| Anahtar | İçerik |
+> **Adım 4c'den itibaren** uygulama `belearn_*` anahtarlarını okuyup yazar. `bmo_*` anahtarları yalnızca ilk açılışta bir kez okunup kopyalanır; **asla yazılmaz ve asla silinmez**. Tek kaynak: `src/lib/storageKeys.ts`.
+
+| Anahtar (`belearn_` / eski `bmo_`) | İçerik |
 |---|---|
-| `bmo_theme` | `'dark' \| 'light'` |
-| `bmo_notes` | `Note[]` |
-| `bmo_flashcards` | `Flashcard[]` |
-| `bmo_quiz` | `QuizQuestion[]` |
-| `bmo_summaries` | `Record<contentId, markdown>` |
-| `bmo_todos` | `Todo[]` |
-| `bmo_history` | `HistoryItem[]` (en fazla 30) |
-| `bmo_pomodoro` | `Record<YYYY-MM-DD, adet>` |
-| `bmo_progress` | `Record<videoId, saniye>` |
+| `theme` | `'dark' \| 'light'` (yalnızca kullanıcı seçince yazılır) |
+| `notes` | `Note[]` |
+| `flashcards` | `Flashcard[]` |
+| `quiz` | `QuizQuestion[]` |
+| `summaries` | `Record<contentId, markdown>` |
+| `todos` | `Todo[]` |
+| `history` | `HistoryItem[]` (eskiden en fazla 30, şimdi 200) |
+| `pomodoro` | `Record<YYYY-MM-DD, adet>` (eski kayıtlar UTC günü) |
+| `progress` | `Record<videoId, saniye>` |
+| `belearn_meta` | `{ version, createdAt? , migratedFrom?, migratedAt?, migratedKeys? }` |
+| `belearn_backup_<anahtar>_<zaman>` | Okunamayan ham değerin silinmeyen kopyası |
+
+Kimlikler (`Id`): yeni kayıtlarda UUID (string); eski kayıtların sayı/ondalıklı id'leri olduğu gibi korunur.
 
 ## 2. Bağımlılıklar
 
@@ -364,6 +370,44 @@ Commit'ler: `f953a0e` (3a) · `fae5947` (3b) · `7c02931` (3c) · `045d0c1` + `9
 - **K12:** Taban stiller katmansız CSS'teyken Tailwind'in `@layer utilities` sınıflarını eziyordu (ör. `focus:outline-none`). `@layer base`'e alındı.
 - **K13:** Turbopack, ICO içindeki PNG'lerin RGBA olmasını şart koşuyor; RGB PNG'li favicon build'i kırıyor. İkonlar RGBA olarak üretildi.
 - **W1 (değişmedi):** Manifest hâlâ `blob:` URL ile ekleniyor; `start_url` ve ikon adresleri mutlak URL'ye çevrildi ama kurulabilirlik Adım 10'a kadar garanti değil.
+
+### Adım 4: yedek, state ve depolama
+
+Commit'ler: `cb228f6` (4a) · `0da59cf` (4b) · `61fc95a` (4c) · `9d4a086` (4d).
+
+**Yöntem:** Edge ile depolama testi (sahte eski döküm `tests/fixtures/bmo-legacy.json` ve bozuk döküm `bmo-corrupt.json`). Her alt adımda ayrıca genel duman testi koşuldu. Gerçek bir döküm `fixtures/local/bmo-dump.json` olarak konursa test onu kullanır; bu klasör `.gitignore`'da.
+
+| Senaryo | Sonuç |
+|---|---|
+| A1–A3 Yedeği indir → tarayıcı verisini temizle → yedeği yükle: tüm anahtarlar byte-byte aynı, raf ve sekmeler veriyi gösteriyor | ✅ |
+| B1 "Boş alanlara ekle" mevcut notlara dokunmuyor, boş alanları dolduruyor | ✅ |
+| C1 "Yerine koy" önce `-oncesi` yedeğini indiriyor, sonra değiştiriyor | ✅ |
+| D1 Ham `bmo_*` dökümü yüklenebiliyor · D2 geçersiz dosyada anlaşılır hata, veri değişmiyor | ✅ |
+| E1 Yalnızca `bmo_*` varken açılış: `belearn_*` kopyası byte-byte aynı, meta yazılıyor | ✅ |
+| E2 Kullanım sonrası `bmo_*` anahtarları byte-byte değişmemiş; yeni veri `belearn_*`'ta | ✅ |
+| E3 Migrasyon bir kez çalışıyor · E4 `bmo_theme` okunuyor, seçim `belearn_theme`'e yazılıyor | ✅ |
+| E5 Eski geçmiş biçimi (id'siz, `pId`'li) koleksiyona dönüşüyor | ✅ |
+| E6 Migrasyon kota yüzünden yarıda kalırsa `belearn_*` geri alınıyor, `bmo_*` sağlam, uyarı gösteriliyor | ✅ |
+| F1 Bozuk JSON + şemaya uymayan soru: uygulama açılıyor, uyarı ve `belearn_backup_*` var | ✅ |
+| F2 Geçerli 3 soru korunuyor, bozuk soru atlanıyor, Quiz sekmesi çökmüyor (S4'ün kalıcı çökme kısmı) | ✅ |
+| F3 Kota dolu: not ekranda kalıyor, kullanıcı uyarılıyor | ✅ |
+| F4 Yeni kayıt id'si UUID v4; eski sayı id'ler korunuyor | ✅ |
+| G1 Geçerli eski veri hiçbir kayıt kaybetmeden ve uyarı üretmeden okunuyor | ✅ |
+| G2 Geçmiş kaydı silinince yalnızca o içeriğin video ilerlemesi siliniyor (B6) | ✅ |
+| Depolama testi toplam | **20/20** |
+| Duman testi v2 (`belearn_*` ile) | **45/45** |
+
+**Çözülen bulgular:** S7, B10 (kimlikler; blob revoke Adım 8'de), B11, B15, K8; B6'nın ilerleme kısmı (onay Adım 9'da); B16 ve P4 kısmen (sınır yükseltildi, otomatik silme yok, yetim tespiti hazır; onaylı temizlik arayüzü Adım 9'da); S4'ün depolamadaki kalıcı çökme kısmı (AI içe aktarma şeması Adım 5'te).
+
+**Plandan sapmalar ve kararlar:**
+- **zustand `persist` kullanılmadı.** `persist` bütün durumu tek bir anahtara tek blob olarak yazıyor; plan ise her veri alanının kendi `belearn_*` anahtarında durmasını istiyor. Bunun yerine küçük bir abonelik katmanı (`store/persistence.ts`) kullanıldı: yükleme bittikten sonra abone oluyor ve yalnızca referansı değişen alanın anahtarını yazıyor. Sürümleme `belearn_meta` ile yapılıyor.
+- **Geçmiş sınırı 30'dan 200'e çıkarıldı.** Eskiden 30'u aşan kayıtlar listeden düşünce notları erişilemez hale geliyordu. Otomatik silme kullanıcı verisini sessizce yok edeceği için yapılmadı.
+- **"Tümünü temizle" video ilerlemesini de siliyor.** Görevler ve pomodoro geçmişi bilinçli olarak korunuyor (eski davranışla aynı).
+- **UI slice'ı oluşturuldu** ve `page.tsx`'teki durum oraya taşındı. Bileşenler hâlâ prop alıyor; doğrudan selector ile okumaya geçiş Adım 9'da (P1).
+
+**Adım 4 sırasında bulunan ek konular:**
+- **K14:** Next, sayfaya boş bir `role="alert"` öğesi ekliyor (route announcer). Testlerde ve ileride erişilebilirlik denetiminde `role="alert"` seçicileri bu yüzden metne göre süzülmeli.
+- **K15:** Ayarlar açılır menüsü, "Yedeği yükle" ile açılan pencerenin arkasında açık kalıyor (dosya seçimi dışarı tıklama sayılmıyor). İşlevi etkilemiyor; ortak `<Modal>` ile Adım 9'da düzeltilecek.
 
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 

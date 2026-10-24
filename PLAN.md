@@ -91,7 +91,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 4 — Yedek, state ve depolama (`belearn_*`)
+## Adım 4 — Yedek, state ve depolama (`belearn_*`) ✅
+
+> **Tamamlandı (2026-10-24):** 4a–4d commit'lendi. Depolama testi 20/20, duman testi 45/45. Sapmalar: `persist` yerine alan-başına-anahtar abonelik katmanı, geçmiş sınırı 30 → 200. Ayrıntı: [ANALYSIS.md §7, Adım 4](ANALYSIS.md#adım-4-yedek-state-ve-depolama).
 
 **Amaç:** Dayanıklı, doğrulanan, versiyonlanan kalıcı state ve kullanıcının kendi verisini yedekleyebilmesi.
 
