@@ -14,7 +14,7 @@ Dal: `refactor/bmo-optimizasyon`. Her adım en az bir commit'tir ve her adımın
 - **Risk:** Yok (davranış değişmez).
 - **Zorluk:** Kolay.
 
-## Adım 2 — Dosya parçalama (saf taşıma)
+## Adım 2 — Dosya parçalama (saf taşıma) ✅
 - **Amaç:** 2000 satırlık `page.tsx`'i sorumluluk bazlı modüllere bölmek; davranış, görünüm ve depolama birebir aynı kalır.
 - **Yapılacaklar:** `app/` → `src/app/`; `@/*` → `./src/*`. `types`, `constants`, `lib` (format, youtube, markdown, notifications), `store`, `components/*`, `hooks/*`. `App` içindeki mantık hook'lara (`useAppInit`, `usePomodoroTimer`, `useYouTubePlayers`, `useKeyboardShortcuts`, `useFullscreen`) gövdeleri değişmeden taşınır. `page.tsx` yalnızca bileşenleri birleştirir. `any` prop'lar yerine prop arayüzleri yazılır. Prettier ayrı bir commit olarak uygulanır.
 - **Dosyalar:** `src/**`, `tsconfig.json`, ANALYSIS.md §6.

@@ -79,7 +79,7 @@ Ham çıktılar: [docs/baseline/](docs/baseline/)
 
 | ID | Önem | Doğr. | Konum | Açıklama | Önerilen çözüm | Adım |
 |---|---|---|---|---|---|---|
-| B1 | **Yüksek** | ✅ (kodla) | `initMainPlayer`, contentConfig effect'i (L1566), header logo butonu | App → Landing geçişinde `#youtube-main-player` unmount oluyor ama `playerRef` eski player'ı tutmaya devam ediyor ve `destroy` çağrılmıyor. Yeni video seçildiğinde `loadVideoById` ölü player'a gidiyor ve oynatıcı boş kalıyor. Aynı videoya geri dönülürse effect hiç tetiklenmiyor. | `useYouTubePlayer` hook'u: mount'ta create, unmount'ta destroy, ref sıfırlama | 6 |
+| B1 | **Yüksek** | ✅ (Edge'de gözlendi, §7) | `initMainPlayer`, contentConfig effect'i (L1566), header logo butonu | App → Landing geçişinde `#youtube-main-player` unmount oluyor ama `playerRef` eski player'ı tutmaya devam ediyor ve `destroy` çağrılmıyor. Yeni video seçildiğinde `loadVideoById` ölü player'a gidiyor ve oynatıcı boş kalıyor. Aynı videoya geri dönülürse effect hiç tetiklenmiyor. | `useYouTubePlayer` hook'u: mount'ta create, unmount'ta destroy, ref sıfırlama | 6 |
 | B2 | Düşük | 🟡 | YT yükleme effect'i (L1491) | Production'da effect bir kez çalıştığı için script tek. Dev'de StrictMode effect'i iki kez çalıştırıyor ve YT henüz yüklenmediği için **ikinci bir script** ekleniyor. `onYouTubeIframeAPIReady` aynı fonksiyonla eziliyor (bugün zararsız). `setTimeout` polling'i temizlenmiyor; `#youtube-music-player` hep render edildiği için pratikte döngüye girmiyor. | Promise tabanlı tekil `loadYouTubeApi()` | 6 |
 | B3 | **Yüksek** | 🟡 | `initMainPlayer.onStateChange` (L1535) | Ön bulguda tarif edilen stale closure büyük ölçüde zararsız (pId değişince player yeniden kuruluyor). **Asıl hata:** PDF'e geçildiğinde gizli YouTube player durdurulmuyor, ses arkada çalmaya devam ediyor. Playlist sonraki videoya geçerse closure'daki `type === 'video'` yüzünden `setActiveContentId(video_id)` çağrılıyor; PDF açıkken aktif içerik videoya dönüyor ve **notlar/AI içeriği yanlış içeriğe kaydediliyor**. `initMusicPlayer.onReady` de ilk render'daki `musicVolume`/`globalMuted`'ı kullanıyor. | Belge moduna geçerken `pauseVideo`/`destroy`; callback'lerde `useStore.getState()` ya da ref | 6 |
 | B4 | Orta | ✅ | Pomodoro effect'i (L1425), `addPomodoroRecord`, `PomodoroHeatmap` | Effect `timeLeft`'e bağlı olduğu için interval her saniye kurulup sökülüyor. Arka plan sekmesinde `setInterval` kısılıyor (Chrome 5 dk sonra dakikada 1), sayaç ciddi şekilde geri kalıyor. `toISOString()` UTC: Türkiye'de (UTC+3) 00:00–02:59 arası pomodorolar önceki güne yazılıyor; ısı haritası da aynı kayma ile çiziliyor. | Bitiş zaman damgası (`endsAt`) + `Date.now()` farkı; yerel tarih anahtarı | 7 |
@@ -233,4 +233,80 @@ Her adımın sonunda tekrarlanacak. Adım bazında hangi maddelerin otomatik/kod
 
 ## 6. Konum eşlemesi (Adım 2 sonrası)
 
-_Adım 2 tamamlandığında doldurulacak._
+| Orijinal (`app/page.tsx`) | Yeni konum |
+|---|---|
+| `ThemeStyles` (L20) | `src/components/layout/ThemeStyles.tsx` |
+| `declare global Window.YT` (L135) | `src/types/youtube.d.ts` |
+| Arayüzler (L142–170) + yeni `StudyTab`, `TimerMode`, `RadioStation`, `Setter` | `src/types/index.ts` |
+| `RADIO_STATIONS`, `EXAM_LEVELS` | `src/constants/index.ts` |
+| `formatTime` | `src/lib/format.ts` |
+| `extractYTId`, `extractPlaylistId` | `src/lib/youtube.ts` |
+| `NotificationManager` | `src/lib/notifications.ts` |
+| `renderMarkdown` | `src/lib/markdown.ts` |
+| `AppState`, `useStore` (tüm aksiyonlar: `addToHistory`, `clearHistory`, `replaceContentAI`…) | `src/store/useStore.ts` |
+| `PomodoroToast`, `PomodoroHeatmap`, `PomodoroWidget` | `src/components/pomodoro/*` |
+| `SkeletonLoading`, `OfflineBanner`, `BlueLightFilter` | `src/components/ui/*` |
+| `PWAInjector`, `AppInstallModal` | `src/components/pwa/*` |
+| `LandingPage` (`handleStart`, `handleFileUpload`) | `src/components/landing/LandingPage.tsx` |
+| `SettingsPopover`, `ProgressBar` | `src/components/layout/*` |
+| `HistoryModal` | `src/components/history/HistoryModal.tsx` |
+| `RadioWidget` | `src/components/radio/RadioWidget.tsx` |
+| `AIModal` (`handleParseJSON`, prompt şablonu) | `src/components/ai/AIModal.tsx` |
+| `SummaryTab` / `QuizTab` / `FlashcardsTab` | `src/components/{summary,quiz,flashcards}/*` |
+| `App`: header JSX + `handleInstallClick` | `src/components/layout/AppHeader.tsx` |
+| `App`: sağ panel (sekmeler) | `src/components/layout/StudyPanel.tsx` |
+| `App`: notlar sekmesi + `handleExportNotes` | `src/components/notes/NotesTab.tsx` |
+| `App`: URL çubuğu + `handleDashboardUrlChange` / `handleDashboardFileUpload` | `src/components/player/ContentToolbar.tsx` |
+| `App`: video/PDF alanı (`#youtube-main-player`, PDF iframe) | `src/components/player/ContentViewer.tsx` |
+| `App`: playlist kenar çubuğu | `src/components/player/PlaylistSidebar.tsx` |
+| `App`: `pendingDocReload` modalı | `src/components/player/DocReloadModal.tsx` |
+| `App`: meta/title + localStorage yükleme effect'leri | `src/hooks/useAppInit.ts` |
+| `App`: pomodoro state'i + zamanlayıcı effect'i + toast | `src/hooks/usePomodoroTimer.ts` |
+| `App`: `playerRef`, `musicPlayerRef`, `initMainPlayer`, `initMusicPlayer`, API yükleme, içerik senkronu, progress, mute, radyo kontrolleri, `jumpToTime`, `handlePlaylistVideoSelect` | `src/hooks/useYouTubePlayers.ts` |
+| `App`: `Alt+N` / `Ctrl+Space` | `src/hooks/useKeyboardShortcuts.ts` |
+| `App`: tam ekran | `src/hooks/useFullscreen.ts` |
+| `App`: görünümler arası korunan UI state'i + birleştirme | `src/app/page.tsx` |
+
+## 7. Doğrulama kayıtları
+
+### Adım 2: parçalama sonrası davranış eşitliği
+
+Yöntem: Adım 1 commit'i (`1a1d8b2`, ayrı worktree) ve Adım 2 aynı anda production modunda çalıştırıldı. Aynı duman testi (Playwright-core + yerel **Microsoft Edge**, headless, 1440×900 ve 375×812, `tr-TR`, `Europe/Istanbul`) iki sürümde de koşuldu; 16 ekran görüntüsü piksel bazında karşılaştırıldı (iframe'ler maskelendi).
+
+- **31/31 senaryo iki sürümde aynı sonucu verdi.**
+- **16/16 ekran görüntüsü birebir aynı** (0 piksel fark). İlk koşudaki radyo farkı, tıklamanın widget'ın açılış animasyonuyla çakışmasından doğan bir test zamanlaması artefaktıydı; bekleme eklenince kayboldu.
+- localStorage dökümü: anahtar kümesi ve yapı aynı. Tek fark `Date.now()` ile üretilen todo id'si ve oynatılan video saniyesinin kesirli kısmı.
+- Konsol: uygulamadan kaynaklanan hata yok. Görülen tek hata YouTube'un `doubleclick.net` reklam isteğindeki CORS hatası (harici, rastlantısal).
+- **B1 tarayıcıda doğrulandı:** Landing'e dönüp ikinci bir video açıldığında `#youtube-main-player` boş bir `DIV` olarak kalıyor ve oynatıcı oluşmuyor. Davranış iki sürümde de aynı (refactor kaynaklı değil).
+- **B8 tarayıcıda doğrulandı:** `https://example.com` girildiğinde "Desteklenmeyen Format" açılıyor.
+
+| §5 # | Sonuç | Not |
+|---|---|---|
+| 1, 2 | ✅ Edge | |
+| 3, 5 | ✅ Edge | iframe `src` içinde video id ve `start=30` var |
+| 4 | 🟡 | `watch?v=` ve `youtu.be` test edildi; `shorts`/`live` yalnızca regex okumasıyla |
+| 6 | ❌ (beklenen, B1) | iki sürümde aynı |
+| 7, 8, 9 | ⬜ | Gerçek playlist ve hatalı video ID ile manuel test gerekiyor |
+| 10 | ✅ Edge | blob iframe oluşuyor, geçmişe ekleniyor (headless'ta PDF görüntüleyici render'ı görsel olarak doğrulanmadı) |
+| 11, 12, 13 | ⬜ | Manuel |
+| 14 | ⬜ | Ses gerektiriyor (B3) |
+| 15–18 | ✅ Edge | not ekleme, kalın render, `Alt+N` odağı, `.txt` indirme |
+| 19 | ⬜ | Manuel |
+| 20–22 | ✅ Edge | pano içeriği, ```json bloğu içinden içe aktarma, kart=2 quiz=1 |
+| 23, 24 | ⬜ | Manuel |
+| 25, 26 | ✅ Edge | çevirme, çalışma modu, öğrendim, doğru cevap sayacı |
+| 27 | 🟡 Edge | Sayaç ilerliyor (25:00 → 24:58); süre bitişi, ses ve bildirim test edilmedi |
+| 28 | ✅ Edge | |
+| 29 | ✅ Edge | widget, istasyon değişimi, radyo iframe'i (ses doğrulanmadı) |
+| 30, 33, 36, 37, 38 | ⬜ | Manuel (ses, tam ekran, kısayol, çevrimdışı, PWA istemi) |
+| 31, 32 | ✅ Edge | `light-theme` sınıfı + `bmo_theme`, mavi ışık katmanı |
+| 34, 35 | ✅ Edge | tek kayıt silme; temizleme sonrası kalan anahtarlar `bmo_pomodoro`, `bmo_progress`, `bmo_theme`, `bmo_todos` (B6 doğrulandı) |
+| 39 | ✅ Edge | 375 px'te `scrollWidth = innerWidth` (yatay taşma yok); gerçek iOS/Android cihaz test edilmedi |
+| 40 | ✅ | `bmo_*` anahtarlarının kaynak koddaki kullanım sayıları orijinalle birebir aynı (`grep`) |
+
+### Adım 2 sırasında bulunan ek konular
+
+- **K7:** `useYouTubePlayers` ana oynatıcıyla radyoyu birlikte yönetiyor, çünkü ikisi aynı API yükleme effect'i tarafından başlatılıyor. Saf taşıma sırasında ayrılmadı; Adım 6'da `useYouTubePlayer` ve `useRadio` olarak ayrılacak.
+- **K8:** Görünümler arası (landing ↔ app) korunan UI state'i (`newNote`, `videoUrlInput`, `activeTab`, `copyFeedback`…) davranış değişmesin diye `page.tsx`'te tutuluyor ve prop'larla aşağı iniyor. Adım 4/9'da store'un `ui` slice'ına taşınması önerilir.
+- **K9:** `loadedPlaylistRef` hiç kullanılmıyordu, kaldırıldı (davranış etkisi yok).
+- Bütün uygulama hâlâ tek bir client sınırının (`page.tsx`) altında. Server component'e geçirilebilecek anlamlı bir parça yok; landing'in statik kısmı Adım 3'te `layout`/server tarafına alınabilir.
