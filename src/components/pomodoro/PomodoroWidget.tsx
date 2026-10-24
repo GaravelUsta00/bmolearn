@@ -18,7 +18,7 @@ import {
 import { useStore } from '@/store/useStore';
 import { formatTime } from '@/lib/format';
 import { PomodoroHeatmap } from '@/components/pomodoro/PomodoroHeatmap';
-import type { Setter, TimerMode } from '@/types';
+import type { Setter, TimerMode, Id } from '@/types';
 
 interface PomodoroWidgetProps {
   showPomodoroWidget: boolean;
@@ -50,7 +50,7 @@ export const PomodoroWidget = ({
   setIsTimerRunning,
 }: PomodoroWidgetProps) => {
   const { todos, toggleTodo, deleteTodo, addTodo } = useStore();
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<Id | null>(null);
 
   if (!showPomodoroWidget) return null;
   return (

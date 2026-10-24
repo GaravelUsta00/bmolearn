@@ -5,6 +5,7 @@ import { X, Sparkles, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { EXAM_LEVELS } from '@/constants';
 import type { ContentConfig, StudyTab, Setter } from '@/types';
+import { newId } from '@/lib/id';
 
 interface AIModalProps {
   isOpen: boolean;
@@ -68,14 +69,14 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
       if (!parsed.summary && !parsed.cards && !parsed.quiz) throw new Error('Format uyuşmazlığı');
 
       const newCards = (parsed.cards || []).map((c: any) => ({
-        id: Date.now() + Math.random(),
+        id: newId(),
         contentId: activeContentId,
         question: c.question || 'Soru bulunamadı',
         answer: c.answer || 'Cevap bulunamadı',
         learned: false,
       }));
       const newQuiz = (parsed.quiz || []).map((q: any) => ({
-        id: Date.now() + Math.random(),
+        id: newId(),
         contentId: activeContentId,
         question: q.question || 'Soru bulunamadı',
         options: q.options || { A: 'A', B: 'B', C: 'C', D: 'D' },

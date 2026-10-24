@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Bookmark, AlignLeft } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { renderMarkdown } from '@/lib/markdown';
+import { newId } from '@/lib/id';
 
 interface SummaryTabProps {
   activeContentId: string;
@@ -26,7 +27,7 @@ export const SummaryTab = ({ activeContentId }: SummaryTabProps) => {
   };
 
   const handleAddToNotes = () => {
-    addNote({ id: Date.now(), contentId: activeContentId, text: `> ${selectedText}`, time: 0 });
+    addNote({ id: newId(), contentId: activeContentId, text: `> ${selectedText}`, time: 0 });
     setShowPopup(false);
     window.getSelection()?.removeAllRanges();
   };

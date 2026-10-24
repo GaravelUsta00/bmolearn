@@ -1,3 +1,4 @@
+import { newId } from '@/lib/id';
 import type { SliceCreator, PomodoroSlice } from '@/store/types';
 
 export const createPomodoroSlice: SliceCreator<PomodoroSlice> = (set) => ({
@@ -13,7 +14,7 @@ export const createPomodoroSlice: SliceCreator<PomodoroSlice> = (set) => ({
     }),
   addTodo: (text) =>
     set((state) => {
-      const newTodos = [...state.todos, { id: Date.now(), text, completed: false }];
+      const newTodos = [...state.todos, { id: newId(), text, completed: false }];
       return { todos: newTodos };
     }),
   toggleTodo: (id) =>

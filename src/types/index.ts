@@ -1,20 +1,23 @@
 import type { Dispatch, SetStateAction } from 'react';
 
+/** Kayıt kimliği: yeni kayıtlar UUID (string), eski kayıtlar sayı olarak korunur. */
+export type Id = string | number;
+
 export interface Note {
-  id: number;
+  id: Id;
   contentId: string;
   text: string;
   time: number;
 }
 export interface Flashcard {
-  id: number;
+  id: Id;
   contentId: string;
   question: string;
   answer: string;
   learned?: boolean;
 }
 export interface Todo {
-  id: number;
+  id: Id;
   text: string;
   completed: boolean;
 }
@@ -33,7 +36,7 @@ export interface HistoryItem {
   playlistItems?: WatchedVideo[];
 }
 export interface QuizQuestion {
-  id: number;
+  id: Id;
   contentId: string;
   question: string;
   options: { A: string; B: string; C: string; D: string };

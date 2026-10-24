@@ -17,7 +17,9 @@ export const useAppInit = () => {
     if (migration.status === 'failed') useStore.getState().addStorageNotice({ kind: 'migration-failed' });
     if (migration.status === 'unavailable') useStore.getState().addStorageNotice({ kind: 'unavailable' });
 
-    useStore.getState().initData(loadPersistedData());
+    const { data, notices } = loadPersistedData();
+    notices.forEach((n) => useStore.getState().addStorageNotice(n));
+    useStore.getState().initData(data);
     // Yükleme bittikten sonra abone ol: okunan veri geri yazılmasın.
     const stopPersistence = startPersistence(useStore);
 

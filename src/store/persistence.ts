@@ -2,10 +2,11 @@
 // zustand `persist` tek bir anahtara tek blob yazar; BeLearn her veri alanını kendi
 // anahtarında tutar (`<önek>notes`, `<önek>history`, ...). Bu yüzden yazma, store'a
 // abone olup yalnızca referansı değişen alanın anahtarını yazan küçük bir katmanla yapılır.
-import { ACTIVE_PREFIX, type DataKey } from '@/lib/storageKeys';
-import type { AppState, LoadedData, PersistedData } from '@/store/types';
+import { ACTIVE_PREFIX, PREFIX, type DataKey } from '@/lib/storageKeys';
+import { validateRaw } from '@/lib/schemas';
+import type { AppState, LoadedData, PersistedData, StorageNotice } from '@/store/types';
 
-export const PERSISTED_FIELDS: Record<keyof PersistedData, DataKey> = {
+export const PERSISTED_FIELDS: Record<keyof PersistedData, Exclude<DataKey, 'theme'>> = {
   notes: 'notes',
   flashcards: 'flashcards',
   quiz: 'quiz',
@@ -26,19 +27,73 @@ const storage = (): Storage | null => {
   }
 };
 
+export const isQuotaError = (e: unknown) =>
+  e instanceof DOMException &&
+  (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014);
+
 const isEmpty = (v: unknown) =>
   Array.isArray(v) ? v.length === 0 : v !== null && typeof v === 'object' && Object.keys(v).length === 0;
 
-/** Kayıtlı veriyi okur. */
-export const loadPersistedData = (): LoadedData => {
+export interface LoadResult {
+  data: LoadedData;
+  notices: StorageNotice[];
+}
+
+/**
+ * Kayıtlı veriyi okur ve doğrular (S7). Okunamayan bir anahtar ya da geçersiz kayıtlar
+ * uygulamayı kilitlemez:
+ * - ham değer `belearn_backup_<anahtar>_<zaman>` altına kopyalanır (silinmez),
+ * - geçerli kayıtlar korunur, temizlenmiş hali anahtara geri yazılır,
+ * - kullanıcıya hangi verinin etkilendiği söylenir.
+ */
+export const loadPersistedData = (now = Date.now()): LoadResult => {
   const ls = storage();
   const data: Record<string, unknown> = {};
-  if (!ls) return data;
+  const corrupt: DataKey[] = [];
+  const notices: StorageNotice[] = [];
+  if (!ls) return { data, notices: [{ kind: 'unavailable' }] };
+
   for (const field of FIELDS) {
-    const raw = ls.getItem(ACTIVE_PREFIX + PERSISTED_FIELDS[field]);
-    if (raw) data[field] = JSON.parse(raw);
+    const key = PERSISTED_FIELDS[field];
+    const fullKey = ACTIVE_PREFIX + key;
+    let raw: string | null;
+    try {
+      raw = ls.getItem(fullKey);
+    } catch {
+      continue;
+    }
+    if (!raw) continue;
+
+    const result = validateRaw(key, raw);
+    if (result.ok && result.dropped === 0) {
+      data[field] = result.value;
+      continue;
+    }
+
+    corrupt.push(key);
+    let backedUp = false;
+    try {
+      ls.setItem(`${PREFIX}backup_${key}_${now}`, raw);
+      backedUp = true;
+    } catch (e) {
+      if (isQuotaError(e)) notices.push({ kind: 'quota' });
+    }
+    if (result.ok) {
+      data[field] = result.value;
+      // Ham hali yedeklendiyse temiz hali yaz; yoksa ham veriye dokunma.
+      if (backedUp) {
+        try {
+          if (isEmpty(result.value)) ls.removeItem(fullKey);
+          else ls.setItem(fullKey, JSON.stringify(result.value));
+        } catch {
+          /* bir sonraki yazımda yeniden denenir */
+        }
+      }
+    }
   }
-  return data as LoadedData;
+
+  if (corrupt.length) notices.push({ kind: 'corrupt', keys: corrupt });
+  return { data: data as LoadedData, notices };
 };
 
 export const writeThemePreference = (theme: 'dark' | 'light') => {
@@ -51,7 +106,8 @@ export const writeThemePreference = (theme: 'dark' | 'light') => {
 
 /**
  * Store'daki kalıcı alanları izler; değişen alanı kendi anahtarına yazar.
- * Boş liste/nesne anahtarı siler (eski `clearHistory` davranışıyla aynı sonuç).
+ * Boş liste/nesne anahtarı siler. Yazma başarısız olursa (kota) state bellekte
+ * güncel kalır ve kullanıcı uyarılır (B11).
  */
 export const startPersistence = (store: {
   getState: () => AppState;
@@ -68,6 +124,7 @@ export const startPersistence = (store: {
         else ls.setItem(key, JSON.stringify(state[field]));
       } catch (e) {
         console.warn(`${key} kaydedilemedi:`, e);
+        store.getState().addStorageNotice(isQuotaError(e) ? { kind: 'quota' } : { kind: 'unavailable' });
       }
     }
   });

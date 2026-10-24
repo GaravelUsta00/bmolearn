@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { formatTime } from '@/lib/format';
 import { renderMarkdown } from '@/lib/markdown';
 import type { Setter } from '@/types';
+import { newId } from '@/lib/id';
 
 interface NotesTabProps {
   newNote: string;
@@ -121,7 +122,7 @@ export const NotesTab = ({
               contentConfig.type === 'video' && playerRef.current?.getCurrentTime
                 ? playerRef.current.getCurrentTime()
                 : 0;
-            addNote({ id: Date.now(), contentId: activeContentId, text: newNote, time });
+            addNote({ id: newId(), contentId: activeContentId, text: newNote, time });
             setNewNote('');
           }}
           className="relative"
