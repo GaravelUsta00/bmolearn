@@ -60,3 +60,5 @@ export const usePomodoroTimer = () => {
     setIsTimerRunning,
   };
 };
+
+export type PomodoroState = ReturnType<typeof usePomodoroTimer>;

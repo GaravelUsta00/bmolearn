@@ -109,13 +109,12 @@ export default function App() {
           />
 
           <AppHeader
+            pomodoro={pomodoro}
+            setShowPomodoroWidget={setShowPomodoroWidget}
             showPlaylistSidebar={showPlaylistSidebar}
             setShowPlaylistSidebar={setShowPlaylistSidebar}
             setShowHistory={setShowHistory}
             setShowInstallModal={setShowInstallModal}
-            showPomodoroWidget={showPomodoroWidget}
-            setShowPomodoroWidget={setShowPomodoroWidget}
-            isTimerRunning={pomodoro.isTimerRunning}
             showMusicWidget={showMusicWidget}
             setShowMusicWidget={setShowMusicWidget}
             isMusicPlaying={player.isMusicPlaying}

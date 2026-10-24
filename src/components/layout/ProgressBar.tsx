@@ -11,17 +11,19 @@ export const ProgressBar = () => {
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
 
   return (
-    <div className="flex flex-col w-28 sm:w-40 gap-1.5 mr-2">
-      <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-bold tracking-wider uppercase">
-        <span>İlerleme</span>
-        <span className="text-[#FF8C00]">{percentage}%</span>
+    <div className="flex items-center gap-3">
+      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">İlerleme</span>
+      <div
+        className="h-0.5 flex-1 bg-rule"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percentage}
+        aria-label="İlerleme"
+      >
+        <div className="h-full bg-ribbon transition-[width] duration-700" style={{ width: `${percentage}%` }}></div>
       </div>
-      <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden shadow-inner">
-        <div
-          className="h-full bg-[#FF8C00] transition-all duration-700 shadow-[0_0_10px_rgba(255,140,0,0.8)]"
-          style={{ width: `${percentage}%` }}
-        ></div>
-      </div>
+      <span className="font-mono text-[11px] tabular-nums text-ink">{percentage}%</span>
     </div>
   );
 };

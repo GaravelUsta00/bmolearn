@@ -1,36 +1,78 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
 import {
-  Moon,
-  Sun,
+  History,
+  ListVideo,
   Maximize,
+  Menu,
   Minimize,
-  BookOpen,
+  Moon,
+  Music,
+  Radio,
+  SlidersHorizontal,
+  Sun,
   Volume2,
   VolumeX,
-  Bookmark,
-  Music,
-  Timer,
-  Radio,
-  History,
-  Download,
-  Target,
-  ListVideo,
+  X,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { useDismiss } from '@/hooks/useDismiss';
 import { Logo } from '@/components/ui/Logo';
-import { ProgressBar } from '@/components/layout/ProgressBar';
-import { SettingsPopover } from '@/components/layout/SettingsPopover';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { PomodoroControl } from '@/components/pomodoro/PomodoroControl';
+import { SettingsContent } from '@/components/layout/SettingsMenu';
+import type { PomodoroState } from '@/hooks/usePomodoroTimer';
 import type { Setter } from '@/types';
 
+interface IconButtonProps {
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  expanded?: boolean;
+  children: ReactNode;
+}
+
+const IconButton = ({ label, onClick, pressed, expanded, children }: IconButtonProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    aria-pressed={pressed}
+    aria-expanded={expanded}
+    className={`inline-flex h-11 w-11 items-center justify-center rounded-sm hover:text-ink ${pressed ? 'text-ribbon' : 'text-mute'}`}
+  >
+    {children}
+  </button>
+);
+
+interface MenuRowProps {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+}
+
+const MenuRow = ({ icon, label, onClick, pressed }: MenuRowProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={pressed}
+    className={`flex min-h-11 w-full items-center gap-3 text-left text-sm hover:text-ink ${pressed ? 'text-ribbon' : 'text-ink'}`}
+  >
+    <span className="text-mute">{icon}</span>
+    {label}
+  </button>
+);
+
 interface AppHeaderProps {
+  pomodoro: PomodoroState;
+  setShowPomodoroWidget: Setter<boolean>;
   showPlaylistSidebar: boolean;
   setShowPlaylistSidebar: Setter<boolean>;
   setShowHistory: Setter<boolean>;
   setShowInstallModal: Setter<boolean>;
-  showPomodoroWidget: boolean;
-  setShowPomodoroWidget: Setter<boolean>;
-  isTimerRunning: boolean;
   showMusicWidget: boolean;
   setShowMusicWidget: Setter<boolean>;
   isMusicPlaying: boolean;
@@ -39,21 +81,23 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({
+  pomodoro,
+  setShowPomodoroWidget,
   showPlaylistSidebar,
   setShowPlaylistSidebar,
   setShowHistory,
   setShowInstallModal,
-  showPomodoroWidget,
-  setShowPomodoroWidget,
-  isTimerRunning,
   showMusicWidget,
   setShowMusicWidget,
   isMusicPlaying,
   isFocusMode,
   toggleFocusMode,
 }: AppHeaderProps) => {
-  const { theme, setTheme, globalMuted, notes, flashcards, quiz, installPrompt, playlistItems, toggleGlobalMute } =
-    useStore();
+  const { theme, setTheme, globalMuted, installPrompt, playlistItems, toggleGlobalMute } = useStore();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const settingsRef = useDismiss<HTMLDivElement>(settingsOpen, () => setSettingsOpen(false));
+  const menuRef = useDismiss<HTMLDivElement>(menuOpen, () => setMenuOpen(false));
 
   const handleInstallClick = () => {
     if (installPrompt) {
@@ -64,106 +108,137 @@ export const AppHeader = ({
     }
   };
 
+  const hasPlaylist = playlistItems.length > 0;
+  const radioLabel = isMusicPlaying ? 'Odak radyosu (çalıyor)' : 'Odak radyosu';
+  const nextThemeLabel = theme === 'dark' ? 'Gündüz' : 'Gece';
+  const closeMenuAnd = (fn: () => void) => () => {
+    setMenuOpen(false);
+    fn();
+  };
+
   return (
-    <header
-      className={`flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] bg-[var(--card)] sticky top-0 z-40 backdrop-blur-xl gap-3`}
-    >
-      <div className="flex items-center gap-3 sm:gap-6">
+    <header className="sticky top-0 z-40 border-b border-rule bg-page">
+      <div className="mx-auto flex w-full max-w-[1700px] items-center justify-between gap-3 px-3 py-1.5 sm:px-6">
         <button
+          type="button"
           onClick={() => useStore.getState().setView('landing')}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
+          className="min-h-11 px-1 hover:opacity-80"
+          aria-label="BeLearn ana sayfa"
         >
-          <Logo className="text-xl sm:text-2xl" />
+          <Logo className="text-xl" />
         </button>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <div className="hidden md:block mr-2 border-r border-[var(--border)] pr-4">
-          <ProgressBar />
+        <div className="flex items-center gap-1 sm:gap-2">
+          <PomodoroControl pomodoro={pomodoro} onOpenWidget={() => setShowPomodoroWidget(true)} />
+
+          {/* Masaüstü: ikon düğmeleri */}
+          <div className="ml-2 hidden items-center gap-0.5 border-l border-rule pl-2 sm:flex">
+            {hasPlaylist && (
+              <IconButton
+                label="Oynatma listesi"
+                pressed={showPlaylistSidebar}
+                onClick={() => setShowPlaylistSidebar(!showPlaylistSidebar)}
+              >
+                <ListVideo size={18} strokeWidth={1.5} />
+              </IconButton>
+            )}
+            <ThemeToggle />
+            <IconButton label="Geçmiş" onClick={() => setShowHistory(true)}>
+              <History size={18} strokeWidth={1.5} />
+            </IconButton>
+            <IconButton
+              label={radioLabel}
+              pressed={showMusicWidget}
+              onClick={() => setShowMusicWidget(!showMusicWidget)}
+            >
+              {isMusicPlaying ? <Radio size={18} strokeWidth={1.5} /> : <Music size={18} strokeWidth={1.5} />}
+            </IconButton>
+            <IconButton label="Tüm sesleri kapat" pressed={globalMuted} onClick={toggleGlobalMute}>
+              {globalMuted ? <VolumeX size={18} strokeWidth={1.5} /> : <Volume2 size={18} strokeWidth={1.5} />}
+            </IconButton>
+            <IconButton label="Tam ekran" pressed={isFocusMode} onClick={toggleFocusMode}>
+              {isFocusMode ? <Minimize size={18} strokeWidth={1.5} /> : <Maximize size={18} strokeWidth={1.5} />}
+            </IconButton>
+            <div ref={settingsRef} className="relative">
+              <IconButton label="Ayarlar" expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>
+                <SlidersHorizontal size={18} strokeWidth={1.5} />
+              </IconButton>
+              {settingsOpen && (
+                <div
+                  role="dialog"
+                  aria-label="Ayarlar"
+                  className="absolute right-0 top-full z-50 mt-2 w-72 animate-fade rounded-sm border border-rule bg-page p-4 shadow-page"
+                >
+                  <SettingsContent onInstall={handleInstallClick} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobil: tek "Menü" düğmesi */}
+          <div ref={menuRef} className="relative sm:hidden">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-expanded={menuOpen}
+              className="inline-flex min-h-11 items-center gap-1.5 px-2 font-mono text-xs uppercase tracking-[0.12em] text-mute hover:text-ink"
+            >
+              {menuOpen ? <X size={16} strokeWidth={1.5} /> : <Menu size={16} strokeWidth={1.5} />}
+              Menü
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-1.5rem))] animate-fade rounded-sm border border-rule bg-page p-4 shadow-page">
+                <div className="divide-y divide-rule">
+                  {hasPlaylist && (
+                    <MenuRow
+                      icon={<ListVideo size={16} strokeWidth={1.5} />}
+                      label="Oynatma listesi"
+                      pressed={showPlaylistSidebar}
+                      onClick={closeMenuAnd(() => setShowPlaylistSidebar(!showPlaylistSidebar))}
+                    />
+                  )}
+                  <MenuRow
+                    icon={theme === 'dark' ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
+                    label={`${nextThemeLabel} teması`}
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  />
+                  <MenuRow
+                    icon={<History size={16} strokeWidth={1.5} />}
+                    label="Geçmiş"
+                    onClick={closeMenuAnd(() => setShowHistory(true))}
+                  />
+                  <MenuRow
+                    icon={
+                      isMusicPlaying ? <Radio size={16} strokeWidth={1.5} /> : <Music size={16} strokeWidth={1.5} />
+                    }
+                    label={radioLabel}
+                    pressed={showMusicWidget}
+                    onClick={closeMenuAnd(() => setShowMusicWidget(!showMusicWidget))}
+                  />
+                  <MenuRow
+                    icon={
+                      globalMuted ? <VolumeX size={16} strokeWidth={1.5} /> : <Volume2 size={16} strokeWidth={1.5} />
+                    }
+                    label={globalMuted ? 'Sesleri aç' : 'Tüm sesleri kapat'}
+                    pressed={globalMuted}
+                    onClick={toggleGlobalMute}
+                  />
+                  <MenuRow
+                    icon={
+                      isFocusMode ? <Minimize size={16} strokeWidth={1.5} /> : <Maximize size={16} strokeWidth={1.5} />
+                    }
+                    label="Tam ekran"
+                    pressed={isFocusMode}
+                    onClick={closeMenuAnd(toggleFocusMode)}
+                  />
+                </div>
+                <div className="mt-3 border-t border-rule pt-3">
+                  <SettingsContent onInstall={closeMenuAnd(handleInstallClick)} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
-        <div
-          className={`hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-full bg-[var(--card-solid)] border border-[var(--border)] text-xs font-medium mr-2 transition-all`}
-        >
-          <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Notlar">
-            <Bookmark size={14} /> {notes.length}
-          </span>
-          <span className={`w-1 h-1 rounded-full text-[var(--text-muted)]`}></span>
-          <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Kartlar">
-            <BookOpen size={14} /> {flashcards.length}
-          </span>
-          <span className={`w-1 h-1 rounded-full text-[var(--text-muted)]`}></span>
-          <span className="flex items-center gap-1.5 text-[#FF8C00]" title="Quiz Soruları">
-            <Target size={14} /> {quiz.length}
-          </span>
-        </div>
-
-        {playlistItems.length > 0 && (
-          <button
-            onClick={() => setShowPlaylistSidebar(!showPlaylistSidebar)}
-            className={`p-2 sm:p-2.5 rounded-xl transition-all ${showPlaylistSidebar ? 'bg-[var(--primary-muted)] text-[#FF8C00] border border-[#FF8C00]/30' : 'hover:bg-[var(--hover-bg)] text-[var(--text-muted)] hover:text-[#FF8C00]'}`}
-            title="Oynatma Listesi"
-          >
-            <ListVideo size={18} />
-          </button>
-        )}
-
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className={`p-2 sm:p-2.5 rounded-xl hover:bg-[var(--hover-bg)] text-[var(--text-muted)] hover:text-[#FF8C00] transition-colors`}
-          title="Temayı Değiştir"
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        <button
-          onClick={handleInstallClick}
-          className={`p-2 sm:p-2.5 rounded-xl hover:bg-[var(--hover-bg)] text-[var(--text-muted)] hover:text-[#FF8C00] transition-colors`}
-          title="Ana Ekrana Ekle"
-        >
-          <Download size={18} />
-        </button>
-
-        <button
-          onClick={() => setShowHistory(true)}
-          className={`p-2 sm:p-2.5 rounded-xl hover:bg-[var(--hover-bg)] text-[var(--text-muted)] transition-colors`}
-          title="Geçmiş"
-        >
-          <History size={18} />
-        </button>
-        <SettingsPopover />
-        <div className={`hidden sm:block w-px h-5 border-[var(--border)] mx-1`}></div>
-
-        <button
-          onClick={() => setShowPomodoroWidget(!showPomodoroWidget)}
-          className={`p-2 sm:p-2.5 rounded-xl transition-all ${showPomodoroWidget || isTimerRunning ? 'bg-[var(--primary-muted)] text-[#FF8C00]' : `hover:bg-[var(--hover-bg)] text-[var(--text-muted)]`}`}
-          title="Odak ve Görevler"
-        >
-          <Timer size={18} className={isTimerRunning ? 'animate-pulse' : ''} />
-        </button>
-
-        <button
-          onClick={() => setShowMusicWidget(!showMusicWidget)}
-          className={`p-2 sm:p-2.5 rounded-xl transition-all ${showMusicWidget ? 'bg-[var(--primary-muted)] text-[#FF8C00]' : `hover:bg-[var(--hover-bg)] text-[var(--text-muted)]`}`}
-          title="Odak Radyosu"
-        >
-          {isMusicPlaying ? <Radio className="animate-pulse" size={18} /> : <Music size={18} />}
-        </button>
-        <button
-          onClick={toggleGlobalMute}
-          className={`p-2.5 rounded-xl hover:bg-[var(--hover-bg)] ${globalMuted ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
-          title="Tüm Sesleri Sustur (Mute)"
-        >
-          {globalMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
-
-        <button
-          onClick={toggleFocusMode}
-          className={`p-2.5 rounded-xl hover:bg-[var(--hover-bg)] ${isFocusMode ? 'text-[#FF8C00]' : 'text-[var(--text-muted)]'}`}
-          title="Tam Ekran (F11)"
-        >
-          {isFocusMode ? <Minimize size={18} /> : <Maximize size={18} />}
-        </button>
       </div>
     </header>
   );
