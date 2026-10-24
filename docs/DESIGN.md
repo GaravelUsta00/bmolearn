@@ -32,6 +32,10 @@ Aşağıdakiler hiçbir bileşende kullanılmaz. Her adımın sonunda §11'deki 
 
 `src/app/globals.css` içinde tanımlanır. Tema `<html data-theme="light|dark">` özniteliğiyle seçilir. Tailwind'e `@theme inline` ile bağlanır (`bg-page`, `text-ink`, `border-rule`…). Bileşenlerde `[var(--x)]` ya da hex **kullanılmaz**.
 
+**Zorlama:** Tailwind'in varsayılan renk paleti, köşe ve gölge ölçekleri `@theme { --color-*: initial; --radius-*: initial; --shadow-*: initial; }` ile kapalıdır. `text-white`, `bg-blue-500`, `rounded-xl` gibi bir sınıf yazılırsa CSS üretilmez.
+
+**Tek sabit kopya:** `<meta name="theme-color">` ve PWA manifest'i CSS değişkeni okuyamadığı için `src/constants/theme.ts` (`THEME_COLORS`) token değerlerinin kopyasını tutar; globals.css ile senkron tutulmalıdır.
+
 | Token | Gündüz | Gece | Kullanım |
 |---|---|---|---|
 | `paper` | `#E8E6DD` | `#141210` | Sayfa zemini (masa) |
@@ -106,14 +110,15 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 | `label` | DM Mono 0.6875–0.75rem, BÜYÜK HARF, `letter-spacing: .12em` | Etiketler, sekme sayaçları |
 | `timer` | DM Mono, `font-variant-numeric: tabular-nums` | Pomodoro, zaman damgaları |
 
-- **Logo:** metin olarak "Be" düz + "*Learn*" italik (Literata), `ink` rengi. `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
+- **Logo:** metin olarak "Be" düz + "*Learn*" italik (Literata), `ink` rengi (`<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
+- **Yer tutucu ikon** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de üretildi; gerçek ikon gelince `public/icons/` ve `src/app/{favicon.ico,apple-icon.png}` değiştirilir.
 - Türkçe büyük harf dönüşümü için `lang="tr"` zorunlu (`i` → `İ` doğru dönüşsün).
 
 ## 6. Şekil, çizgi, gölge, boşluk
 
 - **Köşe yuvarlaklığı yalnızca iki değer:** `--radius: 2px` (her şey) ve `--radius-pill: 9999px` (yalnızca tam yuvarlak düğmeler ve çipler). Tailwind'de `rounded-sm` → 2px, `rounded-full`; diğer tüm `rounded-*` yasak.
 - **Çizgi:** 1px. Dekoratif ayırıcılar `rule`, etkileşimli sınırlar `mute`, aktif/odak `ribbon`.
-- **Gölge:** yalnızca kitap/kart yüzeylerinde (sağ panel "sayfa", flashcard, modal, widget, kitap sırtı). Tek bir hafif gölge: `0 1px 2px var(--shadow)`. Panel için ek olarak hafif iç gölge (`inset 0 0 0 1px var(--rule)` + sayfa kenarı hissi). Düğmelerde gölge yok.
+- **Gölge:** yalnızca kitap/kart yüzeylerinde (sağ panel "sayfa", flashcard, modal, widget, kitap sırtı). Tek bir hafif gölge: `shadow-page` = `0 1px 2px var(--shadow)`. Kitap sırtları `<button>` olsa da kitap yüzeyi sayılır ve gölgelidir. Panel için ek olarak hafif iç gölge (`inset 0 0 0 1px var(--rule)` + sayfa kenarı hissi). Düğmelerde gölge yok.
 - **Boşluk:** 4px tabanlı ölçek; bölümler arası cömert (≥ 48px masaüstü). Hiyerarşi boyut ve boşlukla kurulur, renk ve kutuyla değil.
 - **Odak halkası:** `outline: 2px solid var(--ribbon); outline-offset: 2px` (`:focus-visible`). Hiçbir yerde `outline: none` tek başına kullanılmaz.
 - **Dokunma hedefi:** ≥ 44×44 px (mobil); görsel ikon küçük olsa da tıklama alanı büyük.
@@ -195,7 +200,7 @@ Tek bir bölünmüş kontrol:
 ### 8.5 Widget'lar ve modallar
 
 Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
-- `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `ink` (bulanıklık yok). Açılış/kapanış yalnızca 150 ms solma (§7.5).
+- `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `plate` (bulanıklık yok; `ink` gece temasında açık renk olduğu için örtüde kullanılmaz). Açılış/kapanış yalnızca 150 ms solma (§7.5).
 - Başlık Literata, etiketler DM Mono.
 - Pomodoro: büyük DM Mono sayaç; "Odak" ve "Mola" modları renkle değil **metinle** ayrılır (mavi yok). Isı haritası `ribbon` opaklık basamaklarıyla.
 - Radyo: çalma durumu metinle ("Çalıyor" / "Duraklatıldı"); ekolayzer animasyonu yok.
@@ -231,7 +236,7 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 grep -rEn "backdrop-blur|blur-\[|animate-(blob|float|subtle-glow|bounce|pulse)|gradient" src
 grep -rEin "ff8c00|ea580c|orange-[0-9]|255, ?140, ?0" src      # istisna: --filter-warm tanımı
 grep -rEn "rounded-(xl|2xl|3xl|lg|md|\[)" src
-grep -rEn "#[0-9a-fA-F]{3,8}\b|rgba?\(" src --include=*.tsx     # bileşenlerde sabit renk
+grep -rEn "#[0-9a-fA-F]{3,8}\b|rgba?\(" src --include=*.tsx     # bileşenlerde sabit renk (constants/theme.ts hariç)
 grep -rEin "\bbmo\b|bmo learn|BMO" src public README.md          # istisna: bmo_* depolama anahtarları ve migrasyon kodu
 ```
 

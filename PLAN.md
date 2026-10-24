@@ -24,7 +24,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 3 — Güvenlik yükseltmesi, marka, tasarım altyapısı, Landing ve üst çubuk
+## Adım 3 — Güvenlik yükseltmesi, marka, tasarım altyapısı, Landing ve üst çubuk ✅
+
+> **Tamamlandı (2026-10-24):** 3a–3g commit'lendi. `npm audit` 0 açık; duman testi v2 45/45 geçti. Ayrıntılı kayıt, sapmalar (yer tutucu ikonlar 3d'de, sekme şeridi 3f'de, kapanış solması Adım 9'da) ve bilinçli davranış değişiklikleri: [ANALYSIS.md §7, Adım 3](ANALYSIS.md#adım-3-güvenlik-yükseltmesi-marka-tasarım-altyapısı).
 
 **Amaç:** Kritik açığı kapatmak; BeLearn markasına ve yeni tasarım sistemine geçmek; cam efekti ve turuncuyu tamamen kaldırmak; tema/FOUC ve stil bulgularını (T1–T7, B18–B20) çözmek.
 
@@ -311,7 +313,7 @@ Dal: `refactor/bmo-optimizasyon`.
 
 **Yapılacaklar:**
 - `src/app/manifest.ts`: `name`/`short_name` "BeLearn", `theme_color`/`background_color` token'lardan.
-- **Yer tutucu ikonlar:** "Be*L*" metin logosundan üretilen 192, 512 ve maskable PNG ile favicon. Kullanıcıya bilgi verilir; sonra gerçek ikonla değiştirilebilir.
+- **Yer tutucu ikonlar:** Adım 3d'de üretildi (`public/icons/`, `src/app/favicon.ico`, `src/app/apple-icon.png`). Bu adımda yalnızca `manifest.ts`'e bağlanır; gerçek ikon gelirse dosyalar değiştirilir.
 - Service worker: uygulama kabuğu önbelleği, YouTube önbelleklenmez, sürümleme + güncelleme bildirimi. `PWAInjector` kaldırılır (W1).
 - Bildirim ikonu yer tutucu ikonla geri gelir.
 - **Testler:**

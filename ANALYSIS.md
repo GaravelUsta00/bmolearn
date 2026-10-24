@@ -313,6 +313,58 @@ Yöntem: Adım 1 commit'i (`1a1d8b2`, ayrı worktree) ve Adım 2 aynı anda prod
 - **K9:** `loadedPlaylistRef` hiç kullanılmıyordu, kaldırıldı (davranış etkisi yok).
 - Bütün uygulama hâlâ tek bir client sınırının (`page.tsx`) altında. Server component'e geçirilebilecek anlamlı bir parça yok; landing'in statik kısmı Adım 3'te `layout`/server tarafına alınabilir.
 
+### Adım 3: güvenlik yükseltmesi, marka, tasarım altyapısı
+
+Commit'ler: `f953a0e` (3a) · `fae5947` (3b) · `7c02931` (3c) · `045d0c1` + `960afe1` (3d) · `030587a` (3e) · `281fff6` (3f) · `a7e0f13` + `a0fd956` (3g).
+
+**3a kapısı:** `next` 16.2.1 → 16.4.3 ve `eslint-config-next` 16.4.3; `npm audit fix` (source-map-js). Sonuç: `npm audit` **0 açık**. Duman testi 31/31 geçti; 16/16 ekran görüntüsü Adım 2 ile piksel piksel aynı (yükseltme görünümü değiştirmedi).
+
+**Adım sonu doğrulaması:** Duman testi v2 (Edge, yeni arayüze uyarlandı ve genişletildi) **45/45** geçti. Uygulamadan kaynaklanan konsol hatası yok. Yeni kontroller:
+
+| Kontrol | Sonuç |
+|---|---|
+| FOUC: `bmo_theme=light` ile `DOMContentLoaded` anında `data-theme=light` | ✅ |
+| OS koyu + uygulama Gündüz: zemin `rgb(232,230,221)` | ✅ (T2) |
+| Kayıt yoksa OS tercihi uygulanıyor ve tercih kaydedilmiyor | ✅ |
+| `prefers-reduced-motion`: başlık animasyonu ~0 ms | ✅ |
+| Landing yalnızca DESIGN §8.1 öğeleri; ilovepdf bağlantısı ve "Sadece PDF" metni yok | ✅ |
+| Kitaplık rafı: 3 sırt, "Koleksiyon · 1 video" | ✅ |
+| "Tüm geçmiş" → modal → seçim çalışma ekranını açıyor | ✅ |
+| Panel ve video aynı hizada başlıyor (grid, T3) | ✅ (163 px / 163 px) |
+| Sekme sayaçları içerik bazlı | ✅ |
+| Not dosyası "BeLearn — Çalışma Notları" ile başlıyor | ✅ |
+| Üst çubukta "Odaklan" sayacı başlatıyor; panelde +1 dk → 26:00, 50/10 → 50:00; widget ile aynı süre | ✅ |
+| Ayarlar: mavi ışık çalışıyor, Escape ile kapanıyor | ✅ |
+| Ses düğmesi `aria-pressed` | ✅ |
+| 375 px: yatay taşma yok, mobil menüde tüm işlemler var, üst çubuk dokunma hedefleri ≥ 44 px | ✅ |
+| "Tümünü temizle" (artık modalda) | ✅ (onay hâlâ yok; B6 → Adım 9) |
+| DESIGN §11 kalıp taraması | ✅ (tek eşleşme: istisna olan `--filter-warm`) |
+| Kaynaktaki her renk/köşe/gölge sınıfı CSS üretiyor | ✅ (geçersiz sınıfla denenerek doğrulandı) |
+| Kullanıcıya görünen "BMO" | ✅ yok (yalnızca `bmo_*` anahtarları) |
+
+**Çözülen bulgular:** K2, K3, T1, T2, T3, T4, T5, T6, T7, B18, B19, B20. Bunlara ek olarak P2 (`ThemeStyles` kaldırıldı) ve A2'nin üst çubuk kısmı (`aria-label`, `aria-pressed`, `aria-expanded`, Escape).
+
+**Bilinçli davranış değişiklikleri** (işlev kaybı yok):
+1. Tema, kullanıcı seçene kadar **kaydedilmiyor**; OS tercihini izliyor. Eskiden ilk açılışta OS tercihi `bmo_theme`'e yazılıyordu. (DESIGN §4)
+2. Yapay 500 ms bekleme ve iskelet ekranı kalktı; Landing doğrudan prerender ediliyor.
+3. "Geçmişi Temizle" Landing'den kalktı ve yalnızca Geçmiş modalında (karar #3). Modal artık Landing'den de açılıyor ve seçim çalışma ekranına geçiyor.
+4. Üst çubuktaki toplam not/kart/soru sayaçları, içerik bazlı sekme sayaçlarına dönüştü. İlerleme çubuğu panelin içine taşındı (karar #2).
+5. Pomodoro widget'ı artık üst çubuktaki süre düğmesiyle değil, ayar panelindeki "Görevler ve harita →" bağlantısıyla açılıyor. Sayaç üst çubuktan doğrudan başlatılabiliyor (karar #6).
+6. Playlist kenar çubuğu açılıp kapanırken genişlik animasyonu yok (DESIGN §7).
+7. Tema geçişi anlık; 0.4 s'lik renk geçişi kalktı.
+
+**Plandan sapmalar:**
+- **Yer tutucu ikonlar Adım 10 yerine 3d'de üretildi.** Mevcut `favicon.ico` turuncu BMO logosuydu; ya eski logo görünmeye devam edecekti ya da PWA ikonları kırılacaktı. `manifest.ts` ve service worker yine Adım 10'da.
+- **Sekme şeridi altı çizgili metne Adım 9 yerine 3f'de geçti.** Sayaçları eklemek için zaten değiştiriliyordu; 3g'nin mekanik boyaması dolu bordo sekmeler üretecekti. Panelin geri kalanı Adım 9'da.
+- Modal ve widget'larda **açılış** 150 ms solma ile yapılıyor. **Kapanış** solması, modallar ortak `<Modal>` bileşenine taşınınca (Adım 9) eklenecek; şu an kapanış anında.
+
+**Adım 3 sırasında bulunan ek konular:**
+- **K10:** `README.md` karışık kodlamalıydı (UTF-8 metin + sona eklenmiş UTF-16 satır); bu yüzden `grep` içeriği göremiyordu. UTF-8 olarak yeniden yazıldı.
+- **K11:** `src/app/favicon.ico` turuncu BMO logosuydu (görsel incelemeyle bulundu). Değiştirildi.
+- **K12:** Taban stiller katmansız CSS'teyken Tailwind'in `@layer utilities` sınıflarını eziyordu (ör. `focus:outline-none`). `@layer base`'e alındı.
+- **K13:** Turbopack, ICO içindeki PNG'lerin RGBA olmasını şart koşuyor; RGB PNG'li favicon build'i kırıyor. İkonlar RGBA olarak üretildi.
+- **W1 (değişmedi):** Manifest hâlâ `blob:` URL ile ekleniyor; `start_url` ve ikon adresleri mutlak URL'ye çevrildi ama kurulabilirlik Adım 10'a kadar garanti değil.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.
