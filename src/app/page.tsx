@@ -76,7 +76,9 @@ export default function App() {
       {view === 'landing' && <LandingPage />}
 
       {view === 'app' && (
-        <div className={`min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-400 animate-fade-in relative overflow-x-hidden`}>
+        <div
+          className={`min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-400 animate-fade-in relative overflow-x-hidden`}
+        >
           <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
           <AIModal
             isOpen={showAIModal}
@@ -126,7 +128,9 @@ export default function App() {
             toggleFocusMode={toggleFocusMode}
           />
 
-          <main className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 w-full max-w-[1700px] mx-auto relative z-0`}>
+          <main
+            className={`flex-1 flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 sm:gap-6 w-full max-w-[1700px] mx-auto relative z-0`}
+          >
             <div className={`flex flex-col flex-1 transition-all duration-500 ease-in-out w-full`}>
               <ContentToolbar
                 videoUrlInput={videoUrlInput}

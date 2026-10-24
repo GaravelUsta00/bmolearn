@@ -9,4 +9,4 @@ export const RADIO_STATIONS: RadioStation[] = [
   { id: 'Fru_Ss-TqgY', title: 'Karadeniz Akustik', category: 'Yöresel & Akustik' },
 ];
 
-export const EXAM_LEVELS = ["KPSS Lisans", "TYT-AYT", "Vize Sınavı", "Final Sınavı", "Genel Çalışma"];
+export const EXAM_LEVELS = ['KPSS Lisans', 'TYT-AYT', 'Vize Sınavı', 'Final Sınavı', 'Genel Çalışma'];

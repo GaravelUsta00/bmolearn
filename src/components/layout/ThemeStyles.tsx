@@ -1,8 +1,9 @@
 'use client';
 
-
 export const ThemeStyles = () => (
-  <style dangerouslySetInnerHTML={{__html: `
+  <style
+    dangerouslySetInnerHTML={{
+      __html: `
     :root {
       --bg: #09090b;
       --bg-secondary: #000000;
@@ -110,5 +111,7 @@ export const ThemeStyles = () => (
       100% { transform: translateX(50px) scale(0.9); opacity: 0; filter: blur(2px); }
     }
     .animate-todo-complete { animation: taskComplete 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: none; }
-  `}} />
+  `,
+    }}
+  />
 );
