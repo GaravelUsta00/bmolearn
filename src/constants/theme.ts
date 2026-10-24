@@ -5,8 +5,10 @@ export const THEME_COLORS = {
   dark: { paper: '#141210', page: '#1D1A17', ink: '#ECE6DA', ribbon: '#D2604A' },
 } as const;
 
-export const THEME_STORAGE_KEY = 'bmo_theme';
+export const THEME_STORAGE_KEY = 'belearn_theme';
+// Migrasyondan önce açılırsa (ör. ilk açılış) eski anahtar da okunur; asla yazılmaz.
+export const LEGACY_THEME_STORAGE_KEY = 'bmo_theme';
 
 // <head> içinde, ilk boyamadan önce çalışır (FOUC önleme). Kayıtlı seçim yoksa
 // işletim sistemi tercihi kullanılır; tercih kaydedilmez (kullanıcı seçene kadar OS'u izler).
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}var d=document.documentElement;d.setAttribute('data-theme',t);d.style.colorScheme=t}catch(e){}})()`;
+export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}')||localStorage.getItem('${LEGACY_THEME_STORAGE_KEY}');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}var d=document.documentElement;d.setAttribute('data-theme',t);d.style.colorScheme=t}catch(e){}})()`;

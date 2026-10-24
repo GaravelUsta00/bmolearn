@@ -3,8 +3,8 @@
 export const LEGACY_PREFIX = 'bmo_';
 export const PREFIX = 'belearn_';
 
-// Uygulamanın şu an okuyup yazdığı önek.
-export const ACTIVE_PREFIX = LEGACY_PREFIX;
+// Uygulamanın okuyup yazdığı önek (Adım 4c'den itibaren `belearn_`).
+export const ACTIVE_PREFIX = PREFIX;
 
 // Her anahtarın son eki (önek hariç). Biçimleri ANALYSIS.md §1'deki tabloda.
 export const DATA_KEYS = [

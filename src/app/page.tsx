@@ -23,6 +23,7 @@ import { PomodoroWidget } from '@/components/pomodoro/PomodoroWidget';
 import { RadioWidget } from '@/components/radio/RadioWidget';
 import { DocReloadModal } from '@/components/player/DocReloadModal';
 import { BackupDialog } from '@/components/backup/BackupDialog';
+import { StorageNotices } from '@/components/ui/StorageNotices';
 import { ContentToolbar } from '@/components/player/ContentToolbar';
 import { ContentViewer } from '@/components/player/ContentViewer';
 import { PlaylistSidebar } from '@/components/player/PlaylistSidebar';
@@ -83,6 +84,7 @@ export default function App() {
 
       <DocReloadModal />
       <BackupDialog />
+      <StorageNotices />
       <HistoryModal showHistory={showHistory} setShowHistory={setShowHistory} />
 
       {view === 'landing' && <LandingPage onShowHistory={() => setShowHistory(true)} />}
