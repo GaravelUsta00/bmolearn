@@ -1,0 +1,92 @@
+'use client';
+
+import { type RefObject } from 'react';
+import { Plus, Trash2, Bookmark, Download } from 'lucide-react';
+import { useStore } from '@/store/useStore';
+import { formatTime } from '@/lib/format';
+import { renderMarkdown } from '@/lib/markdown';
+import type { Setter } from '@/types';
+
+interface NotesTabProps {
+  newNote: string;
+  setNewNote: Setter<string>;
+  noteInputRef: RefObject<HTMLInputElement | null>;
+  copyFeedback: boolean;
+  setCopyFeedback: Setter<boolean>;
+  jumpToTime: (time: number) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- YouTube player tipi Adım 6'da eklenecek
+  playerRef: RefObject<any>;
+}
+
+export const NotesTab = ({ newNote, setNewNote, noteInputRef, copyFeedback, setCopyFeedback, jumpToTime, playerRef }: NotesTabProps) => {
+  const { notes, history, activeContentId, contentConfig, addNote, deleteNote } = useStore();
+
+  const handleExportNotes = () => {
+    const currentNotes = notes.filter(n => n.contentId === activeContentId);
+    if (currentNotes.length === 0) return alert("İndirilecek not bulunamadı.");
+    const title = history.find(h => h.contentId === activeContentId)?.title || "BMO_Learn";
+    const dateStr = new Date().toLocaleDateString('tr-TR'); 
+    let content = `BMO Learn - Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
+    currentNotes.forEach(n => { content += `[${n.time > 0 ? formatTime(n.time) : '-'}] ${n.text}\n`; });
+    
+    navigator.clipboard.writeText(content).catch(() => {});
+    try {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' }); 
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      const safeTitle = title.replace(/[\\/:*?"<>|]/g, ''); 
+      a.download = `${safeTitle} - ${dateStr}.txt`;
+      document.body.appendChild(a); 
+      a.click(); 
+      document.body.removeChild(a); 
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setCopyFeedback(true); setTimeout(() => setCopyFeedback(false), 3000);
+    } catch (error) { 
+      alert("İndirme kısıtlandı. Notlarınız panoya kopyalandı! Doğrudan bir belgeye yapıştırabilirsiniz."); 
+    }
+  };
+
+  const currentNotes = notes.filter(n => n.contentId === activeContentId);
+
+  return (
+                <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade-in relative">
+                  {currentNotes.length > 0 && (
+                    <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+                       <button onClick={handleExportNotes} className={`p-2 rounded-lg bg-[var(--card-solid)] hover:bg-[#FF8C00] hover:text-white text-[var(--text-muted)] transition-all border border-[var(--border)] backdrop-blur-sm shadow-md`} title="Notları İndir (TXT)">
+                         <Download size={14} className="sm:w-4 sm:h-4" />
+                       </button>
+                       {copyFeedback && <span className="text-[10px] bg-[var(--success)] text-white px-2 py-1 rounded-md font-bold shadow-md">Kopyalandı!</span>}
+                    </div>
+                  )}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-5 pt-12 space-y-3 custom-scrollbar">
+                    {currentNotes.length === 0 ? (
+                      <div className={`text-center py-10 sm:py-16 text-[var(--text-muted)] flex flex-col items-center gap-4`}><div className={`p-3 sm:p-4 rounded-full bg-[var(--card-solid)]`}><Bookmark size={24} className="sm:w-8 sm:h-8 opacity-50" /></div><p className="text-xs sm:text-sm">Bu içerik için henüz not yok.</p></div>
+                    ) : (
+                      currentNotes.map(note => (
+                        <div key={note.id} className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-[20px] bg-[var(--card-solid)] border border-transparent hover:border-[var(--border)] transition-all shadow-sm`}>
+                          {note.time > 0 && (
+                            <button onClick={() => jumpToTime(note.time)} className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-lg bg-[var(--primary-muted)] text-[#FF8C00] text-[10px] sm:text-xs font-mono font-bold hover:bg-[#FF8C00]/20`}>
+                              {formatTime(note.time)}
+                            </button>
+                          )}
+                          <p className="flex-1 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={renderMarkdown(note.text)}></p>
+                          <button onClick={() => deleteNote(note.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-[var(--danger)] hover:bg-[var(--danger-muted)] rounded-lg"><Trash2 size={14} className="sm:w-4 sm:h-4" /></button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className={`p-4 sm:p-5 border-t border-[var(--border)] bg-[var(--bg)]`}>
+                    <form onSubmit={(e) => {
+                      e.preventDefault(); if(!newNote.trim()) return;
+                      const time = contentConfig.type === 'video' && playerRef.current?.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
+                      addNote({ id: Date.now(), contentId: activeContentId, text: newNote, time });
+                      setNewNote('');
+                    }} className="relative">
+                      <input ref={noteInputRef} type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Not al... (**kalın** veya - liste desteği var)" className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-[20px] bg-[var(--card-solid)] border border-[var(--border)] focus:border-[#FF8C00] outline-none text-xs sm:text-sm text-[var(--text)] transition-colors shadow-sm`} />
+                      <button type="submit" className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-2xl bg-[#FF8C00] text-white shadow-md active:scale-95 hover:scale-105 transition-transform`}><Plus size={16} className="sm:w-4.5 sm:h-4.5" /></button>
+                    </form>
+                  </div>
+                </div>
+  );
+};
