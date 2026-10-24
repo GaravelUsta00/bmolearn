@@ -1,0 +1,4 @@
+    33 app/layout.tsx
+  1982 app/page.tsx
+    26 app/globals.css
+  2041 total

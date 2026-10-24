@@ -502,7 +502,7 @@ const useStore = create<AppState>((set) => ({
 // 4. UTILS & HELPERS
 // ==========================================
 const renderMarkdown = (text: string) => {
-  let html = text
+  const html = text
     .replace(/</g, "&lt;").replace(/>/g, "&gt;") 
     .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--primary); font-weight: bold;">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em style="color: var(--text-muted); font-style: italic;">$1</em>')
@@ -594,7 +594,7 @@ const AppInstallModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
           <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2"><MonitorSmartphone className="text-[#FF8C00]"/> Ana Ekrana Ekle</h3>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"><X size={20}/></button>
         </div>
-        <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">BMO Learn'ü cihazınıza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.</p>
+        <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">BMO Learn&apos;ü cihazınıza ekleyerek tam ekran ve daha hızlı bir deneyim yaşayabilirsiniz.</p>
         <div className="space-y-4">
           <div className="bg-[var(--card-muted)] p-4 rounded-2xl border border-[var(--border)] shadow-sm">
             <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 flex items-center gap-1.5"><Smartphone size={14}/> Android / Chrome / Edge</h4>
@@ -690,7 +690,7 @@ const LandingPage = () => {
           <span className="flex items-center gap-1.5"><FileText size={14} className="text-[var(--text-muted)]" /> Sadece PDF formatı desteklenmektedir.</span>
           <span className="hidden sm:inline text-[var(--border-hover)]">|</span>
           <a href="https://www.ilovepdf.com/tr" target="_blank" rel="noreferrer" className="text-[var(--text-muted)] hover:text-[#FF8C00] transition-colors inline-flex items-center gap-1">
-            Farklı bir dosyayı PDF'e dönüştür <ExternalLink size={10} />
+            Farklı bir dosyayı PDF&apos;e dönüştür <ExternalLink size={10} />
           </a>
         </div>
 
@@ -1753,7 +1753,7 @@ export default function App() {
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-3xl w-full max-w-sm p-6 shadow-2xl relative text-center">
             <div className="w-16 h-16 bg-[var(--primary-muted)] text-[#FF8C00] rounded-full flex items-center justify-center mx-auto mb-4"><AlertCircle size={32} /></div>
             <h3 className="text-xl font-bold text-[var(--text)] mb-2">Dokümanı Yeniden Yükle</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">Güvenlik ve performans nedeniyle dosya içerikleri tarayıcıda saklanmaz. Geçmişteki notlarınıza ve AI özetinize ulaşmak için lütfen <strong className="text-[var(--text)]">"{pendingDocReload.title}"</strong> adlı dosyanızı tekrar seçin.</p>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">Güvenlik ve performans nedeniyle dosya içerikleri tarayıcıda saklanmaz. Geçmişteki notlarınıza ve AI özetinize ulaşmak için lütfen <strong className="text-[var(--text)]">&quot;{pendingDocReload.title}&quot;</strong> adlı dosyanızı tekrar seçin.</p>
             <div className="relative w-full">
               <input type="file" id="doc-reload-upload" accept=".pdf" onChange={(e) => { const file = e.target.files?.[0]; if(!file) return; const objUrl = URL.createObjectURL(file); setContentConfig({ id: pendingDocReload.id, type: 'document', title: pendingDocReload.title, url: objUrl, fileType: file.type || file.name.split('.').pop() }); setPendingDocReload(null); }} className="hidden" />
               <label htmlFor="doc-reload-upload" className="flex items-center justify-center w-full py-3.5 bg-[#FF8C00] hover:bg-[#ea580c] text-white font-bold text-sm rounded-xl cursor-pointer transition-colors shadow-lg shadow-[#FF8C00]/20 active:scale-95">Dosyayı Seç ve Devam Et</label>
@@ -1867,7 +1867,7 @@ export default function App() {
                             <strong className="text-[#FF8C00]">{contentConfig.title}</strong> isimli dosya kaydedildi, ancak tarayıcıda görüntülenebilmesi için <strong className="text-[var(--text)]">PDF</strong> olması gerekmektedir.
                           </p>
                           <a href="https://www.ilovepdf.com/tr" target="_blank" rel="noreferrer" className="mt-2 px-5 py-2.5 bg-[var(--card-solid)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border)] rounded-xl text-xs font-medium transition-all flex items-center gap-2 shadow-sm">
-                            Ücretsiz PDF'e Dönüştür <ExternalLink size={14}/>
+                            Ücretsiz PDF&apos;e Dönüştür <ExternalLink size={14}/>
                           </a>
                         </div>
                       )
