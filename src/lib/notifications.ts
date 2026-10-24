@@ -10,7 +10,7 @@ export const NotificationManager = {
   },
   send: (title: string, body: string) => {
     try {
-      const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+      const audio = new Audio('/sounds/bildirim.wav');
       audio.play().catch(() => {});
 
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
