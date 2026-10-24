@@ -1,6 +1,6 @@
 'use client';
 
-import { Volume2, Music, X, Pause, Play, Radio, PlayCircle } from 'lucide-react';
+import { Volume2, X, Pause, Play, Radio, PlayCircle } from 'lucide-react';
 import { RADIO_STATIONS } from '@/constants';
 import type { RadioStation } from '@/types';
 

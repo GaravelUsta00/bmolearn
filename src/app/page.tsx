@@ -150,7 +150,6 @@ export default function App() {
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 setShowAIModal={setShowAIModal}
-                showPlaylistSidebar={showPlaylistSidebar}
                 newNote={newNote}
                 setNewNote={setNewNote}
                 noteInputRef={noteInputRef}

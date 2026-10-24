@@ -14,17 +14,10 @@ interface StudyPanelProps extends ComponentProps<typeof NotesTab> {
   activeTab: StudyTab;
   setActiveTab: Setter<StudyTab>;
   setShowAIModal: Setter<boolean>;
-  showPlaylistSidebar: boolean;
 }
 
-export const StudyPanel = ({
-  activeTab,
-  setActiveTab,
-  setShowAIModal,
-  showPlaylistSidebar,
-  ...notesTabProps
-}: StudyPanelProps) => {
-  const { activeContentId, playlistItems, notes, summaries, flashcards, quiz } = useStore();
+export const StudyPanel = ({ activeTab, setActiveTab, setShowAIModal, ...notesTabProps }: StudyPanelProps) => {
+  const { activeContentId, notes, summaries, flashcards, quiz } = useStore();
 
   // Sekme sayaçları (üst çubuktaki toplam sayaçların yerine; karar #2)
   const counts: Record<StudyTab, string> = {
