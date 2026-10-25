@@ -1,0 +1,8 @@
+# Netlify: Next.js çalışma zamanı otomatik algılanır; güvenlik başlıkları next.config.ts'ten gelir.
+# package.json "engines" Node 22.12+ ister; site eski bir Node sürümüne sabitlenmişse derleme kırılmasın.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"

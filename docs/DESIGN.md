@@ -114,7 +114,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 | `timer`   | DM Mono, `font-variant-numeric: tabular-nums`               | Pomodoro, zaman damgaları                          |
 
 - **Logo:** metin olarak "Be" düz, `brand` rengi + "_Learn_" italik, `ink` rengi (Literata, `<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
-- **Yer tutucu ikon** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de üretildi; gerçek ikon gelince `public/icons/` ve `src/app/{favicon.ico,apple-icon.png}` değiştirilir.
+- **Uygulama simgesi** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de yer tutucu olarak üretildi; 2026-10-25'te kullanıcı kalıcı simge olarak onayladı.
 - Türkçe büyük harf dönüşümü için `lang="tr"` zorunlu (`i` → `İ` doğru dönüşsün).
 
 ## 6. Şekil, çizgi, gölge, boşluk
@@ -232,7 +232,7 @@ Film sitelerindeki sinema modu gibi: video önde, geri kalan her şey yarı sayd
 - **Depolama uyarıları:** sol altta, sol kenarda 2 px `ribbon` çizgi; `role="alert"`.
 - **Çevrimdışı:** üstte tam genişlik `ribbon` şerit, `role="status"`; bağlantı gelince kalkar.
 - Bildirimler üst üste binmez: yeni sürüm sağ altta, depolama sol altta, pomodoro üst ortada.
-- Sistem (işletim sistemi) bildirimi yer tutucu simgeyle (`/icons/icon-192.png`) gösterilir.
+- Sistem (işletim sistemi) bildirimi uygulama simgesiyle (`/icons/icon-192.png`) gösterilir.
 
 ## 9. Metin ve ses tonu
 

@@ -17,10 +17,10 @@ Son doğrulama: `npm run check` yeşil; Vitest 49/49; Playwright 17/17 (Chromium
 
 ## Sonraki işler (öneri; planın dışında, kullanıcı onayıyla)
 
-1. ~~Dalı push etmek~~ ✅ 2026-10-25. `main`'e PR/birleştirme ve yayın (barındırma seçimi; CSP başlıkları `next.config.ts`'te, statik barındırmada `_headers` gerekir).
+1. ~~Dalı push etmek~~ ✅ 2026-10-25. `main`'e birleştirme ve Netlify'da yayın (karar: Netlify'da kalınıyor; `netlify.toml` Node 22). Yayından sonra güvenlik başlıkları `curl -I` ile doğrulanır.
 2. Performans: landing ilk yüklemede tam `zod` paketi (≈392 KB, gzip ≈91 KB) iniyor; `zod/mini`'ye geçiş ya da depolama doğrulamasının ilk boyamadan sonra yüklenmesi.
 3. CI: GitHub Actions'ta `npm run check` ve `npx playwright install chromium && npm run test:e2e`.
-4. Gerçek uygulama simgesi (`public/icons/*`, `src/app/favicon.ico`, `src/app/apple-icon.png`; DESIGN §5).
+4. ~~Gerçek uygulama simgesi~~ ✅ "BL" monogramı kalıcı (kullanıcı kararı 2026-10-25).
 5. iOS Safari ve Android Chrome'da gerçek cihaz testi (PDF, IndexedDB kotası, PWA kurulumu, bildirim).
 6. Gerçek YouTube ile elle denetim listesi: [tests/e2e/README.md](tests/e2e/README.md#gerçek-youtube).
 7. İsteğe bağlı: arka plan sekmesinde zamanında pomodoro bildirimi (push sunucusu gerekir; bugün kapsam dışı), mobil LCP için landing açılış animasyonunun gözden geçirilmesi (tasarım kararı), `www.youtube-nocookie.com`'a geçiş.

@@ -58,12 +58,12 @@ tests/fixtures/    sahte (gerçek olmayan) eski BMO verisi
 
 ## Yayınlama
 
-Vercel ya da `npm run build && npm start` ile çalışır. Güvenlik başlıkları (CSP vb.) `next.config.ts` içinde tanımlıdır ve bu iki yolla uygulanır; başka bir statik barındırıcıya taşınırsa aynı başlıkların sunucuda verilmesi gerekir ([SECURITY.md](SECURITY.md)).
+Netlify'da yayınlanır (`netlify.toml`: Node 22, `npm run build`; Next.js çalışma zamanı otomatik algılanır). Vercel ya da `npm run build && npm start` ile de çalışır. Güvenlik başlıkları (CSP vb.) `next.config.ts` içinde tanımlıdır ve bu yollarla uygulanır; yayından sonra `curl -I` ile doğrulanmalı. Saf statik bir barındırıcıya taşınırsa aynı başlıkların sunucuda verilmesi gerekir ([SECURITY.md](SECURITY.md)).
 
 - `public/pdfjs/` ve `public/sw.js` derlemede üretilir, depoda yoktur.
 - Her derleme yeni bir service worker sürümü üretir. Açık sekmeler "BeLearn'ün yeni sürümü hazır · Yenile" bildirimini görür; yeni sürüm kullanıcı onayıyla devreye girer.
 - Kullanıcı verisi tarayıcıdadır. Adres (alan adı) değişirse eski adresteki veri yeni adreste görünmez; kullanıcı Ayarlar → "Yedeği indir / yükle" ile taşıyabilir.
-- Uygulama simgeleri yer tutucudur (`public/icons/`, `src/app/favicon.ico`, `src/app/apple-icon.png`); gerçek simge gelince bu dosyalar değiştirilir.
+- Uygulama simgesi "BL" monogramıdır (`public/icons/`, `src/app/favicon.ico`, `src/app/apple-icon.png`).
 
 ## Veri
 
