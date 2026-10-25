@@ -472,7 +472,7 @@ Commit'ler: `262a099` (6a: hook'lar + video, oynatma listesi ve radyo yeni tasar
 
 **Adım 6 sırasında bulunan ek konular:**
 - **K19 (çözüldü):** Varsayılan "Lofi Hip Hop" yayını (`jfKfPfyJRdk`) YouTube'da gömmeye kapalı (hata 150), yani radyo hiç çalmıyordu. Eski kod radyo hatasını dinlemediği için görünmüyordu. Aynı adlı ve aynı türden gömülebilir bir yayınla (`7NOSDKb0HlU`, Chillhop Music) değiştirildi.
-- **K20 (karar gerekli):** "Karadeniz Akustik" (`Fru_Ss-TqgY`) da hata 150 veriyor. Doğrulanmış bir alternatif bulunamadı. İstasyon listede kalıyor; seçilirse "Bu istasyon şu an çalınamıyor. Başka bir istasyon dene." gösteriliyor.
+- **K20 (çözüldü, 2026-10-25):** "Karadeniz Akustik" (`Fru_Ss-TqgY`) de hata 150 veriyordu. Kullanıcının verdiği yayınla (`26SKAEoDpPI`, kanal: Karadeniz Akustik) değiştirildi; gömülebildiği doğrulandı.
 - **K21 (çözüldü):** Oynatıcı hazır olmadan istasyon değiştirilirse hazır olduğunda eski istasyon çalıyordu.
 - **K22 (çözüldü):** İstasyon değişince arayüz iyimser biçimde "Duraklat" gösterirken düğme oynatıcının gerçek (arabellek) durumuna bakıyordu; "Duraklat"a basmak bir şey yapmıyordu.
 - **Davranış değişikliği:** Radyo ve YouTube API'si artık ilk ihtiyaçta yükleniyor (eskiden açılışta). Landing YouTube'a hiç istek yapmıyor.
