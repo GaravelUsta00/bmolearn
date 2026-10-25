@@ -61,6 +61,56 @@ describe('parseAIResponse (S4)', () => {
     expect(r.warnings.join(' ')).toMatch(/Özet/);
   });
 
+  it('bozuk JSON onarılır: gerçek satır sonu, kaçışsız iç tırnak, sondaki virgül, yorum', () => {
+    const r = ok(
+      [
+        '```json',
+        '{',
+        '  // özet',
+        '  "summary": "# Hücre',
+        '',
+        'Hücre zarı "seçici geçirgen" bir yapıdır.",',
+        '  "cards": [{"question": "S?", "answer": "C",},],',
+        '}',
+        '```',
+      ].join('\n')
+    );
+    expect(r.summary).toBe('# Hücre\n\nHücre zarı "seçici geçirgen" bir yapıdır.');
+    expect(r.cards).toEqual([{ question: 'S?', answer: 'C' }]);
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('akıllı tırnaklar ve LaTeX ters eğik çizgisi', () => {
+    expect(ok('{“summary”: “# Başlık”}').summary).toBe('# Başlık');
+    expect(ok(String.raw`{"summary":"\alpha açısı"}`).summary).toBe(String.raw`\alpha açısı`);
+  });
+
+  it('yarıda kesilen yanıt: tamamlanan öğeler alınır, uyarı verilir', () => {
+    const r = ok('```json\n{"summary":"# A","cards":[{"question":"1","answer":"a"},{"question":"2","answer":"yarı');
+    expect(r.summary).toBe('# A');
+    expect(r.cards).toEqual([{ question: '1', answer: 'a' }]);
+    expect(r.warnings.join(' ')).toMatch(/yarıda kesilmiş/);
+  });
+
+  it('sarılmış yanıt, Türkçe/eş anahtarlar ve harfli şıklar', () => {
+    expect(ok('{"data":{"summary":"x"}}').summary).toBe('x');
+    expect(ok('[{"summary":"y"}]').summary).toBe('y');
+    const r = ok(
+      JSON.stringify({
+        özet: 'z',
+        flashcards: [{ front: 'S', back: 'C' }],
+        questions: [{ question: 'Q', options: ['A) bir', 'B) iki', 'C) üç', 'D) dört'], correct: 'C' }],
+      })
+    );
+    expect(r.summary).toBe('z');
+    expect(r.cards).toHaveLength(1);
+    expect(r.quiz[0].options).toEqual({ A: 'bir', B: 'iki', C: 'üç', D: 'dört' });
+  });
+
+  it('kod bloğu bozuksa metnin tamamı denenir', () => {
+    expect(ok('Örnek: ```\nkod\n``` ve cevap: {"summary":"tamam"}').summary).toBe('tamam');
+  });
+
   it('adet ve uzunluk sınırları', () => {
     const r = ok(
       JSON.stringify({

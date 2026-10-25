@@ -43,28 +43,48 @@ export const AIModal = ({ isOpen, onClose, activeContentId, contentConfig, setAc
     onClose();
   };
 
-  const promptTemplate = `Sen bir eğitim asistanısın. Aşağıdaki kurallara KESİNLİKLE uy:
-1. İçeriğin dili neyse tüm yanıtı O DİLDE ver (İngilizce ise İngilizce, Türkçe ise Türkçe).
-2. Yanıtın SADECE geçerli bir JSON objesi olmalıdır. Ekstra metin veya açıklama KULLANMA.
-3. Seviye: ${selectedLevel}
+  const isDocument = contentConfig.type === 'document';
+  // Cevap tek bir ```json bloğunda istenir: sohbetteki "Kopyala" düğmesi metni birebir verir
+  // (blok dışındaki JSON'u sohbet ekranı Markdown olarak işler ve \" gibi kaçışları bozar).
+  // Adet ve uzunluk sınırları yanıtın yarıda kesilmesini önler. Okuyucu: src/lib/aiImport.ts.
+  const promptTemplate = `Sen bir eğitim asistanısın. Aşağıdaki içerikten çalışma materyali hazırla. Cevabın bir program tarafından otomatik okunacak; biçim kurallarına harfiyen uy.
 
-FORMAT:
+İÇERİK
+Başlık: ${contentConfig.title}
+${isDocument ? 'Tür: PDF belgesi' : `Link: https://www.youtube.com/watch?v=${activeContentId}`}
+Seviye: ${selectedLevel}
+${isDocument ? 'Bu sohbete PDF dosyasını eklediysem YALNIZCA dosyanın içeriğini kullan. Eklemediysem başlığa göre konuyu anlat.\n' : ''}
+İÇERİK KURALLARI
+- Tüm metinleri içeriğin dilinde yaz (içerik İngilizce ise İngilizce, Türkçe ise Türkçe).
+- Yalnızca doğru olduğundan emin olduğun bilgileri yaz.
+- summary: Markdown özet; # ve ## başlıklar, madde işaretleri; en fazla 600 kelime.
+- cards: 12 bilgi kartı; question kısa, answer 1-2 cümle.
+- quiz: 10 çoktan seçmeli soru; her soruda A, B, C, D olmak üzere 4 şık ve tek doğru cevap; doğru şıkları harfler arasında dağıt.
+
+BİÇİM KURALLARI
+1. Cevabının tamamı TEK bir \`\`\`json kod bloğu olsun. Bloktan önce ve sonra hiçbir şey yazma.
+2. Geçerli JSON yaz: anahtarlar ve metinler çift tırnak içinde; son öğeden sonra virgül yok; yorum yok.
+3. Metinlerin içinde çift tırnak (") kullanma; alıntı gerekirse tek tırnak (') kullan.
+4. Metin içinde satır atlamak için \\n yaz; bunun dışında ters eğik çizgi (\\) kullanma.
+5. "correct" yalnızca tek büyük harf olsun: "A", "B", "C" ya da "D".
+6. Göndermeden önce JSON'u kontrol et ve kod bloğunu mutlaka kapat.
+
+ŞABLON (anahtar adlarını değiştirme):
+\`\`\`json
 {
-  "summary": "# Başlık\\nDetaylı Markdown özet buraya gelecek.",
+  "summary": "# Başlık\\n\\nÖzet metni...",
   "cards": [
-    { "question": "Soru 1?", "answer": "Cevap 1" }
+    { "question": "Soru?", "answer": "Cevap." }
   ],
   "quiz": [
     {
-      "question": "Çoktan Seçmeli Soru 1?",
-      "options": { "A": "Seçenek A", "B": "Seçenek B", "C": "Seçenek C", "D": "Seçenek D" },
-      "correct": "A"
+      "question": "Soru?",
+      "options": { "A": "Şık A", "B": "Şık B", "C": "Şık C", "D": "Şık D" },
+      "correct": "B"
     }
   ]
 }
-
-BAŞLIK: ${contentConfig.title}
-${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${activeContentId}` : ''}`;
+\`\`\``;
 
   const handleCopyPrompt = async () => {
     if (await copyText(promptTemplate)) {
@@ -197,9 +217,16 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
                 </div>
               )}
               <p className="mt-3 text-sm leading-relaxed text-mute">
-                İsteği ChatGPT, Gemini ya da Claude gibi bir yapay zekâ sohbetine yapıştır; verdiği JSON cevabını
-                aşağıya getir.
+                İsteği ChatGPT, Gemini ya da Claude gibi bir yapay zekâ sohbetine yapıştır. Cevaptaki kod bloğunu
+                köşesindeki &ldquo;Kopyala&rdquo; düğmesiyle kopyalayıp aşağıya yapıştır.
               </p>
+              {isDocument && (
+                <p className="mt-2 border-l-2 border-ribbon pl-3 text-sm leading-relaxed text-ink">
+                  <span className="font-medium">Tavsiye:</span> PDF dosyanı da yapay zekâ sohbetine eklersen içerik
+                  doğrudan belgeden üretilir, çok daha sağlıklı bir sonuç alırsın. Eklemezsen yapay zekâ yalnızca
+                  başlığa göre içerik üretir.
+                </p>
+              )}
             </section>
 
             <section aria-labelledby="ai-step-2">
@@ -210,7 +237,7 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
                 id="ai-response"
                 value={aiResponse}
                 onChange={(e) => setAiResponse(e.target.value)}
-                placeholder="{ ile başlayıp } ile biten JSON cevabı buraya yapıştır…"
+                placeholder="Yapay zekânın cevabını (kod bloğuyla ya da bloksuz) buraya yapıştır…"
                 aria-invalid={errorMsg ? true : undefined}
                 aria-describedby={errorMsg ? 'ai-error' : undefined}
                 className="custom-scrollbar mt-3 min-h-35 w-full resize-y rounded-sm border border-mute bg-page-2 p-3 font-mono text-xs text-ink placeholder:text-mute focus:border-ribbon"

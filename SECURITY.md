@@ -73,7 +73,9 @@ Kaynak `scripts/sw.source.js`; derlemede sürüm basılarak `public/sw.js`'e yaz
 
 ## Bağımlılıklar
 
-`npm audit` (2026-10-25): üretim bağımlılıklarında ve tüm bağımlılıklarda bilinen açık yok. Sürümler `package-lock.json` ile sabit; `next`, `react`, `pdfjs-dist`, `zod` ve `react-markdown` tam sürümle belirtilir.
+`npm audit` (2026-10-25): üretim bağımlılıklarında ve tüm bağımlılıklarda bilinen açık yok. Sürümler `package-lock.json` ile sabit; `next`, `react`, `pdfjs-dist`, `zod`, `react-markdown` ve `jsonrepair` tam sürümle belirtilir.
+
+`jsonrepair` (3.15.0, ISC, bağımlılıksız; 2026-10-25'te eklendi): AI yanıtındaki bozuk JSON'u ayrıştırmadan önce onarır. Yalnızca metin dönüştürür (`eval`/`Function` yok, CSP'yi etkilemez); çıktısı yine `JSON.parse` ve zod şemasından geçer.
 
 ## Testler
 
