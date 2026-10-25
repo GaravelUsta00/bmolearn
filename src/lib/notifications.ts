@@ -23,6 +23,16 @@ const startBlink = (title: string) => {
   blinkStop = window.setTimeout(stopBlink, 10000);
 };
 
+const NOTIFICATION_OPTIONS = { icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: 'belearn-pomodoro' };
+
+// Service worker varsa onun üzerinden: Android Chrome `new Notification()`'a izin vermez ve
+// bildirime tıklayınca SW açık sekmeye döndürür. Yoksa (geliştirme, eski tarayıcı) doğrudan.
+const showSystemNotification = async (title: string, body: string) => {
+  const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+  if (reg?.active) await reg.showNotification(title, { body, ...NOTIFICATION_OPTIONS });
+  else new Notification(title, { body, ...NOTIFICATION_OPTIONS });
+};
+
 export const NotificationManager = {
   /** Kullanıcı eylemi içinde çağrılmalı (ör. "Odaklan" tıklaması); aksi halde tarayıcılar reddeder. */
   requestPermission: async () => {
@@ -40,7 +50,7 @@ export const NotificationManager = {
       audio.play().catch(() => {});
 
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        if (window.self === window.top) new Notification(title, { body, icon: '/icons/icon-192.png' });
+        if (window.self === window.top) void showSystemNotification(title, body);
       }
 
       startBlink(title);

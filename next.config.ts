@@ -8,7 +8,7 @@ const reportOnly = process.env.CSP_REPORT_ONLY === '1';
 // - 'unsafe-inline' (script): sayfa statik prerender ediliyor; nonce dinamik render gerektirir.
 //   XSS'e karşı asıl önlem hiçbir kullanıcı/AI içeriğinin HTML olarak render edilmemesi.
 // - YouTube: IFrame API script'i ve oynatıcı iframe'i www.youtube.com'dan gelir.
-// - blob: PWA manifest'i (Adım 10'a kadar) blob URL'si; PDF'ler pdf.js ile blob URL'den okunur.
+// - blob: PDF'ler pdf.js ile blob URL'den okunur. Manifest artık /manifest.webmanifest (Adım 10).
 // - 'wasm-unsafe-eval': yalnızca pdf.js'in WebAssembly görüntü çözücülerinin derlenmesine izin verir
 //   (JavaScript eval'i AÇMAZ).
 const csp = [
@@ -22,7 +22,7 @@ const csp = [
   "media-src 'self'",
   'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
   "worker-src 'self' blob:",
-  "manifest-src 'self' blob:",
+  "manifest-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -47,7 +47,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      { source: '/(.*)', headers: securityHeaders },
+      // Service worker her açılışta tazelensin: güncellemeler gecikmeden fark edilir.
+      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+    ];
   },
 };
 

@@ -12,7 +12,7 @@ import { useMountedOnce } from '@/hooks/usePresence';
 
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { BlueLightFilter } from '@/components/ui/BlueLightFilter';
-import { PWAInjector } from '@/components/pwa/PWAInjector';
+import { PwaManager } from '@/components/pwa/PwaManager';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { PomodoroToast } from '@/components/pomodoro/PomodoroToast';
 import { StorageNotices } from '@/components/ui/StorageNotices';
@@ -56,7 +56,7 @@ export default function App() {
 
   return (
     <>
-      <PWAInjector />
+      <PwaManager />
       {installMounted && (
         <Suspense fallback={null}>
           <AppInstallModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />

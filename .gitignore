@@ -45,3 +45,11 @@ next-env.d.ts
 
 # pdf.js çalışma zamanı dosyaları (npm install sırasında üretilir)
 /public/pdfjs/
+
+# service worker (scripts/sw.source.js'ten derlemede üretilir)
+/public/sw.js
+
+# Playwright çıktıları
+/test-results/
+/playwright-report/
+/blob-report/
