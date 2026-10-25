@@ -445,6 +445,38 @@ Commit'ler: `efd5337` (5a: markdown, AI şeması, hata ekranı, girdi doğrulama
 - **K17:** `next dev` 16.4, `AGENTS.md`'deki `nextjs-agent-rules` bloğunu kendisi yeniden yazıyor. Değişiklik commit'lenmezse her `dev` çalıştırmasında yeniden oluşuyor.
 - **K18:** YouTube IFrame API, iframe hazır olmadan `postMessage` denediğinde konsola "target origin … does not match" uyarısı basıyor (geliştirme modunda görüldü). İşlevsel değil; Adım 6'da oynatıcı yaşam döngüsüyle birlikte ele alınacak.
 
+### Adım 6: YouTube ve radyo
+
+Commit'ler: `262a099` (6a: hook'lar + video, oynatma listesi ve radyo yeni tasarımla) · `6ada6c3` (6c: kalan `any`'ler, lint kuralları yeniden hata).
+
+**Yöntem:** Edge ile oynatıcı testi (`--autoplay-policy=no-user-gesture-required`). Oynatıcı durumu, konteynerdeki `data-yt-state` özniteliğinden okundu. Gerçek bir herkese açık oynatma listesi (32 bölüm) kullanıldı.
+
+| Senaryo | Sonuç |
+|---|---|
+| Y0 Landing YouTube'a hiç bağlanmıyor (API script'i yok) | ✅ |
+| Y1 **[B1]** Landing ↔ çalışma ekranı 5 kez, her seferinde farklı video: hepsi doğru oynuyor | ✅ |
+| Y2 **[B2]** DOM'da tek `iframe_api` script'i ve tek ana oynatıcı | ✅ |
+| Y3 Video oynuyor, altyazıda gerçek başlık | ✅ |
+| Y4–Y5 **[B3]** PDF'e geçince video duraklıyor (state 2), etkin içerik belge olarak kalıyor | ✅ |
+| Y6 Belgeden videoya dönüşte video yeniden oynuyor | ✅ |
+| Y7 [#7] Oynatılamayan video: koda göre anlaşılır mesaj | ✅ |
+| Y8–Y10 [#8, #9] Oynatma listesi tanınıyor (32 bölüm); 3. bölüme geçiş "Bölüm 3 / 32" ve etkin satır; koleksiyon geçmişe yazılıyor | ✅ |
+| Y11–Y14 [#29] Radyo ilk açılışta kuruluyor; varsayılan istasyon çalıyor; istasyon değişimi "Çalıyor", Duraklat "Duraklatıldı"; Landing'e dönünce kapanmıyor | ✅ |
+| Y15–Y16 YouTube engellenirse "YouTube yüklenemedi" + "Yeniden dene"; yeniden denemede oynatıcı kuruluyor | ✅ |
+| Oynatıcı testi toplam | **19/19** |
+| Duman · güvenlik (zorunlu CSP) · depolama | **45/45 · 20/20 · 20/20** |
+
+#30 (genel sessiz) tarayıcıda ses olarak ölçülemiyor. Kodda iki oynatıcı da `globalMuted` değişince ve kurulduğu anda (`onReady`) sessize alınıyor; eskiden yeni kurulan oynatıcı açılışta sessize alınmıyordu.
+
+**Çözülen bulgular:** B1, B2, B3, K7, K18. Ayrıca `no-explicit-any` ve `react-hooks/immutability` yeniden hata düzeyinde; geçici olarak uyarıda kalan tek kural `react-hooks/set-state-in-effect` (Adım 9).
+
+**Adım 6 sırasında bulunan ek konular:**
+- **K19 (çözüldü):** Varsayılan "Lofi Hip Hop" yayını (`jfKfPfyJRdk`) YouTube'da gömmeye kapalı (hata 150), yani radyo hiç çalmıyordu. Eski kod radyo hatasını dinlemediği için görünmüyordu. Aynı adlı ve aynı türden gömülebilir bir yayınla (`7NOSDKb0HlU`, Chillhop Music) değiştirildi.
+- **K20 (karar gerekli):** "Karadeniz Akustik" (`Fru_Ss-TqgY`) da hata 150 veriyor. Doğrulanmış bir alternatif bulunamadı. İstasyon listede kalıyor; seçilirse "Bu istasyon şu an çalınamıyor. Başka bir istasyon dene." gösteriliyor.
+- **K21 (çözüldü):** Oynatıcı hazır olmadan istasyon değiştirilirse hazır olduğunda eski istasyon çalıyordu.
+- **K22 (çözüldü):** İstasyon değişince arayüz iyimser biçimde "Duraklat" gösterirken düğme oynatıcının gerçek (arabellek) durumuna bakıyordu; "Duraklat"a basmak bir şey yapmıyordu.
+- **Davranış değişikliği:** Radyo ve YouTube API'si artık ilk ihtiyaçta yükleniyor (eskiden açılışta). Landing YouTube'a hiç istek yapmıyor.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.

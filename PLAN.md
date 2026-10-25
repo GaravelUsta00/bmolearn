@@ -171,7 +171,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 6 — YouTube ve radyo (+ yeni tasarım)
+## Adım 6 — YouTube ve radyo (+ yeni tasarım) ✅
+
+> **Tamamlandı (2026-10-25):** Oynatıcı testi 19/19, duman 45/45, güvenlik 20/20, depolama 20/20. "Lofi Hip Hop" istasyonu gömülebilir bir yayınla değiştirildi; "Karadeniz Akustik" için karar bekleniyor. Ayrıntı: [ANALYSIS.md §7, Adım 6](ANALYSIS.md#adım-6-youtube-ve-radyo).
 
 **Amaç:** Oynatıcı yaşam döngüsünü düzeltmek; video, playlist ve radyo bileşenlerini yeni tasarımla yeniden yazmak.
 
