@@ -15,6 +15,7 @@ export const DATA_KEYS = [
   'todos',
   'history',
   'pomodoro',
+  'pomodoro_settings',
   'progress',
   'theme',
 ] as const;
@@ -28,6 +29,7 @@ export const DATA_KEY_LABELS: Record<DataKey, string> = {
   todos: 'Görevler',
   history: 'Geçmiş',
   pomodoro: 'Pomodoro geçmişi',
+  pomodoro_settings: 'Pomodoro süreleri',
   progress: 'Video ilerlemesi',
   theme: 'Tema',
 };

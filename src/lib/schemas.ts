@@ -53,7 +53,12 @@ export const HistoryItemSchema = z.looseObject({
   playlistItems: z.array(WatchedVideoSchema).optional(),
 });
 
-type Kind = { list: z.ZodType } | { record: z.ZodType };
+export const PomodoroSettingsSchema = z.object({
+  focusMinutes: z.number().int().min(1).max(120),
+  breakMinutes: z.number().int().min(1).max(30),
+});
+
+type Kind = { list: z.ZodType } | { record: z.ZodType } | { object: z.ZodType };
 
 /** Her veri anahtarının biçimi: liste (öğe şeması) ya da sözlük (değer şeması). */
 export const KEY_SCHEMAS: Record<Exclude<DataKey, 'theme'>, Kind> = {
@@ -64,6 +69,7 @@ export const KEY_SCHEMAS: Record<Exclude<DataKey, 'theme'>, Kind> = {
   history: { list: HistoryItemSchema },
   summaries: { record: z.string() },
   pomodoro: { record: z.number() },
+  pomodoro_settings: { object: PomodoroSettingsSchema },
   progress: { record: z.number() },
 };
 
@@ -89,6 +95,10 @@ export const validateRaw = (key: Exclude<DataKey, 'theme'>, raw: string): Valida
       if (r.success) value.push(r.data);
     }
     return { ok: true, value, dropped: json.length - value.length };
+  }
+  if ('object' in kind) {
+    const r = kind.object.safeParse(json);
+    return r.success ? { ok: true, value: r.data, dropped: 0 } : { ok: false, reason: 'shape' };
   }
   if (!json || typeof json !== 'object' || Array.isArray(json)) return { ok: false, reason: 'shape' };
   const value: Record<string, unknown> = {};

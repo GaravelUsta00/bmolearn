@@ -1,5 +1,15 @@
 import type { StateCreator } from 'zustand';
-import type { ContentConfig, Flashcard, HistoryItem, Note, QuizQuestion, Setter, StudyTab, Todo } from '@/types';
+import type {
+  ContentConfig,
+  Flashcard,
+  HistoryItem,
+  Note,
+  QuizQuestion,
+  Setter,
+  StudyTab,
+  TimerMode,
+  Todo,
+} from '@/types';
 
 /** `beforeinstallprompt` olayı (TypeScript DOM tiplerinde yok). */
 export interface InstallPromptEvent extends Event {
@@ -59,14 +69,42 @@ export interface HistorySlice {
   clearHistory: () => void;
 }
 
+export interface PomodoroSettings {
+  focusMinutes: number;
+  breakMinutes: number;
+}
+
+export type TimerStatus = 'idle' | 'running' | 'paused';
+
 export interface PomodoroSlice {
   pomodoroHistory: Record<string, number>;
   todos: Todo[];
+  /** Kalıcı: belearn_pomodoro_settings (karar #6) */
+  pomodoroSettings: PomodoroSettings;
 
-  addPomodoroRecord: () => void;
+  // Zamanlayıcı (B4): çalışırken bitiş anı (endsAt) tutulur, kalan süre her okumada hesaplanır.
+  timerMode: TimerMode;
+  timerStatus: TimerStatus;
+  timerEndsAt: number | null;
+  timerRemainingMs: number;
+  pomodoroToast: { message: string; type: TimerMode | null; visible: boolean };
+
+  addPomodoroRecord: (at?: number) => void;
   addTodo: (text: string) => void;
   toggleTodo: (id: Todo['id']) => void;
   deleteTodo: (id: Todo['id']) => void;
+
+  startTimer: () => void;
+  pauseTimer: () => void;
+  resetTimer: () => void;
+  skipBreak: () => void;
+  setFocusMinutes: (minutes: number) => void;
+  setBreakMinutes: (minutes: number) => void;
+  applyPomodoroPreset: (focusMinutes: number, breakMinutes: number) => void;
+  /** Süre dolduysa fazı bitirir; biten fazı döndürür (dolmadıysa null). */
+  completeTimerPhase: (now?: number) => TimerMode | null;
+  showPomodoroToast: (message: string, type: TimerMode) => void;
+  hidePomodoroToast: () => void;
 }
 
 export type StorageNotice =
@@ -120,6 +158,7 @@ export interface PersistedData {
   history: HistoryItem[];
   pomodoroHistory: Record<string, number>;
   videoProgress: Record<string, number>;
+  pomodoroSettings: PomodoroSettings;
 }
 
 /** Eski sürümlerde `id` alanı olmayan geçmiş kaydı. */

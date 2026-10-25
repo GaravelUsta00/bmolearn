@@ -1,35 +1,45 @@
 'use client';
 
-import { CalendarDays } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { lastLocalDays } from '@/lib/date';
+
+const DAYS = 30;
+
+// Bordo opaklık basamakları (DESIGN §8.5). Günler yerel tarihe göre (B4).
+const level = (count: number) =>
+  count === 0 ? 'bg-rule' : count <= 2 ? 'bg-ribbon/35' : count <= 5 ? 'bg-ribbon/65' : 'bg-ribbon';
+
+const formatDay = (key: string) =>
+  new Date(`${key}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
 
 export const PomodoroHeatmap = () => {
-  const { pomodoroHistory } = useStore();
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (29 - i));
-    return d.toISOString().split('T')[0];
-  });
+  const pomodoroHistory = useStore((s) => s.pomodoroHistory);
+  const days = lastLocalDays(DAYS);
+  const total = days.reduce((sum, d) => sum + (pomodoroHistory[d] || 0), 0);
+
   return (
-    <div className="mt-6 w-full p-4 bg-page border border-rule rounded-sm shadow-page">
-      <h3 className="text-[10px] sm:text-xs font-bold text-mute mb-3 flex items-center gap-1.5 uppercase tracking-wider">
-        <CalendarDays size={14} /> 30 Günlük Harita
-      </h3>
-      <div className="flex flex-wrap gap-1.5">
+    <div className="mt-6">
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">Son 30 gün</h3>
+        <span className="font-mono text-[11px] tabular-nums text-mute">{total} pomodoro</span>
+      </div>
+      <ol className="mt-2 grid grid-cols-10 gap-1.5" aria-label="Son 30 günün pomodoro sayıları">
         {days.map((d) => {
           const count = pomodoroHistory[d] || 0;
-          let bgColor = 'bg-rule';
-          if (count > 0 && count <= 2) bgColor = 'bg-ribbon/40';
-          else if (count > 2 && count <= 5) bgColor = 'bg-ribbon/70';
-          else if (count > 5) bgColor = 'bg-ribbon';
+          const label = `${formatDay(d)}: ${count} pomodoro`;
           return (
-            <div
-              key={d}
-              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm ${bgColor} transition-colors hover:ring-1 hover:ring-ink`}
-              title={`${d}: ${count} Pomodoro`}
-            />
+            <li key={d} title={label} className={`aspect-square rounded-sm ${level(count)}`}>
+              <span className="sr-only">{label}</span>
+            </li>
           );
         })}
+      </ol>
+      <div className="mt-2 flex items-center justify-end gap-1.5 font-mono text-[10px] text-mute" aria-hidden="true">
+        az
+        {['bg-rule', 'bg-ribbon/35', 'bg-ribbon/65', 'bg-ribbon'].map((c) => (
+          <span key={c} className={`h-2.5 w-2.5 rounded-sm ${c}`} />
+        ))}
+        çok
       </div>
     </div>
   );

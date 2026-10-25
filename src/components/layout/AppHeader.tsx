@@ -22,7 +22,6 @@ import { Logo } from '@/components/ui/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { PomodoroControl } from '@/components/pomodoro/PomodoroControl';
 import { SettingsContent } from '@/components/layout/SettingsMenu';
-import type { PomodoroState } from '@/hooks/usePomodoroTimer';
 import type { Setter } from '@/types';
 
 interface IconButtonProps {
@@ -67,7 +66,6 @@ const MenuRow = ({ icon, label, onClick, pressed }: MenuRowProps) => (
 );
 
 interface AppHeaderProps {
-  pomodoro: PomodoroState;
   setShowPomodoroWidget: Setter<boolean>;
   showPlaylistSidebar: boolean;
   setShowPlaylistSidebar: Setter<boolean>;
@@ -81,7 +79,6 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({
-  pomodoro,
   setShowPomodoroWidget,
   showPlaylistSidebar,
   setShowPlaylistSidebar,
@@ -129,7 +126,7 @@ export const AppHeader = ({
         </button>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <PomodoroControl pomodoro={pomodoro} onOpenWidget={() => setShowPomodoroWidget(true)} />
+          <PomodoroControl onOpenWidget={() => setShowPomodoroWidget(true)} />
 
           {/* Masaüstü: ikon düğmeleri */}
           <div className="ml-2 hidden items-center gap-0.5 border-l border-rule pl-2 sm:flex">

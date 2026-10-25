@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { loadPersistedData, startPersistence } from '@/store/persistence';
-import { NotificationManager } from '@/lib/notifications';
 import { runMigration } from '@/lib/migration';
 
 export const useAppInit = () => {
@@ -23,7 +22,6 @@ export const useAppInit = () => {
     // Yükleme bittikten sonra abone ol: okunan veri geri yazılmasın.
     const stopPersistence = startPersistence(useStore);
 
-    NotificationManager.requestPermission();
     setIsInitializing(false);
     return stopPersistence;
   }, []);

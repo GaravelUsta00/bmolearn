@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '@/store/useStore';
 
 import { useAppInit } from '@/hooks/useAppInit';
-import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
+import { usePomodoroEngine } from '@/hooks/usePomodoroEngine';
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer';
 import { useRadio } from '@/hooks/useRadio';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -61,7 +61,7 @@ export default function App() {
   const sidebarVisible = showPlaylistSidebar && playlistItems.length > 0;
 
   useAppInit();
-  const pomodoro = usePomodoroTimer();
+  usePomodoroEngine();
   const {
     hostRef: playerHostRef,
     playerRef,
@@ -99,12 +99,7 @@ export default function App() {
         <div ref={radioHostRef}></div>
       </div>
 
-      <PomodoroToast
-        message={pomodoro.pomodoroToast.message}
-        type={pomodoro.pomodoroToast.type}
-        isVisible={pomodoro.pomodoroToast.isVisible}
-        onClose={() => pomodoro.setPomodoroToast((prev) => ({ ...prev, isVisible: false }))}
-      />
+      <PomodoroToast />
 
       <DocReloadModal />
       <BackupDialog />
@@ -123,20 +118,7 @@ export default function App() {
             setActiveTab={setActiveTab}
           />
 
-          <PomodoroWidget
-            showPomodoroWidget={showPomodoroWidget}
-            setShowPomodoroWidget={setShowPomodoroWidget}
-            focusDuration={pomodoro.focusDuration}
-            setFocusDuration={pomodoro.setFocusDuration}
-            breakDuration={pomodoro.breakDuration}
-            setBreakDuration={pomodoro.setBreakDuration}
-            timerMode={pomodoro.timerMode}
-            setTimerMode={pomodoro.setTimerMode}
-            timeLeft={pomodoro.timeLeft}
-            setTimeLeft={pomodoro.setTimeLeft}
-            isTimerRunning={pomodoro.isTimerRunning}
-            setIsTimerRunning={pomodoro.setIsTimerRunning}
-          />
+          <PomodoroWidget showPomodoroWidget={showPomodoroWidget} setShowPomodoroWidget={setShowPomodoroWidget} />
           <RadioWidget
             showMusicWidget={showMusicWidget}
             setShowMusicWidget={setShowMusicWidget}
@@ -150,7 +132,6 @@ export default function App() {
           />
 
           <AppHeader
-            pomodoro={pomodoro}
             setShowPomodoroWidget={setShowPomodoroWidget}
             showPlaylistSidebar={showPlaylistSidebar}
             setShowPlaylistSidebar={setShowPlaylistSidebar}

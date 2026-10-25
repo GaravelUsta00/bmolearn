@@ -18,6 +18,11 @@ export const createInitData: SliceCreator<Pick<AppState, 'initData'>> = (set) =>
         }
         return { ...h, id: h.id };
       });
-      return { ...data, history: migratedHistory };
+      return {
+        ...data,
+        history: migratedHistory,
+        // Kayıtlı odak süresiyle başla (zamanlayıcı açılışta hep odak modunda ve duruyor).
+        ...(data.pomodoroSettings ? { timerRemainingMs: data.pomodoroSettings.focusMinutes * 60_000 } : {}),
+      };
     }),
 });
