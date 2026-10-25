@@ -1,6 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useStore } from '@/store/useStore';
+import { newId } from '@/lib/id';
+
+// pdf.js yalnızca bir PDF açılınca yüklenir (ilk paketi büyütmez).
+const PdfViewer = dynamic(() => import('@/components/player/PdfViewer').then((m) => m.PdfViewer), {
+  ssr: false,
+  loading: () => <p className="p-6 text-sm text-mute">PDF hazırlanıyor…</p>,
+});
 
 interface ContentViewerProps {
   hostRef: (el: HTMLDivElement | null) => void;
@@ -14,8 +22,22 @@ const PLACEHOLDER_TITLE = 'YouTube Video';
 // Video bir "şekil" gibi: koyu sıcak zemin, altında italik açıklama (DESIGN §8.3).
 // YouTube'un kendi kontrolleri kullanılır; özel oynatıcı kontrolü yok.
 export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: ContentViewerProps) => {
-  const { contentConfig, playlistItems, currentPlaylistIndex } = useStore();
+  const {
+    contentConfig,
+    playlistItems,
+    currentPlaylistIndex,
+    activeContentId,
+    addNote,
+    setActiveTab,
+    setPendingDocReload,
+  } = useStore();
   const isVideo = contentConfig.type === 'video';
+  const isPdf = contentConfig.type === 'document' && !!contentConfig.url && contentConfig.fileType === 'pdf';
+
+  const quote = (text: string, page: number) => {
+    addNote({ id: newId(), contentId: activeContentId, text: `> ${text} (s. ${page})`, time: 0 });
+    setActiveTab('notes');
+  };
   const blocked = isVideo && (videoError || apiError);
 
   const caption = isVideo
@@ -28,7 +50,9 @@ export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: Conten
 
   return (
     <figure className="m-0">
-      <div className="relative aspect-video w-full overflow-hidden rounded-sm bg-plate shadow-page">
+      <div
+        className={`relative w-full overflow-hidden rounded-sm bg-plate shadow-page ${isVideo ? 'aspect-video' : 'h-[75vh] min-h-[420px] lg:h-[calc(100vh-14rem)]'}`}
+      >
         <div
           ref={hostRef}
           className={`absolute inset-0 z-10 h-full w-full ${isVideo && !blocked ? '' : 'pointer-events-none opacity-0'}`}
@@ -36,20 +60,21 @@ export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: Conten
 
         {contentConfig.type === 'document' && (
           <div className="absolute inset-0 z-20 flex h-full w-full flex-col bg-page">
-            {contentConfig.url && contentConfig.fileType === 'pdf' ? (
-              <iframe src={contentConfig.url} title={contentConfig.title} className="h-full w-full" />
+            {isPdf ? (
+              <PdfViewer url={contentConfig.url as string} title={contentConfig.title} onQuote={quote} />
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ribbon">Desteklenmeyen dosya</p>
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+                <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">PDF bu cihazda yok</p>
                 <p className="max-w-md font-serif text-xl leading-snug">
-                  {contentConfig.url ? (
-                    <>
-                      <em>{contentConfig.title}</em> açılamadı: yalnızca PDF açılabilir.
-                    </>
-                  ) : (
-                    'Yalnızca PDF açılabilir.'
-                  )}
+                  Devam etmek için <em>{contentConfig.title}</em> dosyasını yeniden seç.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setPendingDocReload({ id: contentConfig.id, title: contentConfig.title })}
+                  className="min-h-11 rounded-sm border border-mute px-5 text-sm hover:border-ink"
+                >
+                  Dosyayı seç
+                </button>
               </div>
             )}
           </div>

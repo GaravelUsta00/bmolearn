@@ -1,14 +1,6 @@
-// Kullanıcının verdiği adres ve dosyaların doğrulanması (S2, S3).
-
-/** Yalnızca geçerli bir https: adresini döndürür; `javascript:`, `data:`, `http:` vb. reddedilir. */
-export const toHttpsUrl = (input: string): string | undefined => {
-  try {
-    const url = new URL(input.trim());
-    return url.protocol === 'https:' ? url.href : undefined;
-  } catch {
-    return undefined;
-  }
-};
+// Kullanıcının verdiği dosyaların doğrulanması (S3).
+// (Web adresi dalı kaldırıldığı için URL doğrulama yardımcısına gerek kalmadı; bağlantılar yalnızca
+// YouTube kimliği olarak ayrıştırılır, bkz. lib/youtube.ts.)
 
 /**
  * Dosyanın gerçekten PDF olup olmadığını denetler: uzantı ya da MIME tipi PDF olmalı VE
@@ -23,12 +15,4 @@ export const isPdfFile = async (file: File): Promise<boolean> => {
   } catch {
     return false;
   }
-};
-
-/** Görüntüleyicinin beklediği dosya türü: geçerli PDF için 'pdf', aksi halde uzantı. */
-export const documentFileType = async (file: File): Promise<string> => {
-  if (await isPdfFile(file)) return 'pdf';
-  const ext = file.name.split('.').pop()?.toLowerCase() || '';
-  // Uzantısı .pdf olup imzası tutmayan dosya PDF olarak gösterilmez.
-  return ext === 'pdf' ? 'gecersiz-pdf' : ext;
 };

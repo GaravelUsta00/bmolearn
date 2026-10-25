@@ -15,6 +15,13 @@ const message = (n: StorageNotice): string => {
       const names = n.keys.map((k) => (isDataKey(k) ? DATA_KEY_LABELS[k] : k)).join(', ');
       return `Bazı kayıtlar okunamadı ve atlandı (${names}). Okunamayan ham veri cihazında saklandı; Ayarlar > Yedeği indir ile onu da içeren bir yedek alabilirsin.`;
     }
+    case 'pdf-not-saved': {
+      const after = 'Yine de açıldı, ama sayfayı yenileyince ya da geçmişten açınca dosyayı yeniden seçmen gerekir.';
+      if (n.reason === 'too-large') return `"${n.name}" 50 MB'tan büyük olduğu için bu cihazda saklanmadı. ${after}`;
+      if (n.reason === 'quota')
+        return `"${n.name}" bu cihazda saklanamadı: tarayıcının depolama alanı dolu ya da sınırlı (Safari'de sık görülür). Ayarlar'dan saklanan PDF'leri silerek yer açabilirsin. ${after}`;
+      return `"${n.name}" bu tarayıcıda saklanamıyor (gizli pencere ya da engellenmiş site verisi olabilir). ${after}`;
+    }
     case 'migration-failed':
       return 'Eski BMO Learn verilerin aktarılamadı. Eski veriler silinmedi; Ayarlar > Yedeği yükle ile bir yedek dosyasından yükleyebilirsin.';
   }

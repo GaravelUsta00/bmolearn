@@ -1,63 +1,84 @@
 'use client';
 
-import { AlertCircle } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useStore } from '@/store/useStore';
-import { documentFileType } from '@/lib/safeInput';
+import { reloadDocumentFile } from '@/lib/openDocument';
 
+// Geçmişten açılan PDF bu cihazda saklı değilse gösterilir (saklıysa doğrudan açılır, A4).
 export const DocReloadModal = () => {
-  const { pendingDocReload, setContentConfig, setPendingDocReload } = useStore();
+  const pending = useStore((s) => s.pendingDocReload);
+  const setPendingDocReload = useStore((s) => s.setPendingDocReload);
+  const storePdfs = useStore((s) => s.documentSettings.storePdfs);
+  const inputError = useStore((s) => s.inputError);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pending) return;
+    dialogRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingDocReload(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [pending, setPendingDocReload]);
+
+  if (!pending) return null;
 
   return (
-    <>
-      {pendingDocReload && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-plate/70">
-          <div className="bg-page border border-rule rounded-sm w-full max-w-sm p-6 shadow-page relative text-center">
-            <div className="w-16 h-16 bg-ribbon/10 text-ribbon rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-ink mb-2">Dokümanı Yeniden Yükle</h3>
-            <p className="text-sm text-ink mb-6 leading-relaxed">
-              Güvenlik ve performans nedeniyle dosya içerikleri tarayıcıda saklanmaz. Geçmişteki notlarınıza ve AI
-              özetinize ulaşmak için lütfen <strong className="text-ink">&quot;{pendingDocReload.title}&quot;</strong>{' '}
-              adlı dosyanızı tekrar seçin.
-            </p>
-            <div className="relative w-full">
-              <input
-                type="file"
-                id="doc-reload-upload"
-                accept=".pdf"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const objUrl = URL.createObjectURL(file);
-                  const fileType = await documentFileType(file);
-                  setContentConfig({
-                    id: pendingDocReload.id,
-                    type: 'document',
-                    title: pendingDocReload.title,
-                    url: objUrl,
-                    fileType,
-                  });
-                  setPendingDocReload(null);
-                }}
-                className="hidden"
-              />
-              <label
-                htmlFor="doc-reload-upload"
-                className="flex items-center justify-center w-full py-3.5 bg-ribbon hover:bg-ribbon/90 text-page font-bold text-sm rounded-sm cursor-pointer transition-colors shadow-page"
-              >
-                Dosyayı Seç ve Devam Et
-              </label>
-            </div>
-            <button
-              onClick={() => setPendingDocReload(null)}
-              className="mt-4 text-sm font-semibold text-mute hover:text-ink transition-colors"
-            >
-              İptal
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex animate-fade items-center justify-center bg-plate/70 p-4">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="doc-reload-title"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-sm border border-rule bg-page p-6 text-ink shadow-page focus:outline-none"
+      >
+        <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">PDF bu cihazda yok</p>
+        <h2 id="doc-reload-title" className="mt-2 font-serif text-xl leading-snug">
+          <em>{pending.title}</em> dosyasını yeniden seç
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-mute">
+          Notların, özetin, kartların ve soruların duruyor; yalnızca PDF&apos;in kendisi bu cihazda saklanmamış.
+          {storePdfs
+            ? ' Dosyayı seçtiğinde bir dahaki sefere sormamak için saklanacak.'
+            : ' "PDF’leri bu cihazda sakla" ayarı kapalı olduğu için dosya saklanmayacak.'}
+        </p>
+        {inputError && (
+          <p role="alert" className="mt-3 text-sm text-ribbon">
+            {inputError}
+          </p>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,application/pdf"
+          className="hidden"
+          aria-label="PDF dosyası seç"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) await reloadDocumentFile(file, pending);
+          }}
+        />
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setPendingDocReload(null)}
+            className="min-h-11 px-3 text-sm text-mute hover:text-ink"
+          >
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="min-h-11 rounded-sm bg-ink px-5 text-sm text-page hover:opacity-90"
+          >
+            Dosyayı seç
+          </button>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };

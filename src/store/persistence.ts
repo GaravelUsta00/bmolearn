@@ -15,6 +15,7 @@ export const PERSISTED_FIELDS: Record<keyof PersistedData, Exclude<DataKey, 'the
   history: 'history',
   pomodoroHistory: 'pomodoro',
   pomodoroSettings: 'pomodoro_settings',
+  documentSettings: 'document_settings',
   videoProgress: 'progress',
 };
 

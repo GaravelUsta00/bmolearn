@@ -7,7 +7,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Bookshelf } from '@/components/landing/Bookshelf';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 import type { HistoryItem } from '@/types';
-import { documentFileType, toHttpsUrl } from '@/lib/safeInput';
+import { openDocumentFile, openHistoryDocument, UNSUPPORTED_LINK } from '@/lib/openDocument';
 
 // Yükleme koreografisi yalnızca ilk açılışta oynar (docs/DESIGN.md §7.1).
 let hasPlayedIntro = false;
@@ -17,7 +17,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
-  const { setView, setContentConfig, history, addToHistory, setPlaylistItems } = useStore();
+  const { setView, setContentConfig, history, inputError, setInputError } = useStore();
   const [url, setUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [intro] = useState(() => !hasPlayedIntro);
@@ -33,27 +33,19 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
     const pId = extractPlaylistId(url);
 
     if (vId || pId) {
+      setInputError(null);
       setContentConfig({ id: vId || '', type: 'video', pId, title: 'YouTube Video' });
       setView('app');
     } else {
-      // Web adresi dalı Adım 8'de kaldırılacak (ANALYSIS B8); şimdilik davranış aynı.
-      const id = 'web_' + Date.now();
-      setContentConfig({ id, type: 'document', title: 'Web Kaynağı', url: toHttpsUrl(url) });
-      setPlaylistItems([]);
-      setView('app');
+      // Web adresi dalı kaldırıldı (B8, karar): yalnızca YouTube bağlantısı ya da PDF.
+      setInputError(UNSUPPORTED_LINK);
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const id = 'doc_' + Date.now();
-    const objUrl = URL.createObjectURL(file);
-    const fileType = await documentFileType(file);
-    setContentConfig({ id, type: 'document', title: file.name, url: objUrl, fileType });
-    addToHistory({ contentId: id, title: file.name, timestamp: Date.now(), type: 'document' });
-    setPlaylistItems([]);
-    setView('app');
+    e.target.value = '';
+    if (file) await openDocumentFile(file);
   };
 
   const openHistoryItem = (item: HistoryItem) => {
@@ -61,15 +53,7 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
       setContentConfig({ id: item.contentId, type: 'video', title: item.title, url: undefined, pId: item.pId });
       setView('app');
     } else {
-      setContentConfig({
-        id: item.contentId,
-        type: 'document',
-        title: item.title,
-        url: undefined,
-        fileType: undefined,
-      });
-      useStore.getState().setPendingDocReload({ id: item.contentId, title: item.title });
-      setView('app');
+      void openHistoryDocument(item.contentId, item.title);
     }
   };
 
@@ -110,7 +94,11 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
               <input
                 type="text"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  if (inputError) setInputError(null);
+                }}
+                aria-describedby={inputError ? 'landing-input-error' : undefined}
                 placeholder="YouTube bağlantısı ya da PDF"
                 className="w-full border-0 border-b border-mute bg-transparent pb-2 text-base text-ink placeholder:text-mute focus:border-b-2 focus:border-ribbon focus:pb-[7px] focus:outline-none sm:text-xl"
                 autoFocus
@@ -130,7 +118,18 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
           >
             ya da PDF yükle
           </button>
-          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileUpload} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          {inputError && (
+            <p id="landing-input-error" role="alert" className="mt-2 text-sm text-ribbon">
+              {inputError}
+            </p>
+          )}
         </div>
 
         {history.length > 0 && (

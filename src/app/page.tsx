@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 
 import { useAppInit } from '@/hooks/useAppInit';
 import { usePomodoroEngine } from '@/hooks/usePomodoroEngine';
+import { useReleaseStaleDocumentUrls } from '@/hooks/useReleaseStaleDocumentUrls';
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer';
 import { useRadio } from '@/hooks/useRadio';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -62,6 +63,7 @@ export default function App() {
 
   useAppInit();
   usePomodoroEngine();
+  useReleaseStaleDocumentUrls();
   const {
     hostRef: playerHostRef,
     playerRef,

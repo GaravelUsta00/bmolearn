@@ -14,6 +14,7 @@ import {
   ListVideo,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { forgetAllDocuments, forgetDocuments, openHistoryDocument } from '@/lib/openDocument';
 import type { HistoryItem } from '@/types';
 
 interface HistoryModalProps {
@@ -22,7 +23,7 @@ interface HistoryModalProps {
 }
 
 export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps) => {
-  const { history, setContentConfig, clearHistory, deleteHistoryItem, setPendingDocReload, setView } = useStore();
+  const { history, setContentConfig, clearHistory, deleteHistoryItem, setView } = useStore();
   const [selectedPlaylist, setSelectedPlaylist] = useState<HistoryItem | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
               <button
                 onClick={() => {
                   clearHistory();
+                  void forgetAllDocuments();
                 }}
                 className="text-xs font-semibold text-ribbon hover:bg-ribbon/10 px-2 sm:px-3 py-1.5 rounded-sm transition-colors"
               >
@@ -169,6 +171,7 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteHistoryItem(item.id);
+                      if (item.type === 'document') void forgetDocuments([item.contentId]);
                     }}
                     className="absolute top-2 right-2 z-30 p-2 rounded-full bg-ribbon text-page opacity-0 group-hover:opacity-100 transition-all"
                     title="Geçmişi ve Verileri Sil"
@@ -190,16 +193,8 @@ export const HistoryModal = ({ showHistory, setShowHistory }: HistoryModalProps)
                         setShowHistory(false);
                         setView('app');
                       } else {
-                        setContentConfig({
-                          id: item.contentId,
-                          type: 'document',
-                          title: item.title,
-                          url: undefined,
-                          fileType: undefined,
-                        });
-                        setPendingDocReload({ id: item.contentId, title: item.title });
                         setShowHistory(false);
-                        setView('app');
+                        void openHistoryDocument(item.contentId, item.title);
                       }
                     }}
                   >

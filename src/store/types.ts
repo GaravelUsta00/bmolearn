@@ -108,7 +108,11 @@ export interface PomodoroSlice {
 }
 
 export type StorageNotice =
-  { kind: 'quota' } | { kind: 'unavailable' } | { kind: 'corrupt'; keys: string[] } | { kind: 'migration-failed' };
+  | { kind: 'quota' }
+  | { kind: 'unavailable' }
+  | { kind: 'corrupt'; keys: string[] }
+  | { kind: 'migration-failed' }
+  | { kind: 'pdf-not-saved'; reason: 'too-large' | 'quota' | 'unavailable'; name: string };
 
 export interface UiSlice {
   theme: 'dark' | 'light';
@@ -116,6 +120,10 @@ export interface UiSlice {
   blueLight: number;
   installPrompt: InstallPromptEvent | null;
   storageNotices: StorageNotice[];
+  /** Kalıcı: belearn_document_settings. "Bu cihazda sakla" varsayılan açık (A4). */
+  documentSettings: { storePdfs: boolean };
+  /** Kaynak girişinin altındaki geçici hata (ör. desteklenmeyen dosya ya da bağlantı). */
+  inputError: string | null;
 
   // Görünümler arası (landing <-> app) korunan arayüz durumu (ANALYSIS K8)
   activeTab: StudyTab;
@@ -135,6 +143,8 @@ export interface UiSlice {
   setInstallPrompt: (prompt: InstallPromptEvent | null) => void;
   addStorageNotice: (notice: StorageNotice) => void;
   dismissStorageNotices: () => void;
+  setStorePdfs: (value: boolean) => void;
+  setInputError: (message: string | null) => void;
 
   setActiveTab: Setter<StudyTab>;
   setShowHistory: Setter<boolean>;
@@ -159,6 +169,7 @@ export interface PersistedData {
   pomodoroHistory: Record<string, number>;
   videoProgress: Record<string, number>;
   pomodoroSettings: PomodoroSettings;
+  documentSettings: { storePdfs: boolean };
 }
 
 /** Eski sürümlerde `id` alanı olmayan geçmiş kaydı. */

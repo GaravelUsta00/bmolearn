@@ -70,6 +70,7 @@ export const KEY_SCHEMAS: Record<Exclude<DataKey, 'theme'>, Kind> = {
   summaries: { record: z.string() },
   pomodoro: { record: z.number() },
   pomodoro_settings: { object: PomodoroSettingsSchema },
+  document_settings: { object: z.object({ storePdfs: z.boolean() }) },
   progress: { record: z.number() },
 };
 

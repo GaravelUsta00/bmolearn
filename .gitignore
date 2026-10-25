@@ -42,3 +42,6 @@ next-env.d.ts
 
 # yerel test verisi (gerçek dökümler) — commit edilmez
 /fixtures/local/
+
+# pdf.js çalışma zamanı dosyaları (npm install sırasında üretilir)
+/public/pdfjs/

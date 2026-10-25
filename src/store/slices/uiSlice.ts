@@ -26,6 +26,8 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
   blueLight: 0,
   installPrompt: null,
   storageNotices: [],
+  documentSettings: { storePdfs: true },
+  inputError: null,
 
   activeTab: 'notes',
   showHistory: false,
@@ -54,6 +56,8 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
         : { storageNotices: [...state.storageNotices, notice] }
     ),
   dismissStorageNotices: () => set({ storageNotices: [] }),
+  setStorePdfs: (value) => set({ documentSettings: { storePdfs: value } }),
+  setInputError: (message) => set({ inputError: message }),
 
   setActiveTab: setterFor(set, 'activeTab'),
   setShowHistory: setterFor(set, 'showHistory'),

@@ -4,6 +4,7 @@ import React, { useId, useRef } from 'react';
 import { useStore } from '@/store/useStore';
 import { downloadBackup, parseBackup } from '@/lib/backup';
 import { useBackupDialog } from '@/components/backup/BackupDialog';
+import { PdfStorageSettings } from '@/components/layout/PdfStorageSettings';
 
 interface SettingsContentProps {
   onInstall: () => void;
@@ -72,6 +73,7 @@ export const SettingsContent = ({ onInstall }: SettingsContentProps) => {
           />
         </div>
       </div>
+      <PdfStorageSettings />
       <div className="border-t border-rule pt-3">
         <button
           type="button"
