@@ -11,7 +11,8 @@ BeLearn tamamen tarayıcıda çalışır: hesap, sunucu tarafı veri ya da API y
 | AI yanıtı (yapıştırılan JSON) | XSS, uygulamayı çökerten biçim, depolama kotasını dolduran boyut | zod tabanlı ayrıştırma; yalnızca metin/sayı kabul edilir; `correct` normalize edilir (`b`, `Cevap: B`, şık metni); dizi şıklar A–D'ye eşlenir; adet (100 kart, 100 soru) ve uzunluk sınırı; geçersiz öğeler atlanır ve raporlanır | `src/lib/aiImport.ts` |
 | Özet ve not metni (markdown) | XSS (`<img onerror>`, `<script>`, `javascript:` bağlantı) | `react-markdown`: ham HTML **düz metin** olarak gösterilir (`rehype-raw` yok); izinli eleman listesi; görsel yok; bağlantılar yalnızca `https:` ve `rel="noopener noreferrer nofollow"`. Uygulamada kullanıcı/AI içeriği için `dangerouslySetInnerHTML` yok | `src/components/ui/Markdown.tsx` |
 | Bağlantı girişi | `javascript:` / `data:` adresi | YouTube kimlikleri yalnızca `[A-Za-z0-9_-]`; diğer adresler yalnızca geçerli `https:` ise saklanır ve hiçbir `src`/`href`'e yazılmaz | `src/lib/youtube.ts`, `src/lib/safeInput.ts` |
-| Yüklenen dosya | PDF diye yeniden adlandırılmış HTML vb. | Uzantı/MIME + ilk 1 KB'ta `%PDF-` imzası; tutmazsa görüntülenmez | `src/lib/safeInput.ts` |
+| Yüklenen dosya | PDF diye yeniden adlandırılmış HTML vb. | Uzantı/MIME + ilk 1 KB'ta `%PDF-` imzası; tutmazsa açılmaz. PDF'ler tarayıcının görüntüleyicisinde (iframe) değil, pdf.js ile canvas'a çizilir; belge içindeki betikler ve formlar çalıştırılmaz (`enableXfa: false`) | `src/lib/safeInput.ts`, `src/components/player/PdfViewer.tsx` |
+| Cihazda saklanan PDF'ler | Paylaşılan bilgisayarda başkalarının erişimi | IndexedDB'de yalnızca bu tarayıcı profilinde durur; Ayarlar'dan kapatılabilir ve toplu silinebilir; geçmişten silinen PDF cihazdan da silinir | `src/lib/idb.ts` |
 | localStorage içeriği | Bozuk ya da elle değiştirilmiş veri | zod ile okuma; geçersiz kayıtlar atlanır, ham hali `belearn_backup_*` olarak saklanır; uygulama kilitlenmez | `src/lib/schemas.ts`, `src/store/persistence.ts` |
 | Yedek dosyası | Bozuk/yabancı JSON | Biçim kontrolü, önizleme ve onay; yazma hatasında geri alma | `src/lib/backup.ts` |
 
@@ -34,19 +35,21 @@ BeLearn tamamen tarayıcıda çalışır: hesap, sunucu tarafı veri ya da API y
 
 ```
 default-src 'self';
-script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com;
+script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.youtube.com https://s.ytimg.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: blob: https://img.youtube.com https://i.ytimg.com;
 font-src 'self';
-connect-src 'self';
+connect-src 'self' blob:;
 media-src 'self';
-frame-src https://www.youtube.com https://www.youtube-nocookie.com blob:;
+frame-src https://www.youtube.com https://www.youtube-nocookie.com;
 worker-src 'self' blob:;
 manifest-src 'self' blob:;
 object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 ```
 
 Geliştirme modunda ek olarak `'unsafe-eval'` (React Refresh) ve `ws:`/`wss:` (HMR) eklenir.
+
+**`'wasm-unsafe-eval'`:** yalnızca WebAssembly modüllerinin derlenmesine izin verir; JavaScript `eval`/`new Function` hâlâ yasaktır. pdf.js görüntü çözücüleri (JPEG 2000 vb.) için gerekir. `connect-src blob:`: pdf.js açılan PDF'i blob URL'sinden `fetch` ile okur. pdf.js worker'ı ve wasm dosyaları aynı kaynaktan (`/pdfjs/`) verilir.
 
 **Bilinen ödünleşim: `script-src 'unsafe-inline'`.** Next.js, statik prerender edilen sayfaya satır içi script'ler ekler. Nonce kullanmak her istekte sunucu tarafı render (Proxy) gerektirir. Uygulama tamamen statik olduğu için bu yol seçilmedi. XSS'e karşı asıl savunma, hiçbir kullanıcı/AI içeriğinin HTML olarak render edilmemesidir (yukarıdaki tablo). İleride gerekirse seçenekler:
 - Proxy + nonce + `'strict-dynamic'` (sayfa dinamik render olur),

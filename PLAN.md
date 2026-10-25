@@ -233,7 +233,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 8 — PDF ve belgeler (+ yeni tasarım)
+## Adım 8 — PDF ve belgeler (+ yeni tasarım) ✅
+
+> **Tamamlandı (2026-10-25):** PDF testi 20/20 (iPhone/Pixel öykünmesi dahil), tüm regresyon takımları yeşil. Gerçek iOS/Android cihaz testi henüz yapılmadı. Ayrıntı: [ANALYSIS.md §7, Adım 8](ANALYSIS.md#adım-8-pdf-ve-belgeler).
 
 **Amaç:** Mobilde çalışan, kalıcı bir belge deneyimi; web adresi dalının kaldırılması.
 

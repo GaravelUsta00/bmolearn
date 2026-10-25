@@ -508,6 +508,45 @@ Commit'ler: `18d0305` (K20: Karadeniz Akustik istasyonu) · `a676938` (Adım 7).
 - Odak ve mola süreleri artık kalıcı (karar #6).
 - Tamamlanan görev 0,9 sn "tamamlandı" görünüp kalkıyor; eskiden animasyon bitince kalkıyordu, süre yaklaşık aynı.
 
+### Adım 8: PDF ve belgeler
+
+Commit: `ddc874f`.
+
+**Yöntem:** Edge ile PDF testi. Test PDF'leri geçerli `xref` tablosuyla üretildi: 5 ve 20 sayfa, metinli; ayrıca 51 MB'lık bir dosya. Mobil için Playwright'ın iPhone 13 ve Pixel 7 öykünmeleri (dokunmatik, mobil görünüm alanı, UA) kullanıldı. Blob URL'leri `createObjectURL`/`revokeObjectURL` sayılarak izlendi; CSP ihlalleri `securitypolicyviolation` ile toplandı.
+
+| Senaryo | Sonuç |
+|---|---|
+| V1–V3 pdf.js görüntüleyici: "Sayfa 1 / 5", iframe yok, seçilebilir metin katmanı, kaydırınca "Sayfa 5 / 5" | ✅ |
+| V4 Yakınlaştırma: %120'de sayfa genişliği 849 → 1019 px; "Genişliğe sığdır" | ✅ |
+| V5 Metin seçimi → "Seçili metni notlara ekle" → `> Mitokondri … (s. 2)` | ✅ |
+| V6, **A4** PDF IndexedDB'de saklanıyor; yenileme sonrası raftan açınca dosya seçmeden açılıyor | ✅ |
+| **B14** Çalışma ekranından yüklenen PDF geçmişe ekleniyor | ✅ |
+| #13, karar #4: PDF olmayan dosyada yalnızca "Desteklenmeyen dosya" uyarısı, içerik değişmiyor; imzası tutmayan `sahte.pdf` reddediliyor | ✅ |
+| **B8** Web adresi (Landing ve çalışma ekranı): "Yalnızca YouTube bağlantısı ya da PDF açılabilir." | ✅ |
+| 50 MB üstü: açılıyor, saklanmıyor, anlaşılır uyarı | ✅ |
+| **B10** 10 yüklemede 10 blob URL oluşturuldu, 9'u serbest bırakıldı; açık kalan 1, ekrandaki PDF | ✅ |
+| Saklama kapalıyken geçmişten açınca yeni "yeniden seç" penceresi; dosya seçince açılıyor (ve saklanmıyor) | ✅ |
+| Geçmişten silinen PDF IndexedDB'den de siliniyor (12 → 11) | ✅ |
+| **A3** iPhone 13 ve Pixel 7 öykünmesi: 20 sayfalık PDF çiziliyor ve kaydırılıyor (Sayfa 13 / 20); bellekte aynı anda 5–6 sayfa; yatay taşma yok | ✅ |
+| CSP ihlali · sayfa hatası | ✅ yok · yok |
+| PDF testi toplam | **20/20** |
+| Duman · güvenlik · oynatıcı · pomodoro · depolama | **45/45 · 20/20 · 19/19 · 16/16 · 20/20** |
+
+**Paket boyutu:** Landing'de pdf.js içeren hiçbir dosya inmiyor. pdf.js (sıkıştırılmamış ~1,7 MB) ve worker'ı yalnızca bir PDF açılınca yükleniyor. Landing'in kendi JS'i sıkıştırılmamış ~1,1 MB; markdown ve modal kodunun gecikmeli yüklenmesi Adım 9'da (P3).
+
+**Çözülen bulgular:** A3, A4, B8, B10 (blob), B14, S3 (iframe tamamen kalktı).
+
+**Kararlar ve notlar:**
+- **pdf.js varlıkları** `npm install` sırasında `public/pdfjs/`'e kopyalanıyor (git'e girmiyor). Vercel kurulumda bu adımı kendisi çalıştırır.
+- **CSP:** `'wasm-unsafe-eval'` (yalnızca wasm derleme, JS eval değil) ve `connect-src blob:` eklendi; iframe kalmadığı için `frame-src`'den `blob:` çıkarıldı (SECURITY.md).
+- **Gerçek cihaz:** iOS Safari ve Android Chrome'da gerçek cihaz testi yapılmadı. pdf.js her tarayıcıda aynı canvas çizimini kullandığı için öykünme sonucu güvenilir bir gösterge, ama kesin değil. Özellikle Safari'nin IndexedDB kotası gerçek cihazda denenmeli.
+- **Görünüm:** Belge modunda içerik kutusu 16:9 yerine uzun sayfa yüksekliğinde.
+- **Kaldırılan yardımcı:** URL doğrulama (`toHttpsUrl`) web adresi dalıyla birlikte kalktı; bağlantılar yalnızca YouTube kimliği olarak ayrıştırılıyor.
+
+**Adım 8 sırasında bulunan ek konular:**
+- **K23:** pdf.js 6'da `PDFDocumentProxy.destroy()` yok; belge yükleme görevi üzerinden (`loadingTask.destroy()`) kapatılıyor.
+- **K24:** Playwright 50 MB'tan büyük dosyaları tampon olarak kabul etmiyor; 50 MB testi dosya yoluyla yapıldı.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.
