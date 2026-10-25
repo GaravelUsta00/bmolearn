@@ -477,6 +477,37 @@ Commit'ler: `262a099` (6a: hook'lar + video, oynatma listesi ve radyo yeni tasar
 - **K22 (çözüldü):** İstasyon değişince arayüz iyimser biçimde "Duraklat" gösterirken düğme oynatıcının gerçek (arabellek) durumuna bakıyordu; "Duraklat"a basmak bir şey yapmıyordu.
 - **Davranış değişikliği:** Radyo ve YouTube API'si artık ilk ihtiyaçta yükleniyor (eskiden açılışta). Landing YouTube'a hiç istek yapmıyor.
 
+### Adım 7: Pomodoro ve zamanlayıcı
+
+Commit'ler: `18d0305` (K20: Karadeniz Akustik istasyonu) · `a676938` (Adım 7).
+
+**Yöntem:** Edge + Playwright sahte saati (`page.clock`), saat dilimi `Europe/Istanbul`. İçeriğe PDF ile girildi (YouTube sahte saatten etkilenmesin diye). Render sayımı, sayfaya React DevTools kancası enjekte edilerek yapıldı. Bir bileşen, ancak fiber nesnesi bir önceki commit'te yoksa **ve** `memoizedProps`/`memoizedState` önceki halinden farklıysa "çalıştı" sayıldı; böylece React'in render etmeden yaptığı klonlar ayıklandı. Metriğin ayırt ediciliği karşı-sınamayla doğrulandı: not alanına yazmak 85 bileşenden 52'sini render ediyor.
+
+| Senaryo | Sonuç |
+|---|---|
+| B5 Açılışta bildirim izni istenmiyor; ilk "Odaklan" tıklamasında bir kez isteniyor | ✅ |
+| **P1** Zamanlayıcı çalışırken 4 sn'de 16 commit; commit başına **85 bileşenden en fazla 1**'i (sayaç) çalışıyor | ✅ |
+| Duraklat: süre donuyor, düğme "Devam et" | ✅ |
+| **B4** Saat 10 dk ileri alınıp hiçbir zamanlayıcı tetiklenmediğinde (arka plan sekmesi gibi) ekranda tam 15:00 | ✅ |
+| **B4** İstanbul 00:05'te başlayıp 00:30'da biten pomodoro `2026-10-25`'e yazılıyor (UTC günü `10-24` değil) | ✅ |
+| Faz bitişi: bildirim kutusu, mola modu, "Molayı başlat", 05:00 | ✅ |
+| Başlık yanıp sönüyor ve 10 sn sonra eski haline dönüyor; üst üste iki bildirimde "🔔" ile takılı kalmıyor (B5) | ✅ |
+| Eski UTC anahtarlı kayıtlar (2 + 4) ısı haritasında, yenilerle birlikte (toplam 8) | ✅ |
+| Karar #6: 50/10 seçimi `belearn_pomodoro_settings`'e yazılıyor, yenilemeden sonra 50:00 | ✅ |
+| Çalışırken süre alanları kilitli | ✅ |
+| Görev tamamlama: işaretleniyor, kısa süre sonra kalkıyor, depodan da siliniyor; hareketi azalt açıkken de çalışıyor | ✅ |
+| Pomodoro testi toplam | **16/16** |
+| Duman · oynatıcı · güvenlik · depolama | **45/45 · 19/19 · 20/20 · 20/20** |
+
+**Çözülen bulgular:** B4, B5; P1'in zamanlayıcı kısmı (store'un tamamına abone olan `page.tsx` hâlâ her store değişiminde geniş render yapıyor; selector'lere geçiş Adım 9'da). `taskComplete` animasyonunun işlevsel bağımlılığı kalktı.
+
+**Bilinen sınır:** Arka plan sekmesinde tarayıcı zamanlayıcıları kısabilir (Chrome'da 5 dk sonra dakikada bir). Ekrandaki süre bundan etkilenmez, ama faz bitişi (ses, bildirim) en geç kısılmış zamanlayıcının tetiklendiği ya da sekmeye dönüldüğü anda işlenir; kayıt yine fazın bittiği güne yazılır. Tam zamanında arka plan bildirimi için service worker gerekir (Adım 10'da değerlendirilecek).
+
+**Davranış değişiklikleri:**
+- Duraklatılmış zamanlayıcının düğmesi "Devam et" oldu.
+- Odak ve mola süreleri artık kalıcı (karar #6).
+- Tamamlanan görev 0,9 sn "tamamlandı" görünüp kalkıyor; eskiden animasyon bitince kalkıyordu, süre yaklaşık aynı.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.

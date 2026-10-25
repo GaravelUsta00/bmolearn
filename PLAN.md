@@ -203,7 +203,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 7 — Pomodoro ve zamanlayıcı (+ yeni tasarım)
+## Adım 7 — Pomodoro ve zamanlayıcı (+ yeni tasarım) ✅
+
+> **Tamamlandı (2026-10-25):** Pomodoro testi 16/16 (sahte saatle sapma ve gece yarısı, render sayımı), tüm regresyon takımları yeşil. Ayrıntı ve bilinen sınır (arka plan bildirim gecikmesi): [ANALYSIS.md §7, Adım 7](ANALYSIS.md#adım-7-pomodoro-ve-zamanlayıcı).
 
 **Amaç:** Doğru ve hafif bir zamanlayıcı; pomodoro arayüzünün yeni tasarımı.
 
