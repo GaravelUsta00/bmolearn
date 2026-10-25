@@ -4,6 +4,26 @@
 
 Dal: `refactor/bmo-optimizasyon`.
 
+## Durum (2026-10-25)
+
+**10 adımın tamamı bitti ✅** — sürüm 0.1.0 ([CHANGELOG.md](CHANGELOG.md)). Dal henüz uzak depoya gönderilmedi (push/PR kullanıcı onayıyla).
+
+| Adım                                                       | Commit'ler                                                                             |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 9 — Çalışma ekranı, erişilebilirlik, performans, odak modu | `4470e22` (kod), `4d50874` (doküman)                                                   |
+| 10 — PWA, testler, teslim                                  | `b271ef7` (Prettier biçimi), `239ff09` (PWA), `c8bed89` (testler), `fa69757` (doküman) |
+
+Son doğrulama: `npm run check` yeşil; Vitest 49/49; Playwright 17/17 (Chromium ve Edge); `npm audit` 0 açık; ESLint'te override yok; Lighthouse mobil erişilebilirlik ve en iyi uygulamalar 100, performans 75–79.
+
+## Sonraki işler (öneri; planın dışında, kullanıcı onayıyla)
+
+1. Dalı push edip `main`'e PR açmak.
+2. CI: GitHub Actions'ta `npm run check` ve `npx playwright install chromium && npm run test:e2e`.
+3. Gerçek uygulama simgesi (`public/icons/*`, `src/app/favicon.ico`, `src/app/apple-icon.png`; DESIGN §5).
+4. iOS Safari ve Android Chrome'da gerçek cihaz testi (PDF, IndexedDB kotası, PWA kurulumu, bildirim).
+5. Gerçek YouTube ile elle denetim listesi: [tests/e2e/README.md](tests/e2e/README.md#gerçek-youtube).
+6. İsteğe bağlı: arka plan sekmesinde zamanında pomodoro bildirimi (push sunucusu gerekir; bugün kapsam dışı), mobil LCP için landing açılış animasyonunun gözden geçirilmesi (tasarım kararı), `www.youtube-nocookie.com`'a geçiş.
+
 ## Her adım için geçerli kurallar
 
 1. Her adım en az bir commit'tir; büyük adımlar alt commit'lere bölünür. Bir adım bitince durulur ve onay beklenir.
