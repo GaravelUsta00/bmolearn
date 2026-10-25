@@ -1,37 +1,46 @@
 import { useEffect, type RefObject } from 'react';
-import type { ContentConfig, StudyTab, Setter } from '@/types';
+import { useStore } from '@/store/useStore';
+import { isModalOpen } from '@/components/ui/Modal';
 
 interface KeyboardShortcutsOptions {
-  contentConfig: ContentConfig;
   playerRef: RefObject<YT.Player | null>;
   noteInputRef: RefObject<HTMLInputElement | null>;
-  setActiveTab: Setter<StudyTab>;
 }
 
-export const useKeyboardShortcuts = ({
-  contentConfig,
-  playerRef,
-  noteInputRef,
-  setActiveTab,
-}: KeyboardShortcutsOptions) => {
+const isTextField = (el: HTMLElement) =>
+  el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT';
+
+/**
+ * Kısayollar:
+ * - Alt+N: not alanına geç (her yerde).
+ * - K ya da Space: videoyu oynat/duraklat (B21; eskiden Ctrl+Space). Yazı alanında, modal açıkken
+ *   ve Space için bir düğme/bağlantı odaktayken çalışmaz (Space o düğmeye basar).
+ */
+export const useKeyboardShortcuts = ({ playerRef, noteInputRef }: KeyboardShortcutsOptions) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-      if (e.altKey && e.key.toLowerCase() === 'n') {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        setActiveTab('notes');
+        useStore.getState().setActiveTab('notes');
         setTimeout(() => noteInputRef.current?.focus(), 100);
+        return;
       }
-      if (e.ctrlKey && e.code === 'Space' && !isInput && contentConfig.type === 'video') {
-        e.preventDefault();
-        if (playerRef.current?.getPlayerState) {
-          if (playerRef.current.getPlayerState() === 1) playerRef.current.pauseVideo();
-          else playerRef.current.playVideo();
-        }
-      }
+
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || isModalOpen() || isTextField(target)) return;
+      const isK = e.key.toLowerCase() === 'k';
+      const isSpace = e.code === 'Space' || e.key === ' ';
+      if (!isK && !isSpace) return;
+      if (isSpace && target.closest('button, a[href], [role="button"], [role="tab"], summary, label')) return;
+      if (useStore.getState().contentConfig.type !== 'video') return;
+
+      const player = playerRef.current;
+      if (!player?.getPlayerState) return;
+      e.preventDefault();
+      if (player.getPlayerState() === 1) player.pauseVideo();
+      else player.playVideo();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [contentConfig.type]);
+  }, [playerRef, noteInputRef]);
 };

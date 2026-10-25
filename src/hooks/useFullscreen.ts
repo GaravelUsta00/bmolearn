@@ -9,11 +9,11 @@ type WebkitElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<voi
 const doc = () => document as WebkitDocument;
 
 export const useFullscreen = () => {
-  const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFocusMode(!!(document.fullscreenElement || doc().webkitFullscreenElement));
+      setIsFullscreen(!!(document.fullscreenElement || doc().webkitFullscreenElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -23,21 +23,25 @@ export const useFullscreen = () => {
     };
   }, []);
 
-  const toggleFocusMode = async () => {
+  const toggleFullscreen = async () => {
     if (!document.fullscreenElement && !doc().webkitFullscreenElement) {
       try {
         if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
         else await (document.documentElement as WebkitElement).webkitRequestFullscreen?.();
-        setIsFocusMode(true);
-      } catch (e) {}
+        setIsFullscreen(true);
+      } catch {
+        /* tarayıcı izin vermedi */
+      }
     } else {
       try {
         if (document.exitFullscreen) await document.exitFullscreen();
         else await doc().webkitExitFullscreen?.();
-        setIsFocusMode(false);
-      } catch (e) {}
+        setIsFullscreen(false);
+      } catch {
+        /* tarayıcı izin vermedi */
+      }
     }
   };
 
-  return { isFocusMode, toggleFocusMode };
+  return { isFullscreen, toggleFullscreen };
 };

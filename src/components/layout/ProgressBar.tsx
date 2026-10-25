@@ -2,13 +2,18 @@
 
 import { useStore } from '@/store/useStore';
 
-export const ProgressBar = () => {
-  const { flashcards, quiz, activeContentId } = useStore();
-  const cards = flashcards.filter((c) => c.contentId === activeContentId);
-  const quizzes = quiz.filter((q) => q.contentId === activeContentId);
+// Öğrenilen kart + cevaplanan soru oranı; tek sayı döndüren seçici, yalnızca yüzde değişince render.
+const selectPercentage = (s: ReturnType<typeof useStore.getState>) => {
+  const id = s.activeContentId;
+  const cards = s.flashcards.filter((c) => c.contentId === id);
+  const quizzes = s.quiz.filter((q) => q.contentId === id);
   const total = cards.length + quizzes.length;
   const completed = cards.filter((c) => c.learned).length + quizzes.filter((q) => q.userAnswer).length;
-  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  return total === 0 ? 0 : Math.round((completed / total) * 100);
+};
+
+export const ProgressBar = () => {
+  const percentage = useStore(selectPercentage);
 
   return (
     <div className="flex items-center gap-3">

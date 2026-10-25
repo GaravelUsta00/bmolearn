@@ -4,7 +4,7 @@ import type { AppState, HistorySlice, SliceCreator } from '@/store/types';
 /**
  * Geçmişte tutulan en fazla kayıt. Eskiden 30'du ve listeden düşen içeriğin notları
  * erişilemez (yetim) kalıyordu (B16); sınır yükseltildi. Listeden düşen içeriğin verisi
- * otomatik SİLİNMEZ; `findOrphanedContentIds` ile bulunur, onaylı temizlik Adım 9'da.
+ * otomatik SİLİNMEZ; `findOrphanedContentIds` ile bulunur, Geçmiş penceresinden onayla temizlenir.
  */
 export const HISTORY_LIMIT = 200;
 const PLAYLIST_ITEMS_LIMIT = 50;
@@ -44,7 +44,7 @@ export const findOrphanedContentIds = (state: AppState): string[] => {
   return [...all].filter((id) => !reachable.has(id));
 };
 
-export const createHistorySlice: SliceCreator<HistorySlice> = (set) => ({
+export const createHistorySlice: SliceCreator<HistorySlice> = (set, get) => ({
   history: [],
 
   // Mevcut kayıtları yerinde değiştirmez (B15); her güncelleme yeni nesne üretir.
@@ -112,6 +112,12 @@ export const createHistorySlice: SliceCreator<HistorySlice> = (set) => ({
         ...withoutContentData(state, contentIdsToRemove),
       };
     }),
+
+  removeOrphanedData: () => {
+    const ids = findOrphanedContentIds(get());
+    if (ids.length) set((state) => withoutContentData(state, ids));
+    return ids;
+  },
 
   // Video ilerlemesi de temizlenir (B6). Görevler ve pomodoro geçmişi bilinçli olarak korunur.
   clearHistory: () =>

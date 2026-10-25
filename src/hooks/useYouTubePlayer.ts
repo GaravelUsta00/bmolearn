@@ -21,7 +21,9 @@ export const useYouTubePlayer = () => {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
   const pendingRef = useRef<YT.Player | null>(null);
-  const [videoError, setVideoError] = useState<string | null>(null);
+  // Hata hangi içerik için alındıysa yalnızca o içerik açıkken gösterilir (içerik değişince effect içinde sıfırlamaya gerek yok).
+  const [videoErrorFor, setVideoError] = useState<{ id: string; message: string } | null>(null);
+  const videoError = videoErrorFor?.id === contentId ? videoErrorFor.message : null;
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiAttempt, setApiAttempt] = useState(0);
 
@@ -102,7 +104,8 @@ export const useYouTubePlayer = () => {
               }
             }
           },
-          onError: (e) => setVideoError(playerErrorMessage(e.data)),
+          onError: (e) =>
+            setVideoError({ id: useStore.getState().contentConfig.id, message: playerErrorMessage(e.data) }),
         },
       });
     },
@@ -123,7 +126,6 @@ export const useYouTubePlayer = () => {
     if (!contentId && !playlistId) return;
 
     let cancelled = false;
-    setVideoError(null);
     loadYouTubeApi()
       .then((api) => {
         if (cancelled) return;

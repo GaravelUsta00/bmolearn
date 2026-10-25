@@ -39,6 +39,7 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
   copyFeedback: false,
   newNote: '',
   videoUrlInput: '',
+  focusMode: false,
 
   setTheme: (theme) => {
     writeThemePreference(theme);
@@ -69,4 +70,5 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
   setCopyFeedback: setterFor(set, 'copyFeedback'),
   setNewNote: setterFor(set, 'newNote'),
   setVideoUrlInput: setterFor(set, 'videoUrlInput'),
+  toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
 });

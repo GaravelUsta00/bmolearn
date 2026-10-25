@@ -1,5 +1,6 @@
 'use client';
 
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 
 interface PlaylistSidebarProps {
@@ -9,7 +10,14 @@ interface PlaylistSidebarProps {
 
 // Numaralı, sade satırlar; etkin bölüm bordo sol çizgi + italik (DESIGN §8.3).
 export const PlaylistSidebar = ({ showPlaylistSidebar, handlePlaylistVideoSelect }: PlaylistSidebarProps) => {
-  const { playlistItems, currentPlaylistIndex, history, contentConfig } = useStore();
+  const { playlistItems, currentPlaylistIndex, history, contentConfig } = useStore(
+    useShallow((s) => ({
+      playlistItems: s.playlistItems,
+      currentPlaylistIndex: s.currentPlaylistIndex,
+      history: s.history,
+      contentConfig: s.contentConfig,
+    }))
+  );
 
   if (!showPlaylistSidebar || playlistItems.length === 0) return null;
 
@@ -44,6 +52,7 @@ export const PlaylistSidebar = ({ showPlaylistSidebar, handlePlaylistVideoSelect
                 >
                   {String(index + 1).padStart(2, '0')}
                 </span>
+                {/* eslint-disable-next-line @next/next/no-img-element -- YouTube küçük resmi; optimizasyon gerekmez */}
                 <img
                   src={`https://img.youtube.com/vi/${id}/default.jpg`}
                   alt=""

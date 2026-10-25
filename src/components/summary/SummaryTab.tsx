@@ -1,70 +1,66 @@
 'use client';
 
 import { useState } from 'react';
-import { Bookmark, AlignLeft } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { Markdown } from '@/components/ui/Markdown';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { newId } from '@/lib/id';
 
 interface SummaryTabProps {
   activeContentId: string;
 }
 
+/** Özet (DESIGN §8.4): okuma ölçeği 16.5px / 1.75, ilk paragrafta italik başlangıç harfi. */
 export const SummaryTab = ({ activeContentId }: SummaryTabProps) => {
-  const { summaries, addNote } = useStore();
-  const summary = summaries[activeContentId];
+  const summary = useStore((s) => s.summaries[activeContentId]);
+  const addNote = useStore((s) => s.addNote);
   const [selectedText, setSelectedText] = useState('');
-  const [showPopup, setShowPopup] = useState(false);
 
-  const handlePointerUp = () => {
-    setTimeout(() => {
-      const text = window.getSelection()?.toString().trim();
-      if (text && text.length > 0) {
-        setSelectedText(text);
-        setShowPopup(true);
-      } else setShowPopup(false);
-    }, 50);
+  // Fareyle ya da klavyeyle (Shift+ok) yapılan seçimi yakala.
+  const readSelection = () => {
+    setTimeout(() => setSelectedText(window.getSelection()?.toString().trim() ?? ''), 50);
   };
 
   const handleAddToNotes = () => {
     addNote({ id: newId(), contentId: activeContentId, text: `> ${selectedText}`, time: 0 });
-    setShowPopup(false);
+    setSelectedText('');
     window.getSelection()?.removeAllRanges();
   };
 
   if (!summary)
     return (
-      <div className={`text-center py-16 text-mute flex flex-col items-center gap-4 animate-fade`}>
-        <div className={`p-4 rounded-full bg-page`}>
-          <AlignLeft size={32} className="opacity-50" />
-        </div>
-        <p className="text-xs sm:text-sm">
-          Bu içerik için henüz özet yok.
-          <br />
-          AI sekmesinden oluşturabilirsiniz.
-        </p>
-      </div>
+      <EmptyState title="Bu içerik için henüz özet yok." withAI>
+        AI Sihirbazı bir istek hazırlar; yapay zekânın cevabını yapıştırınca özet, kartlar ve sorular oluşur.
+      </EmptyState>
     );
 
   return (
     <div
-      onPointerUp={handlePointerUp}
-      className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar text-sm leading-relaxed text-ink relative animate-fade"
+      onPointerUp={readSelection}
+      onKeyUp={(e) => {
+        if (e.shiftKey || e.key === 'Shift') readSelection();
+      }}
+      className="custom-scrollbar relative flex-1 animate-fade overflow-y-auto px-5 py-6 sm:px-8"
     >
-      {showPopup && (
-        <div className="sticky top-0 z-20 flex justify-center mb-4 animate-fade">
+      {selectedText && (
+        <div className="sticky top-0 z-20 mb-4 flex animate-fade justify-center">
           <button
+            type="button"
             onPointerDown={(e) => {
               e.preventDefault();
               handleAddToNotes();
             }}
-            className="px-4 py-2 bg-ribbon text-page font-bold rounded-sm flex items-center gap-2 transition-transform"
+            onClick={(e) => {
+              // Klavyeyle (Enter/Space) basıldığında; fareyle basışta pointerdown zaten ekledi.
+              if (e.detail === 0) handleAddToNotes();
+            }}
+            className="min-h-11 rounded-sm bg-ink px-4 text-sm text-page shadow-page hover:opacity-90"
           >
-            <Bookmark size={16} /> Seçili Metni Notlara Ekle
+            Seçili metni notlara ekle
           </button>
         </div>
       )}
-      <Markdown className="md-summary text-ink">{summary}</Markdown>
+      <Markdown className="md-summary mx-auto max-w-prose text-ink">{summary}</Markdown>
     </div>
   );
 };

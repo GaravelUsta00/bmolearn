@@ -108,6 +108,7 @@
   --shadow-page: 0 1px 2px var(--shadow);
 
   --animate-fade: fade var(--dur-fade) ease-out both;
+  --animate-fade-out: fade-out var(--dur-fade) ease-out both;
 }
 
 :root {
@@ -165,20 +166,102 @@
   border-radius: 2px;
 }
 
-.perspective-1000 {
+/* Kart çevirme (DESIGN §7.3): state tabanlı; React `data-flipped` özniteliğini değiştirir */
+.flip-scene {
   perspective: 1000px;
 }
-.transform-style-3d {
+.flip-inner {
+  position: relative;
+  height: 100%;
   transform-style: preserve-3d;
+  transition: transform var(--dur-flip) var(--ease-rise);
 }
-.backface-hidden {
+.flip-scene[data-flipped='true'] .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
   backface-visibility: hidden;
 }
-.rotate-y-180 {
+.flip-face-back {
   transform: rotateY(180deg);
 }
-.flip-card .card-inner {
-  transform: rotateY(180deg);
+
+/* Çizgili defter kâğıdı (DESIGN §8.4): 1px'lik çizgi gölgelerle çoğaltılır (renk geçişi yasak, §2) */
+/* Konumlandırma bileşende verilir (relative ya da flip-face) */
+.notebook {
+  isolation: isolate;
+  overflow: hidden;
+}
+.notebook::before {
+  content: '';
+  position: absolute;
+  inset: 3.5rem 0 auto;
+  height: 1px;
+  background: var(--rule);
+  box-shadow:
+    0 1.75rem 0 var(--rule),
+    0 3.5rem 0 var(--rule),
+    0 5.25rem 0 var(--rule),
+    0 7rem 0 var(--rule),
+    0 8.75rem 0 var(--rule),
+    0 10.5rem 0 var(--rule),
+    0 12.25rem 0 var(--rule),
+    0 14rem 0 var(--rule),
+    0 15.75rem 0 var(--rule),
+    0 17.5rem 0 var(--rule),
+    0 19.25rem 0 var(--rule);
+  z-index: -1;
+  pointer-events: none;
+}
+.notebook::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 2rem;
+  width: 1px;
+  background: var(--ribbon);
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Özet: ilk paragrafta 3 satırlık italik başlangıç harfi (DESIGN §8.4) */
+.md-summary > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.32em 0.12em 0 0;
+  font-size: 4.6em;
+  line-height: 0.68;
+  font-style: italic;
+  color: var(--ribbon);
+}
+@supports (initial-letter: 3) {
+  .md-summary > p:first-of-type::first-letter {
+    float: none;
+    margin: 0 0.12em 0 0;
+    font-size: inherit;
+    line-height: inherit;
+    initial-letter: 3;
+  }
+}
+
+/* Odak modu (DESIGN §8.7): üst çubuk soluklaşır, kenarlar kararır */
+/* Soluklaştırma opaklıkla değil token'la: metin `mute` olur, kontrast AA'da kalır (mute/page 5.48).
+   Üzerine gelince ya da klavye odağında (fareyle tıklama sonrası değil) normale döner. */
+[data-focus-mode='true'] .focus-dim:not(:hover):not(:has(:focus-visible)) {
+  --ink: var(--mute);
+  --ribbon: var(--mute);
+}
+.focus-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  box-shadow: inset 0 0 12rem 2rem var(--plate);
+  opacity: 0.55;
+}
+[data-theme='dark'] .focus-vignette {
+  opacity: 0.8;
 }
 
 /* ============================================================
@@ -246,6 +329,14 @@
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

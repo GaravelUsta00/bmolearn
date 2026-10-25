@@ -1,146 +1,190 @@
 'use client';
 
-import { type RefObject } from 'react';
-import { Plus, Trash2, Bookmark, Download } from 'lucide-react';
+import { useMemo, useState, type RefObject } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { formatTime } from '@/lib/format';
+import { copyText } from '@/lib/clipboard';
 import { Markdown } from '@/components/ui/Markdown';
-import type { Setter } from '@/types';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { newId } from '@/lib/id';
+import type { Note } from '@/types';
 
 interface NotesTabProps {
-  newNote: string;
-  setNewNote: Setter<string>;
   noteInputRef: RefObject<HTMLInputElement | null>;
-  copyFeedback: boolean;
-  setCopyFeedback: Setter<boolean>;
   jumpToTime: (time: number) => void;
   playerRef: RefObject<YT.Player | null>;
 }
 
-export const NotesTab = ({
-  newNote,
-  setNewNote,
-  noteInputRef,
-  copyFeedback,
-  setCopyFeedback,
-  jumpToTime,
-  playerRef,
-}: NotesTabProps) => {
-  const { notes, history, activeContentId, contentConfig, addNote, deleteNote } = useStore();
+const notesAsText = (notes: Note[], title: string) => {
+  const dateStr = new Date().toLocaleDateString('tr-TR');
+  let content = `BeLearn — Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
+  notes.forEach((n) => {
+    content += `[${n.time > 0 ? formatTime(n.time) : '-'}] ${n.text}\n`;
+  });
+  return { content, dateStr };
+};
 
-  const handleExportNotes = () => {
-    const currentNotes = notes.filter((n) => n.contentId === activeContentId);
-    if (currentNotes.length === 0) return alert('İndirilecek not bulunamadı.');
-    const title = history.find((h) => h.contentId === activeContentId)?.title || 'BeLearn';
-    const dateStr = new Date().toLocaleDateString('tr-TR');
-    let content = `BeLearn — Çalışma Notları\nİçerik Başlığı: ${title}\nTarih: ${dateStr}\n-----------------------------------\n\n`;
-    currentNotes.forEach((n) => {
-      content += `[${n.time > 0 ? formatTime(n.time) : '-'}] ${n.text}\n`;
-    });
+const toolButton =
+  'min-h-11 text-sm text-mute underline decoration-rule underline-offset-4 hover:text-ink hover:decoration-mute';
 
-    navigator.clipboard.writeText(content).catch(() => {});
+/** Yeni not girişi: yalnızca bu bileşen her tuşta render olur, not listesi olmaz (P1). */
+const NoteComposer = ({ noteInputRef, playerRef }: Omit<NotesTabProps, 'jumpToTime'>) => {
+  const activeContentId = useStore((s) => s.activeContentId);
+  const contentType = useStore((s) => s.contentConfig.type);
+  const newNote = useStore((s) => s.newNote);
+  const setNewNote = useStore((s) => s.setNewNote);
+  const addNote = useStore((s) => s.addNote);
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!newNote.trim()) return;
+        const time =
+          contentType === 'video' && playerRef.current?.getCurrentTime ? playerRef.current.getCurrentTime() : 0;
+        addNote({ id: newId(), contentId: activeContentId, text: newNote, time });
+        setNewNote('');
+      }}
+      className="flex items-center gap-2 border-t border-rule px-4 py-2 sm:px-5"
+    >
+      <label htmlFor="new-note" className="sr-only">
+        Yeni not
+      </label>
+      <input
+        id="new-note"
+        ref={noteInputRef}
+        type="text"
+        value={newNote}
+        onChange={(e) => setNewNote(e.target.value)}
+        placeholder="Not al… (**kalın** ya da - liste)"
+        className="min-h-11 min-w-0 flex-1 border-b border-mute bg-transparent text-sm text-ink placeholder:text-mute focus:border-ribbon"
+      />
+      <button
+        type="submit"
+        aria-label="Notu ekle"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-ink text-page hover:opacity-90"
+      >
+        <Plus size={18} strokeWidth={1.5} />
+      </button>
+    </form>
+  );
+};
+
+/** Notlar (DESIGN §8.4): solda zaman damgası sütunu, satırlar arası çizgi, alt çizgili giriş. */
+export const NotesTab = ({ noteInputRef, jumpToTime, playerRef }: NotesTabProps) => {
+  const allNotes = useStore((s) => s.notes);
+  const activeContentId = useStore((s) => s.activeContentId);
+  const contentTitle = useStore((s) => s.contentConfig.title);
+  const copyFeedback = useStore((s) => s.copyFeedback);
+  const setCopyFeedback = useStore((s) => s.setCopyFeedback);
+  const deleteNote = useStore((s) => s.deleteNote);
+  const [exportError, setExportError] = useState('');
+  const currentNotes = useMemo(
+    () => allNotes.filter((n) => n.contentId === activeContentId),
+    [allNotes, activeContentId]
+  );
+
+  // B9: başlık geçmişten değil etkin içerikten gelir.
+  const title = contentTitle || 'BeLearn';
+
+  const handleDownload = () => {
+    setExportError('');
+    const { content, dateStr } = notesAsText(currentNotes, title);
     try {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const safeTitle = title.replace(/[\\/:*?"<>|]/g, '');
-      a.download = `${safeTitle} - ${dateStr}.txt`;
+      a.download = `${title.replace(/[\\/:*?"<>|]/g, '')} - ${dateStr}.txt`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 3000);
-    } catch (error) {
-      alert('İndirme kısıtlandı. Notlarınız panoya kopyalandı! Doğrudan bir belgeye yapıştırabilirsiniz.');
+    } catch {
+      setExportError('İndirme engellendi. "Kopyala" ile notları panoya alabilirsin.');
     }
   };
 
-  const currentNotes = notes.filter((n) => n.contentId === activeContentId);
+  // B17: pano ayrı bir düğmede; Clipboard API yoksa yedek yöntem denenir.
+  const handleCopy = async () => {
+    setExportError('');
+    if (await copyText(notesAsText(currentNotes, title).content)) {
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 3000);
+    } else {
+      setExportError('Panoya kopyalanamadı. "İndir" ile metin dosyası olarak alabilirsin.');
+    }
+  };
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden animate-fade relative">
+    <div className="flex min-h-0 flex-1 animate-fade flex-col">
       {currentNotes.length > 0 && (
-        <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
-          <button
-            onClick={handleExportNotes}
-            className={`p-2 rounded-sm bg-page hover:bg-ribbon hover:text-page text-mute transition-all border border-rule`}
-            title="Notları İndir (TXT)"
-          >
-            <Download size={14} className="sm:w-4 sm:h-4" />
+        <div className="flex items-center justify-end gap-4 border-b border-rule px-4 sm:px-5">
+          <p role="status" className="mr-auto text-sm text-ok">
+            {copyFeedback ? 'Kopyalandı' : ''}
+          </p>
+          <button type="button" onClick={handleCopy} className={toolButton}>
+            Kopyala
           </button>
-          {copyFeedback && (
-            <span className="text-[10px] bg-ok text-page px-2 py-1 rounded-sm font-bold shadow-page">Kopyalandı!</span>
-          )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            className={toolButton}
+            title="Notları metin dosyası olarak indir"
+          >
+            İndir
+          </button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 pt-12 space-y-3 custom-scrollbar">
+      {exportError && (
+        <p role="alert" className="border-b border-rule px-4 py-2 text-sm text-ribbon sm:px-5">
+          {exportError}
+        </p>
+      )}
+
+      <div className="custom-scrollbar flex-1 overflow-y-auto">
         {currentNotes.length === 0 ? (
-          <div className={`text-center py-10 sm:py-16 text-mute flex flex-col items-center gap-4`}>
-            <div className={`p-3 sm:p-4 rounded-full bg-page`}>
-              <Bookmark size={24} className="sm:w-8 sm:h-8 opacity-50" />
-            </div>
-            <p className="text-xs sm:text-sm">Bu içerik için henüz not yok.</p>
-          </div>
+          <EmptyState title="Bu içerik için henüz not yok.">
+            Aşağıya yazıp Enter&apos;a bas. Videoda o anki saniye nota eklenir; Alt+N ile not alanına geçebilirsin.
+          </EmptyState>
         ) : (
-          currentNotes.map((note) => (
-            <div
-              key={note.id}
-              className={`group flex gap-2 sm:gap-3 p-3 sm:p-4 rounded-sm bg-page border border-transparent hover:border-rule transition-all shadow-page`}
-            >
-              {note.time > 0 && (
+          <ul className="divide-y divide-rule">
+            {currentNotes.map((note) => (
+              <li key={note.id} className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-start gap-2 pl-2 sm:pl-3">
+                {note.time > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => jumpToTime(note.time)}
+                    aria-label={`Videoda ${formatTime(note.time)} anına git`}
+                    className="min-h-11 px-2 text-left font-mono text-xs tabular-nums text-ribbon underline decoration-transparent underline-offset-4 hover:decoration-ribbon"
+                  >
+                    {formatTime(note.time)}
+                  </button>
+                ) : (
+                  <span className="min-h-11 px-2 py-3 font-mono text-xs text-mute" aria-hidden="true">
+                    —
+                  </span>
+                )}
+                <Markdown variant="note" className="min-w-0 break-words py-2.5 text-sm leading-relaxed text-ink">
+                  {note.text}
+                </Markdown>
                 <button
-                  onClick={() => jumpToTime(note.time)}
-                  className={`mt-0.5 px-2 sm:px-2.5 py-1 h-fit rounded-sm bg-ribbon/10 text-ribbon text-[10px] sm:text-xs font-mono font-bold hover:bg-ribbon/20`}
+                  type="button"
+                  onClick={() => deleteNote(note.id)}
+                  aria-label="Notu sil"
+                  title="Notu sil"
+                  className="inline-flex h-11 w-11 items-center justify-center text-mute hover:text-ribbon"
                 >
-                  {formatTime(note.time)}
+                  <Trash2 size={16} strokeWidth={1.5} />
                 </button>
-              )}
-              <Markdown variant="note" className="min-w-0 flex-1 break-words text-xs leading-relaxed sm:text-sm">
-                {note.text}
-              </Markdown>
-              <button
-                onClick={() => deleteNote(note.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 text-ribbon hover:bg-ribbon/10 rounded-sm"
-              >
-                <Trash2 size={14} className="sm:w-4 sm:h-4" />
-              </button>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      <div className={`p-4 sm:p-5 border-t border-rule bg-paper`}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!newNote.trim()) return;
-            const time =
-              contentConfig.type === 'video' && playerRef.current?.getCurrentTime
-                ? playerRef.current.getCurrentTime()
-                : 0;
-            addNote({ id: newId(), contentId: activeContentId, text: newNote, time });
-            setNewNote('');
-          }}
-          className="relative"
-        >
-          <input
-            ref={noteInputRef}
-            type="text"
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            placeholder="Not al... (**kalın** veya - liste desteği var)"
-            className={`w-full pl-4 sm:pl-5 pr-10 sm:pr-12 py-3 sm:py-3.5 rounded-sm bg-page border border-rule focus:border-ribbon outline-none text-xs sm:text-sm text-ink transition-colors shadow-page`}
-          />
-          <button
-            type="submit"
-            className={`absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-sm bg-ribbon text-page transition-transform`}
-          >
-            <Plus size={16} className="sm:w-4.5 sm:h-4.5" />
-          </button>
-        </form>
-      </div>
+
+      <NoteComposer noteInputRef={noteInputRef} playerRef={playerRef} />
     </div>
   );
 };

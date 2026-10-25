@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 import { DATA_KEY_LABELS, isDataKey } from '@/lib/storageKeys';
 import type { StorageNotice } from '@/store/types';
@@ -28,7 +29,9 @@ const message = (n: StorageNotice): string => {
 };
 
 export const StorageNotices = () => {
-  const { storageNotices, dismissStorageNotices } = useStore();
+  const { storageNotices, dismissStorageNotices } = useStore(
+    useShallow((s) => ({ storageNotices: s.storageNotices, dismissStorageNotices: s.dismissStorageNotices }))
+  );
   if (storageNotices.length === 0) return null;
 
   return (

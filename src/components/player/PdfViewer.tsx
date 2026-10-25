@@ -127,13 +127,10 @@ export const PdfViewer = ({ url, title, onQuote }: PdfViewerProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selection, setSelection] = useState<{ text: string; page: number } | null>(null);
 
-  // Belgeyi aç
+  // Belgeyi aç (başka belgeye geçişte bileşen `key={url}` ile baştan kurulur; durum sıfırlamaya gerek yok)
   useEffect(() => {
     let cancelled = false;
     let loadingTask: { destroy: () => Promise<void> } | null = null;
-    setDoc(null);
-    setSizes([]);
-    setError(null);
     loadPdfJs()
       .then(async (m) => {
         const task = m.getDocument({ url, ...PDF_DOCUMENT_OPTIONS });

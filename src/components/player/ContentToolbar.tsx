@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, Upload } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 import type { Setter } from '@/types';
@@ -14,7 +15,13 @@ interface ContentToolbarProps {
 }
 
 export const ContentToolbar = ({ videoUrlInput, setVideoUrlInput, setShowPlaylistSidebar }: ContentToolbarProps) => {
-  const { setContentConfig, inputError, setInputError } = useStore();
+  const { setContentConfig, inputError, setInputError } = useStore(
+    useShallow((s) => ({
+      setContentConfig: s.setContentConfig,
+      inputError: s.inputError,
+      setInputError: s.setInputError,
+    }))
+  );
 
   const handleDashboardUrlChange = (e: React.FormEvent) => {
     e.preventDefault();

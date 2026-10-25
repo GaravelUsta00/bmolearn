@@ -67,6 +67,8 @@ export interface HistorySlice {
   }) => void;
   deleteHistoryItem: (id: string) => void;
   clearHistory: () => void;
+  /** Hiçbir geçmiş kaydından ulaşılamayan içeriklerin verisini siler; silinen içerik id'lerini döndürür. */
+  removeOrphanedData: () => string[];
 }
 
 export interface PomodoroSettings {
@@ -136,6 +138,8 @@ export interface UiSlice {
   copyFeedback: boolean;
   newNote: string;
   videoUrlInput: string;
+  /** Odak modu (DESIGN §8.7): üst çubuk soluk, kenarlar karartılmış. Kalıcı değil. */
+  focusMode: boolean;
 
   setTheme: (theme: 'dark' | 'light') => void;
   toggleGlobalMute: () => void;
@@ -156,6 +160,7 @@ export interface UiSlice {
   setCopyFeedback: Setter<boolean>;
   setNewNote: Setter<string>;
   setVideoUrlInput: Setter<string>;
+  toggleFocusMode: () => void;
 }
 
 /** Kalıcı (localStorage'a yazılan) alanlar. */

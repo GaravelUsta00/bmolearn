@@ -8,13 +8,6 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Biçimlendirme kurallarını Prettier'a bırak.
   prettier,
-  {
-    // GEÇİCİ: Refactor öncesi koddan devralınan hatalar. Davranışı değiştirmeden
-    // düzeltilemedikleri için uyarıya düşürüldü; ilgili plan adımında "error"a geri alınacak.
-    rules: {
-      'react-hooks/set-state-in-effect': 'warn', // Adım 9
-    },
-  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

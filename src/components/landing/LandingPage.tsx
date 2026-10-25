@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 import { Logo } from '@/components/ui/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -8,6 +9,7 @@ import { Bookshelf } from '@/components/landing/Bookshelf';
 import { extractYTId, extractPlaylistId } from '@/lib/youtube';
 import type { HistoryItem } from '@/types';
 import { openDocumentFile, openHistoryDocument, UNSUPPORTED_LINK } from '@/lib/openDocument';
+import { preloadStudyScreen } from '@/components/layout/preloadStudyScreen';
 
 // Yükleme koreografisi yalnızca ilk açılışta oynar (docs/DESIGN.md §7.1).
 let hasPlayedIntro = false;
@@ -17,7 +19,15 @@ interface LandingPageProps {
 }
 
 export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
-  const { setView, setContentConfig, history, inputError, setInputError } = useStore();
+  const { setView, setContentConfig, history, inputError, setInputError } = useStore(
+    useShallow((s) => ({
+      setView: s.setView,
+      setContentConfig: s.setContentConfig,
+      history: s.history,
+      inputError: s.inputError,
+      setInputError: s.setInputError,
+    }))
+  );
   const [url, setUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [intro] = useState(() => !hasPlayedIntro);
@@ -68,7 +78,13 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
         <ThemeToggle />
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 pb-12 pt-10 sm:px-10 sm:pt-20">
+      {/* Kullanıcı niyet gösterince (odak, imleç, dokunma) çalışma ekranı paketini önceden indir */}
+      <main
+        onFocusCapture={preloadStudyScreen}
+        onPointerOver={preloadStudyScreen}
+        onTouchStart={preloadStudyScreen}
+        className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 pb-12 pt-10 sm:px-10 sm:pt-20"
+      >
         <h1 className="font-serif text-[clamp(3rem,9vw,8rem)] font-normal leading-[0.95] tracking-tight">
           <span className="block overflow-hidden pb-[0.08em]">
             <span className={`block ${rise}`}>Sadece</span>

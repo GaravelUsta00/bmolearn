@@ -1,18 +1,23 @@
 'use client';
 
 import React, { useId, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 import { downloadBackup, parseBackup } from '@/lib/backup';
-import { useBackupDialog } from '@/components/backup/BackupDialog';
+import { useBackupDialog } from '@/components/backup/backupDialogStore';
 import { PdfStorageSettings } from '@/components/layout/PdfStorageSettings';
 
 interface SettingsContentProps {
   onInstall: () => void;
+  /** Menüyü kapatır: yedek penceresi açılırken popover arkada açık kalmasın (K15). */
+  onClose: () => void;
 }
 
 // Ayarlar menüsünün içeriği; masaüstü popover'ında ve mobil menüde ortak (docs/DESIGN.md §8.2).
-export const SettingsContent = ({ onInstall }: SettingsContentProps) => {
-  const { blueLight, setBlueLight } = useStore();
+export const SettingsContent = ({ onInstall, onClose }: SettingsContentProps) => {
+  const { blueLight, setBlueLight } = useStore(
+    useShallow((s) => ({ blueLight: s.blueLight, setBlueLight: s.setBlueLight }))
+  );
   const sliderId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -21,6 +26,7 @@ export const SettingsContent = ({ onInstall }: SettingsContentProps) => {
     e.target.value = '';
     if (!file) return;
     const result = parseBackup(await file.text());
+    onClose();
     if (result.ok) useBackupDialog.getState().open(result.backup);
     else useBackupDialog.getState().fail(result.error);
   };

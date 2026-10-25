@@ -1,9 +1,10 @@
 'use client';
 
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 
 export const BlueLightFilter = () => {
-  const { blueLight } = useStore();
+  const { blueLight } = useStore(useShallow((s) => ({ blueLight: s.blueLight })));
   if (blueLight === 0) return null;
   return (
     <div

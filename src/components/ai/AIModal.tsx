@@ -1,12 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Sparkles, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { EXAM_LEVELS } from '@/constants';
 import type { ContentConfig, StudyTab, Setter } from '@/types';
 import { newId } from '@/lib/id';
-import { parseAIResponse } from '@/lib/aiImport';
+import { copyText } from '@/lib/clipboard';
+import { parseAIResponse, type AIImportResult } from '@/lib/aiImport';
+import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useRetained } from '@/hooks/usePresence';
+
+type ParsedImport = Extract<AIImportResult, { ok: true }>;
 
 interface AIModalProps {
   isOpen: boolean;
@@ -16,19 +22,26 @@ interface AIModalProps {
   setActiveTab: Setter<StudyTab>;
 }
 
+const stepLabel = 'font-mono text-[11px] uppercase tracking-[0.12em] text-mute';
+
 export const AIModal = ({ isOpen, onClose, activeContentId, contentConfig, setActiveTab }: AIModalProps) => {
-  const { replaceContentAI } = useStore();
+  const replaceContentAI = useStore((s) => s.replaceContentAI);
+  const hasSummary = useStore((s) => !!s.summaries[activeContentId]);
+  const cardCount = useStore((s) => s.flashcards.filter((c) => c.contentId === activeContentId).length);
+  const quizCount = useStore((s) => s.quiz.filter((q) => q.contentId === activeContentId).length);
   const [aiResponse, setAiResponse] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const [showPromptText, setShowPromptText] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<string>(EXAM_LEVELS[0]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [pendingImport, setPendingImport] = useState<{ result: ParsedImport; existing: string } | null>(null);
+  const shownImport = useRetained(pendingImport);
   const closeWithReset = () => {
     setImportWarnings([]);
+    setShowPromptText(false);
     onClose();
   };
-
-  if (!isOpen) return null;
 
   const promptTemplate = `Sen bir eğitim asistanısın. Aşağıdaki kurallara KESİNLİKLE uy:
 1. İçeriğin dili neyse tüm yanıtı O DİLDE ver (İngilizce ise İngilizce, Türkçe ise Türkçe).
@@ -53,17 +66,18 @@ FORMAT:
 BAŞLIK: ${contentConfig.title}
 ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${activeContentId}` : ''}`;
 
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(promptTemplate);
-    setSuccessMsg('Kopyalandı! Yapay zekaya yapıştırın.');
-    setTimeout(() => setSuccessMsg(''), 3000);
+  const handleCopyPrompt = async () => {
+    if (await copyText(promptTemplate)) {
+      setShowPromptText(false);
+      setSuccessMsg('Kopyalandı. Şimdi yapay zekâ sohbetine yapıştır.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } else {
+      // B17: pano kullanılamıyorsa metin seçilebilir olarak gösterilir.
+      setShowPromptText(true);
+    }
   };
 
-  const handleParseJSON = () => {
-    setErrorMsg('');
-    const result = parseAIResponse(aiResponse);
-    if (!result.ok) return setErrorMsg(result.error);
-
+  const applyImport = (result: ParsedImport) => {
     const newCards = result.cards.map((c) => ({
       id: newId(),
       contentId: activeContentId,
@@ -84,23 +98,28 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
     setActiveTab('summary');
     // Atlanan/kısaltılan öğe varsa kullanıcı görsün diye pencere açık kalır.
     if (result.warnings.length) setImportWarnings(result.warnings);
-    else onClose();
+    else closeWithReset();
   };
 
-  if (importWarnings.length) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-plate/60 p-4 animate-fade"
-        onClick={closeWithReset}
-      >
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ai-import-title"
-          className="w-full max-w-md rounded-sm border border-rule bg-page p-6 text-ink shadow-page"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h2 id="ai-import-title" className="font-serif text-xl">
+  const handleParseJSON = () => {
+    setErrorMsg('');
+    const result = parseAIResponse(aiResponse);
+    if (!result.ok) return setErrorMsg(result.error);
+    // B7: mevcut özet/kart/soru varsa üzerine yazmadan önce sor.
+    if (hasSummary || cardCount > 0 || quizCount > 0) setPendingImport({ result, existing: existingLabel() });
+    else applyImport(result);
+  };
+
+  const existingLabel = () =>
+    [hasSummary && 'özeti', cardCount > 0 && `${cardCount} kartı`, quizCount > 0 && `${quizCount} sorusu`]
+      .filter(Boolean)
+      .join(', ');
+
+  return (
+    <Modal open={isOpen} onClose={closeWithReset} labelledBy="ai-title" className="max-w-2xl overflow-hidden">
+      {importWarnings.length ? (
+        <div className="p-6">
+          <h2 id="ai-title" className="font-serif text-xl">
             İçe aktarıldı
           </h2>
           <p className="mt-2 text-sm text-mute">Bazı öğeler alınamadı:</p>
@@ -112,6 +131,7 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
           <div className="mt-6 flex justify-end">
             <button
               type="button"
+              data-autofocus
               onClick={closeWithReset}
               className="min-h-11 rounded-sm bg-ink px-5 text-sm text-page"
             >
@@ -119,85 +139,117 @@ ${contentConfig.type === 'video' ? `LİNK: https://www.youtube.com/watch?v=${act
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-plate/60 p-4 animate-fade" onClick={onClose}>
-      <div
-        className="w-full max-w-2xl flex flex-col bg-page border border-rule rounded-sm shadow-page overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-3 sm:p-4 border-b border-rule flex justify-between items-center bg-page-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-sm bg-ink/5 text-ink">
-              <Sparkles size={16} />
-            </div>
-            <h2 className="text-sm font-bold text-ink">Kompakt AI Sihirbazı</h2>
-          </div>
-          <button onClick={onClose} className="text-mute hover:text-ink transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="p-5 flex flex-col gap-5 bg-paper">
-          <div className="flex flex-col gap-3 bg-page-2 p-4 rounded-sm border border-rule">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-ribbon flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-ribbon/10 flex items-center justify-center text-[10px]">
-                  1
-                </span>{' '}
-                Seviye Seç & Kopyala
-              </span>
-              <button
-                onClick={handleCopyPrompt}
-                className="flex items-center gap-1 text-[10px] font-bold bg-ribbon text-page px-3 py-1.5 rounded-sm transition-transform"
-              >
-                <Copy size={12} /> İsteği Kopyala
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {EXAM_LEVELS.map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setSelectedLevel(level)}
-                  className={`text-[10px] px-2.5 py-1 rounded-sm border font-semibold transition-colors ${selectedLevel === level ? 'bg-ribbon/10 border-ribbon text-ribbon' : 'bg-page border-rule text-mute hover:border-ribbon/50'}`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-            {successMsg && (
-              <p className="text-[10px] text-ok font-bold flex items-center gap-1">
-                <CheckCircle2 size={12} /> {successMsg}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col gap-3">
-            <span className="text-xs font-bold text-ink flex items-center gap-2">
-              <span className="w-4 h-4 rounded-full bg-ink/5 flex items-center justify-center text-[10px]">2</span> AI
-              Cevabını (JSON) Yapıştır
-            </span>
-            <textarea
-              value={aiResponse}
-              onChange={(e) => setAiResponse(e.target.value)}
-              placeholder="Yapay zekanın verdiği { ile başlayıp } ile biten JSON formatlı cevabı buraya yapıştırın..."
-              className="w-full bg-page border border-rule rounded-sm p-3 text-xs text-ink outline-none focus:border-ink resize-none custom-scrollbar min-h-35"
-            ></textarea>
-            {errorMsg && (
-              <p className="text-[10px] text-ribbon font-bold flex items-center gap-1">
-                <AlertCircle size={12} /> {errorMsg}
-              </p>
-            )}
+      ) : (
+        <>
+          <div className="flex items-center justify-between border-b border-rule py-1 pl-6 pr-2">
+            <h2 id="ai-title" className="font-serif text-xl">
+              AI Sihirbazı
+            </h2>
             <button
-              onClick={handleParseJSON}
-              className="w-full py-3 rounded-sm bg-ink text-page font-bold text-xs hover:opacity-90 flex items-center justify-center gap-1.5 transition-all mt-auto"
+              type="button"
+              onClick={closeWithReset}
+              aria-label="Kapat"
+              className="inline-flex h-11 w-11 items-center justify-center text-mute hover:text-ink"
             >
-              <Sparkles size={14} /> İçerikleri Sisteme Aktar
+              <X size={18} strokeWidth={1.5} />
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+          <div className="custom-scrollbar max-h-[calc(100dvh-8rem)] space-y-6 overflow-y-auto p-6">
+            <section aria-labelledby="ai-step-1">
+              <h3 id="ai-step-1" className={stepLabel}>
+                1 · Seviyeni seç, isteği kopyala
+              </h3>
+              <div role="group" aria-label="Seviye" className="mt-3 flex flex-wrap gap-2">
+                {EXAM_LEVELS.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    aria-pressed={selectedLevel === level}
+                    onClick={() => setSelectedLevel(level)}
+                    className={`min-h-9 rounded-full border px-3 text-sm ${selectedLevel === level ? 'border-ribbon text-ribbon' : 'border-rule text-mute hover:border-mute hover:text-ink'}`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button
+                  type="button"
+                  onClick={handleCopyPrompt}
+                  className="min-h-11 rounded-sm border border-ink px-4 text-sm text-ink hover:bg-page-2"
+                >
+                  İsteği kopyala
+                </button>
+                <p role="status" className="text-sm text-ok">
+                  {successMsg}
+                </p>
+              </div>
+              {showPromptText && (
+                <div className="mt-3">
+                  <p className="text-sm text-ribbon">Otomatik kopyalanamadı; aşağıdaki metni seçip kopyala.</p>
+                  <textarea
+                    readOnly
+                    aria-label="Yapay zekâ isteği"
+                    value={promptTemplate}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="custom-scrollbar mt-2 h-32 w-full resize-none rounded-sm border border-mute bg-page-2 p-3 font-mono text-xs text-ink"
+                  />
+                </div>
+              )}
+              <p className="mt-3 text-sm leading-relaxed text-mute">
+                İsteği ChatGPT, Gemini ya da Claude gibi bir yapay zekâ sohbetine yapıştır; verdiği JSON cevabını
+                aşağıya getir.
+              </p>
+            </section>
+
+            <section aria-labelledby="ai-step-2">
+              <label id="ai-step-2" htmlFor="ai-response" className={stepLabel}>
+                2 · Yapay zekânın cevabını yapıştır
+              </label>
+              <textarea
+                id="ai-response"
+                value={aiResponse}
+                onChange={(e) => setAiResponse(e.target.value)}
+                placeholder="{ ile başlayıp } ile biten JSON cevabı buraya yapıştır…"
+                aria-invalid={errorMsg ? true : undefined}
+                aria-describedby={errorMsg ? 'ai-error' : undefined}
+                className="custom-scrollbar mt-3 min-h-35 w-full resize-y rounded-sm border border-mute bg-page-2 p-3 font-mono text-xs text-ink placeholder:text-mute focus:border-ribbon"
+              />
+              {errorMsg && (
+                <p id="ai-error" role="alert" className="mt-2 text-sm text-ribbon">
+                  {errorMsg}
+                </p>
+              )}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleParseJSON}
+                  className="min-h-11 rounded-sm bg-ink px-5 text-sm text-page hover:opacity-90"
+                >
+                  İçerikleri aktar
+                </button>
+              </div>
+            </section>
+          </div>
+        </>
+      )}
+
+      <ConfirmDialog
+        open={pendingImport !== null}
+        title="Mevcut içerik değiştirilsin mi?"
+        confirmLabel="Değiştir"
+        onConfirm={() => {
+          const pending = pendingImport;
+          setPendingImport(null);
+          if (pending) applyImport(pending.result);
+        }}
+        onCancel={() => setPendingImport(null)}
+      >
+        <p>
+          Bu içeriğin {shownImport?.existing || 'mevcut içeriği'} yenileriyle değiştirilecek; kart ilerlemen ve soru
+          cevapların sıfırlanır. Notların etkilenmez.
+        </p>
+      </ConfirmDialog>
+    </Modal>
   );
 };

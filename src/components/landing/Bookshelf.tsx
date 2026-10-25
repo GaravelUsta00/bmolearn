@@ -34,13 +34,13 @@ export const Bookshelf = ({ items, onOpen }: BookshelfProps) => (
             <button
               type="button"
               onClick={() => onOpen(item)}
-              aria-label={`${spineTitle(item)} (${spineLabel(item)})`}
+              // Erişilebilir ad içerikten gelir ("Video Başlık"): görünen metinle aynı (WCAG 2.5.3)
               title={spineTitle(item)}
               className={`flex w-12 items-stretch justify-center gap-1.5 rounded-sm px-1 py-3 text-spine-ink shadow-page transition-transform duration-200 hover:-translate-y-2 focus-visible:-translate-y-2 sm:w-14 ${SPINE_COLORS[h % SPINE_COLORS.length]}`}
               style={{ height: `${184 + (h % 5) * 12}px` }}
             >
               {/* Dikey metin: rotate-180 ile alttan üste okunur; etiket ve başlık yan yana iki sütun */}
-              <span className="block min-h-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[10px] uppercase leading-none tracking-[0.1em] opacity-80 [writing-mode:vertical-rl] rotate-180">
+              <span className="block min-h-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[10px] uppercase leading-none tracking-[0.1em] [writing-mode:vertical-rl] rotate-180">
                 {spineLabel(item)}
               </span>
               <span className="block min-h-0 overflow-hidden text-ellipsis whitespace-nowrap font-serif text-sm leading-none [writing-mode:vertical-rl] rotate-180">

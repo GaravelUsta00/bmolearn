@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 import { newId } from '@/lib/id';
 
@@ -30,7 +31,17 @@ export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: Conten
     addNote,
     setActiveTab,
     setPendingDocReload,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      contentConfig: s.contentConfig,
+      playlistItems: s.playlistItems,
+      currentPlaylistIndex: s.currentPlaylistIndex,
+      activeContentId: s.activeContentId,
+      addNote: s.addNote,
+      setActiveTab: s.setActiveTab,
+      setPendingDocReload: s.setPendingDocReload,
+    }))
+  );
   const isVideo = contentConfig.type === 'video';
   const isPdf = contentConfig.type === 'document' && !!contentConfig.url && contentConfig.fileType === 'pdf';
 
@@ -61,7 +72,12 @@ export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: Conten
         {contentConfig.type === 'document' && (
           <div className="absolute inset-0 z-20 flex h-full w-full flex-col bg-page">
             {isPdf ? (
-              <PdfViewer url={contentConfig.url as string} title={contentConfig.title} onQuote={quote} />
+              <PdfViewer
+                key={contentConfig.url}
+                url={contentConfig.url as string}
+                title={contentConfig.title}
+                onQuote={quote}
+              />
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
                 <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">PDF bu cihazda yok</p>

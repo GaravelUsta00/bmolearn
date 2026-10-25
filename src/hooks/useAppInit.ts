@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { loadPersistedData, startPersistence } from '@/store/persistence';
 import { runMigration } from '@/lib/migration';
 
 export const useAppInit = () => {
-  const [isInitializing, setIsInitializing] = useState(true);
-
   useEffect(() => {
     // Tema <head>'deki script tarafından ilk boyamadan önce uygulandı (constants/theme.ts);
     // burada yalnızca store senkronlanır, seçim kullanıcı değiştirene kadar kaydedilmez.
@@ -22,9 +20,6 @@ export const useAppInit = () => {
     // Yükleme bittikten sonra abone ol: okunan veri geri yazılmasın.
     const stopPersistence = startPersistence(useStore);
 
-    setIsInitializing(false);
     return stopPersistence;
   }, []);
-
-  return isInitializing;
 };

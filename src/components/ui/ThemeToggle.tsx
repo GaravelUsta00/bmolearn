@@ -1,6 +1,7 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/store/useStore';
 
 interface ThemeToggleProps {
@@ -9,7 +10,7 @@ interface ThemeToggleProps {
 
 // Düğme, geçilecek temanın adını gösterir (docs/DESIGN.md §4).
 export const ThemeToggle = ({ className = '' }: ThemeToggleProps) => {
-  const { theme, setTheme } = useStore();
+  const { theme, setTheme } = useStore(useShallow((s) => ({ theme: s.theme, setTheme: s.setTheme })));
   const next = theme === 'dark' ? 'light' : 'dark';
   const label = next === 'dark' ? 'Gece' : 'Gündüz';
 
