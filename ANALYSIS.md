@@ -547,6 +547,65 @@ Commit: `ddc874f`.
 - **K23:** pdf.js 6'da `PDFDocumentProxy.destroy()` yok; belge yükleme görevi üzerinden (`loadingTask.destroy()`) kapatılıyor.
 - **K24:** Playwright 50 MB'tan büyük dosyaları tampon olarak kabul etmiyor; 50 MB testi dosya yoluyla yapıldı.
 
+### Adım 9: Çalışma ekranı, erişilebilirlik, performans, mobil
+
+Commit: `4470e22`.
+
+**Yöntem:** Edge (Playwright) ile yeni Adım 9 testi: modal odak yönetimi, onaylar, kısayollar, yalnızca klavyeyle akışlar, odak modu, 375 px, axe-core 4 (13 ekran, iki tema) ve React DevTools kancasıyla render sayımı. Lighthouse 13, Chrome headless-shell 156 ile, her kip için 3 tekrar. Headless Edge'de Lighthouse 12 ve 13 izi kaydedemedi (`NO_NAVSTART`).
+
+**Lighthouse (landing, aynı makine, 3 tekrar):**
+
+| | Önce (`4101c54`) | Sonra |
+|---|---|---|
+| Mobil performans | 76 · 77 · 77 | 79 · 78 · 79 |
+| Mobil erişilebilirlik · en iyi uygulamalar · SEO | 100 · 100 · 100 | 100 · 100 · 100 |
+| Mobil LCP · TBT · Speed Index | 5,7 sn · 160–190 ms · 2,3 sn | 5,4–5,8 sn · 120–140 ms · 0,8 sn |
+| Masaüstü performans · erişilebilirlik | 98 · 100 | 98 · 100 |
+| Landing JS (ham / aktarım) | 1103 KB / 315 KB | 881 KB / 254 KB |
+
+İlk "önce" ölçümü geçersizdi: arkada çalışan eski `next start` yeni derlemenin dosyalarını 500 ile döndürüyordu (CSS yüklenmemişti). Temiz derlemeyle yeniden ölçüldü.
+
+| Senaryo | Sonuç |
+|---|---|
+| **A2** Ortak `<Modal>`: açılınca odak içeride; 25 Tab/Shift+Tab'da odak dışarı çıkmıyor; Escape kapatıyor; odak açan düğmeye dönüyor | ✅ |
+| §7.5 Kapanışta 150 ms solma (pencere hemen kaybolmuyor, sonra DOM'dan çıkıyor) | ✅ |
+| **B6** "Tümünü temizle" ve kayıt silme onaylı; ilk odak "Vazgeç"; Escape yalnızca onayı kapatıyor; "Vazgeç" hiçbir şey silmiyor | ✅ |
+| **B16** Sahipsiz veri uyarısı ve onaylı temizlik: yalnızca hiçbir geçmiş kaydından açılamayan içeriğin verisi siliniyor | ✅ |
+| **B7** Mevcut içerik varken AI içe aktarma onay istiyor ("özeti, 2 kartı, 2 sorusu"); "Vazgeç" veriyi koruyor | ✅ |
+| **A1** Silme düğmeleri hover olmadan görünür, 44 px | ✅ |
+| Sekmeler ←/→/End; "Quiz" → "Sorular" | ✅ |
+| Özet: drop cap, 16.5 px / 1.75 | ✅ |
+| Sorular: tek soru, "Soru 1 / 2"; klavyeyle cevap, "Doğru cevap / Senin cevabın", odak "Sonraki soru"da; sayaçlar korunuyor | ✅ |
+| **B13** Kart Enter/Space ile çevriliyor, `aria-pressed` değişiyor, DOM sınıfı yok; "Öğrendim" `aria-pressed` ile kaydediliyor | ✅ |
+| **B21** `K` duraklatıyor, `Space` oynatıyor; odak düğmedeyken Space videoya dokunmuyor; not yazarken `k` durdurmuyor; `Alt+N` korundu | ✅ |
+| **B17** "Kopyala" ayrı düğme; pano engelliyse AI isteği seçilebilir metin olarak gösteriliyor | ✅ |
+| **B9** İndirilen dosya adı ve başlığı etkin içerikten | ✅ |
+| **K15** Yedek penceresi açılınca Ayarlar popover'ı kapanıyor | ✅ |
+| Odak modu: üst çubuk `mute` tonunda, kenarlar karartılmış, tıklamalar engellenmiyor, kapatınca normale dönüyor | ✅ |
+| 375 px: dört sekmede ve Geçmiş penceresinde yatay taşma yok; sekmeler sığıyor; paneldeki tüm hedefler ≥ 44 px | ✅ |
+| **P1** Not yazarken tuş başına render olan bileşen: 52/85 → **3/96**; sayaç tikinde 1 | ✅ |
+| **P3** Tembel yüklenen AI, Geçmiş, yedek, radyo ve PDF ilk açılışta çalışma ekranını gizlemiyor | ✅ |
+| axe: 13 ekran (landing, dört sekme, kart çalışma modu, Geçmiş, AI, onay, odak modu, gece, 375 px): kritik 0, ciddi 0, orta 0 | ✅ |
+| Adım 9 testi toplam | **42/42** |
+| Duman · güvenlik · oynatıcı · depolama · pomodoro · PDF | **46/46 · 20/20 · 19/19 · 20/20 · 16/16 · 20/20** |
+
+Lint 0 hata, 0 uyarı; geçici lint istisnası kalmadı (`set-state-in-effect` yeniden `error`). DESIGN §11 taramaları temiz (istisnalar: `--filter-warm`, migrasyon metni, pdf.js vendor dosyaları).
+
+**Çözülen bulgular:** A1, A2, B6, B7, B9, B13, B16 (onaylı temizlik), B17, B21, K15, P1, P3.
+
+**Davranış değişiklikleri:**
+- "Quiz" sekmesinin adı "Sorular". Sorular tek tek gösteriliyor; sekme ilk cevaplanmamış soruda açılıyor. Cevaplar ve sayaçlar aynı.
+- Video kısayolu `Ctrl+Space` yerine `K` ya da `Space`.
+- Not indirme artık panoya kopyalamıyor; bunun için ayrı "Kopyala" düğmesi var.
+- Geçmişi temizleme, kayıt silme ve AI içeriğinin üzerine yazma artık onay istiyor.
+- PDF değişince yakınlaştırma %100'e dönüyor (görüntüleyici belge başına yeniden kuruluyor).
+
+**Adım 9 sırasında bulunan ek konular:**
+- **K25:** `next/dynamic` kendi Suspense sınırını kurmuyor. İlk açılışta indirilen bir pencere en yakın sınırı (bütün çalışma ekranını) askıya alıyor, ekran bir an `display:none` oluyor, odak kayboluyordu. Her tembel bileşen kendi `<Suspense fallback={null}>` sınırına alındı; testte gözlemciyle doğrulanıyor.
+- **K26:** Boşta önceden yükleme (`requestIdleCallback`) Lighthouse ölçüm penceresine denk gelip mobil performansı düşürüyordu. Çalışma ekranı paketi artık landing'de odak, imleç ya da dokunma olunca indiriliyor.
+- **K27:** axe, kitap sırtlarındaki dikey ve döndürülmüş metni görünür saymadığı için `aria-label` ile ad uyuşmazlığı bildirdi. `aria-label` kaldırıldı; erişilebilir ad içerikten geliyor ("Video Başlık").
+- **Bilinen gözlem:** Mobil LCP'nin büyük kısmı (≈1,1 sn simüle "render gecikmesi") landing koreografisinden geliyor: cümle `fade-up` ile görünür oluyor (DESIGN §7.1). Bunu değiştirmek tasarım kararı gerektirir; bu adımda değiştirilmedi.
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.

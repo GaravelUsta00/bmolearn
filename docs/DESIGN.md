@@ -155,7 +155,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 
 İnce, tek satır, `page` zemin, altta `rule` çizgi.
 - **Sol:** "BeLearn" (Landing'e döner).
-- **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · geçmiş · radyo · ses · tam ekran · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
+- **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · geçmiş · radyo · ses · tam ekran · odak modu (§8.7) · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
 - **Ayarlar menüsü:** mavi ışık filtresi, uygulamayı yükle (PWA), Adım 4'ten itibaren "Yedeği indir / Yedeği yükle". (Karar #2)
 - İlerleme yüzdesi ve not/kart/soru sayaçları üst çubukta **yok**; sağ paneldeki sekme sayaçlarında gösterilir. (Karar #2)
 - Mobilde (< 640 px) yalnızca logo, pomodoro kontrolü ve bir "Menü" düğmesi görünür; diğer düğmeler menüde listelenir (dokunma hedefi ≥ 44 px).
@@ -194,8 +194,10 @@ Tek bir bölünmüş kontrol:
 - "AI Sihirbazı" metin düğmesi (mavi değil; `ink` çizgili ya da `ribbon` metin).
 - **Notlar:** sol sütunda zaman damgası (DM Mono, `ribbon`, tıklanabilir), sağda metin, satırlar arası `rule` çizgi. Yeni not input'u alt çizgili (`mute`, odakta `ribbon`).
 - **Özet:** ilk paragrafta büyük italik başlangıç harfi (drop cap, 3 satır), `reading` ölçeği (16.5px / 1.75). Markdown başlık/liste/alıntı stilleri bu dokümana göre.
-- **Kartlar:** çizgili defter kâğıdı görünümü (`rule` yatay çizgiler, kenar boşluğunda ince `ribbon` dikey çizgi), 3B çevirme, "Öğrendim" düğmesi `aria-pressed`, klavyeyle (Enter/Space) çevrilebilir.
-- **Sorular:** dikdörtgen çerçeveli şıklar (2px köşe); cevaptan sonra şıkların yanında metin etiketi: "Doğru cevap" (`ok`) / "Senin cevabın" (yanlışsa `ribbon`). Tek soru görünümü + "Sonraki soru"; ilerleme "3 / 10" (DM Mono).
+- **Kartlar:** çizgili defter kâğıdı görünümü (`rule` yatay çizgiler, kenar boşluğunda ince `ribbon` dikey çizgi), 3B çevirme, "Öğrendim" düğmesi `aria-pressed`, klavyeyle (Enter/Space) çevrilebilir. Kartın kendisi bir düğmedir (`aria-pressed` = çevrili); görünmeyen yüz `aria-hidden`. Yatay çizgiler renk geçişi (§2) kullanılmadan, 1 px'lik bir çizginin `box-shadow` ile 1.75rem aralıkla çoğaltılmasıyla çizilir (`.notebook`).
+- **Sorular:** dikdörtgen çerçeveli şıklar (2px köşe); cevaptan sonra şıkların yanında metin etiketi: "Doğru cevap" (`ok`) / "Senin cevabın" (yanlışsa `ribbon`). Tek soru görünümü + "Sonraki soru"; ilerleme "3 / 10" (DM Mono). Sekme ilk cevaplanmamış soruda açılır; cevap verince odak "Sonraki soru"ya geçer ve sonuç `role="status"` ile duyurulur.
+- **Sekmeler:** WAI-ARIA sekme deseni (←/→, Home/End; yalnızca etkin sekme Tab sırasında). Boş sekmede kısa metin ve gerekiyorsa "AI Sihirbazı'nı aç" bağlantısı; süs ikonu yok.
+- **Onaylar:** geri alınamayan işlemler (`ConfirmDialog`, `role="alertdialog"`) ne silineceğini sayılarıyla söyler; ilk odak "Vazgeç"te, onay düğmesi `ribbon` dolgu.
 
 ### 8.5 Widget'lar ve modallar
 
@@ -212,9 +214,13 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 - Silme düğmeleri hover gerektirmeden görünür (`@media (hover: hover)` olan cihazlarda hover ile belirginleşebilir).
 - Yatay kaydırma yok.
 
-### 8.7 İsteğe bağlı: Odak modu (yalnızca onayla, Adım 9)
+### 8.7 Odak modu (onaylandı, Adım 9'da eklendi)
 
-Üst çubuğu soluklaştırma ve kenarları karartma. Varsayılan olarak **eklenmez**.
+Üst çubuğu soluklaştırma ve kenarları karartma.
+- Üst çubuktaki göz ikonu ("Odak modu", `aria-pressed`) ve mobil menü açıp kapatır. Kalıcı değildir (sayfa yenilenince kapalı).
+- **Soluklaştırma opaklıkla değil token'la yapılır:** çubuğun içinde `ink` ve `ribbon` → `mute`. Opaklık metin kontrastını AA'nın altına düşürüyordu (axe); `mute`/`page` 5.48 ile AA korunur. Üzerine gelince ya da klavye odağı çubuğa girince (`:focus-visible`) normale döner.
+- **Kenar karartması:** sabit, tıklamayı engellemeyen (`pointer-events: none`) bir katman; `plate` renginde iç gölge (`box-shadow: inset`), gündüz %55, gece %80. Renk geçişi kullanılmaz.
+- Kart çevirme, sekmeler ve kısayollar odak modunda aynen çalışır.
 
 ## 9. Metin ve ses tonu
 
@@ -226,7 +232,9 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 
 - WCAG 2.1 AA: metin ≥ 4.5:1, büyük metin ve bileşen sınırı ≥ 3:1 (§3.1).
 - `lang="tr"`; `translate="no"` marka ve içerik alanlarında.
-- Modallar `role="dialog"`, `aria-modal`, Escape, odak tuzağı, odak iadesi.
+- Modallar `role="dialog"`, `aria-modal`, Escape, odak tuzağı, odak iadesi (ortak `<Modal>`). Modal açıkken sayfanın geri kalanı `inert`: ekran okuyucu ve fare arkaya ulaşmaz. İç içe pencerede (ör. Geçmiş üstünde onay) Escape yalnızca en üsttekini kapatır.
+- Klavye kısayolları: `Alt+N` not alanı; `K` ya da `Space` videoyu oynat/duraklat (yazı alanında, bir düğme odaktayken ve modal açıkken çalışmaz).
+- Dokunma hedefleri ≥ 44 px; silme düğmeleri hover gerektirmez.
 - İkon düğmelerinde `aria-label`; durum bildirimleri `aria-live="polite"`.
 
 ## 11. Kontrol listesi (her adım sonunda)

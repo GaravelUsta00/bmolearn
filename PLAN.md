@@ -270,7 +270,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 9 — Çalışma ekranı tasarımı, erişilebilirlik, performans, mobil
+## Adım 9 — Çalışma ekranı tasarımı, erişilebilirlik, performans, mobil ✅
+
+> **Tamamlandı (2026-10-25):** Odak modu onaylandı ve eklendi. Lighthouse mobil: erişilebilirlik 100, en iyi uygulamalar 100, performans 76–77 → 78–79. axe 13 ekranda kritik/ciddi ihlal 0. Yeni Adım 9 testi 42/42, tüm regresyon takımları yeşil. Ayrıntı: [ANALYSIS.md §7, Adım 9](ANALYSIS.md#adım-9-çalışma-ekranı-erişilebilirlik-performans-mobil).
 
 **Amaç:** Çalışma ekranının kalan görsel yenilemesi ve erişilebilir, akıcı, dokunmatik dostu arayüz.
 
@@ -296,7 +298,7 @@ Dal: `refactor/bmo-optimizasyon`.
   - Selector'ler + `useShallow` (P1); `memo`.
   - `next/dynamic` ile modallar ve widget'lar (P3).
   - `set-state-in-effect` → error.
-- **İsteğe bağlı (yalnızca onayla):** Odak modu (DESIGN §8.7).
+- **Odak modu (onaylandı):** DESIGN §8.7.
 - Lighthouse önce/sonra.
 
 **Dosyalar:** `src/components/{layout,notes,summary,flashcards,quiz,history,ai}/*`, `src/components/ui/{Modal,ConfirmDialog}.tsx`, `src/hooks/useKeyboardShortcuts.ts`.
