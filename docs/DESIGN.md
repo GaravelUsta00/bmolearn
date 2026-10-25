@@ -114,7 +114,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 | `timer`   | DM Mono, `font-variant-numeric: tabular-nums`               | Pomodoro, zaman damgaları                          |
 
 - **Logo:** metin olarak "Be" düz, `brand` rengi + "_Learn_" italik, `ink` rengi (Literata, `<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
-- **Uygulama simgesi** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de yer tutucu olarak üretildi; 2026-10-25'te kullanıcı kalıcı simge olarak onayladı.
+- **Uygulama simgesi** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`brand`) + italik "L" (`ink`), logoyla aynı renk düzeni. Adım 3d'de yer tutucu olarak üretildi; 2026-10-25'te kullanıcı kalıcı simge olarak onayladı ve renkleri logoya uyduruldu. Üretici: `node scripts/make-icons.mjs` (dev sunucusu açıkken).
 - Türkçe büyük harf dönüşümü için `lang="tr"` zorunlu (`i` → `İ` doğru dönüşsün).
 
 ## 6. Şekil, çizgi, gölge, boşluk
