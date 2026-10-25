@@ -3,8 +3,7 @@ import type { ContentConfig, StudyTab, Setter } from '@/types';
 
 interface KeyboardShortcutsOptions {
   contentConfig: ContentConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- YouTube player tipi Adım 6'da eklenecek
-  playerRef: RefObject<any>;
+  playerRef: RefObject<YT.Player | null>;
   noteInputRef: RefObject<HTMLInputElement | null>;
   setActiveTab: Setter<StudyTab>;
 }

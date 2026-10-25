@@ -1,7 +1,7 @@
 import type { RadioStation } from '@/types';
 
 export const RADIO_STATIONS: RadioStation[] = [
-  { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop', category: 'Odak & Çalışma' },
+  { id: '7NOSDKb0HlU', title: 'Lofi Hip Hop', category: 'Odak & Çalışma' },
   { id: 'Dx5qFachd3A', title: 'Relaxing Jazz Piano', category: 'Caz & Rahatlama' },
   { id: '36YnV9STBqc', title: 'The Good Life Radio', category: 'Pop Mix' },
   { id: '3MOrgUjiigE', title: 'Hits Radio 1 Live', category: 'Yabancı Pop' },

@@ -15,8 +15,7 @@ interface NotesTabProps {
   copyFeedback: boolean;
   setCopyFeedback: Setter<boolean>;
   jumpToTime: (time: number) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- YouTube player tipi Adım 6'da eklenecek
-  playerRef: RefObject<any>;
+  playerRef: RefObject<YT.Player | null>;
 }
 
 export const NotesTab = ({

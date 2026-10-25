@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useStore } from '@/store/useStore';
 
 import { useAppInit } from '@/hooks/useAppInit';
 import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
-import { useYouTubePlayers } from '@/hooks/useYouTubePlayers';
+import { useYouTubePlayer } from '@/hooks/useYouTubePlayer';
+import { useRadio } from '@/hooks/useRadio';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useFullscreen } from '@/hooks/useFullscreen';
 
@@ -59,10 +60,33 @@ export default function App() {
   const noteInputRef = useRef<HTMLInputElement>(null);
   const sidebarVisible = showPlaylistSidebar && playlistItems.length > 0;
 
-  const isInitializing = useAppInit();
+  useAppInit();
   const pomodoro = usePomodoroTimer();
-  const player = useYouTubePlayers(isInitializing);
-  useKeyboardShortcuts({ contentConfig, playerRef: player.playerRef, noteInputRef, setActiveTab });
+  const {
+    hostRef: playerHostRef,
+    playerRef,
+    videoError,
+    apiError,
+    retry: retryPlayer,
+    jumpToTime,
+    selectPlaylistIndex,
+  } = useYouTubePlayer();
+  const {
+    hostRef: radioHostRef,
+    station,
+    isPlaying: isRadioPlaying,
+    volume: radioVolume,
+    error: radioError,
+    ensure: ensureRadio,
+    toggle: toggleRadio,
+    changeStation,
+    setVolume: setRadioVolume,
+  } = useRadio();
+  // Radyo oynatıcısı ilk kez widget açılınca kurulur.
+  useEffect(() => {
+    if (showMusicWidget) ensureRadio();
+  }, [showMusicWidget, ensureRadio]);
+  useKeyboardShortcuts({ contentConfig, playerRef: playerRef, noteInputRef, setActiveTab });
   const { isFocusMode, toggleFocusMode } = useFullscreen();
 
   return (
@@ -72,7 +96,7 @@ export default function App() {
       <OfflineBanner />
       <BlueLightFilter />
       <div className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden -z-50">
-        <div id="youtube-music-player"></div>
+        <div ref={radioHostRef}></div>
       </div>
 
       <PomodoroToast
@@ -116,12 +140,13 @@ export default function App() {
           <RadioWidget
             showMusicWidget={showMusicWidget}
             setShowMusicWidget={setShowMusicWidget}
-            activeStation={player.activeStation}
-            isMusicPlaying={player.isMusicPlaying}
-            musicVolume={player.musicVolume}
-            setMusicVolume={player.handleMusicVolumeChange}
-            toggleRadioPlay={player.toggleRadioPlay}
-            changeStation={player.changeStation}
+            activeStation={station}
+            isMusicPlaying={isRadioPlaying}
+            musicVolume={radioVolume}
+            setMusicVolume={setRadioVolume}
+            toggleRadioPlay={toggleRadio}
+            changeStation={changeStation}
+            error={radioError}
           />
 
           <AppHeader
@@ -133,7 +158,7 @@ export default function App() {
             setShowInstallModal={setShowInstallModal}
             showMusicWidget={showMusicWidget}
             setShowMusicWidget={setShowMusicWidget}
-            isMusicPlaying={player.isMusicPlaying}
+            isMusicPlaying={isRadioPlaying}
             isFocusMode={isFocusMode}
             toggleFocusMode={toggleFocusMode}
           />
@@ -150,14 +175,19 @@ export default function App() {
               />
             </div>
             <div className="lg:col-start-1 lg:row-start-2">
-              <ContentViewer videoError={player.videoError} />
+              <ContentViewer
+                hostRef={playerHostRef}
+                videoError={videoError}
+                apiError={apiError}
+                onRetry={retryPlayer}
+              />
             </div>
 
             {sidebarVisible && (
               <div className="lg:row-start-2">
                 <PlaylistSidebar
                   showPlaylistSidebar={showPlaylistSidebar}
-                  handlePlaylistVideoSelect={player.handlePlaylistVideoSelect}
+                  handlePlaylistVideoSelect={selectPlaylistIndex}
                 />
               </div>
             )}
@@ -172,8 +202,8 @@ export default function App() {
                 noteInputRef={noteInputRef}
                 copyFeedback={copyFeedback}
                 setCopyFeedback={setCopyFeedback}
-                jumpToTime={player.jumpToTime}
-                playerRef={player.playerRef}
+                jumpToTime={jumpToTime}
+                playerRef={playerRef}
               />
             </div>
           </main>

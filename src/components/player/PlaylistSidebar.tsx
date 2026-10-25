@@ -1,6 +1,5 @@
 'use client';
 
-import { ListVideo } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 interface PlaylistSidebarProps {
@@ -8,48 +7,59 @@ interface PlaylistSidebarProps {
   handlePlaylistVideoSelect: (index: number) => void;
 }
 
+// Numaralı, sade satırlar; etkin bölüm bordo sol çizgi + italik (DESIGN §8.3).
 export const PlaylistSidebar = ({ showPlaylistSidebar, handlePlaylistVideoSelect }: PlaylistSidebarProps) => {
-  const { playlistItems, currentPlaylistIndex } = useStore();
+  const { playlistItems, currentPlaylistIndex, history, contentConfig } = useStore();
 
   if (!showPlaylistSidebar || playlistItems.length === 0) return null;
 
+  // IFrame API yalnızca kimlik verir; izlenmiş bölümlerin başlıkları geçmişten bilinir.
+  const known = new Map(
+    (history.find((h) => h.id === contentConfig.pId)?.playlistItems ?? []).map((v) => [v.contentId, v.title])
+  );
+
   return (
-    <div className="flex flex-col overflow-hidden bg-page rounded-sm border border-rule shadow-page lg:h-full">
-      <div className="w-full h-full max-h-[400px] lg:max-h-none flex flex-col">
-        <div className="p-3 border-b border-rule bg-page flex justify-between items-center shrink-0">
-          <span className="font-bold text-xs sm:text-sm flex items-center gap-2 text-ink">
-            <ListVideo size={16} className="text-ribbon" /> Oynatma Listesi
-          </span>
-          <span className="text-xs text-mute font-mono">{playlistItems.length} Video</span>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-          {playlistItems.map((id, index) => (
-            <button
-              key={`${id}-${index}`}
-              onClick={() => handlePlaylistVideoSelect(index)}
-              className={`w-full text-left p-2 rounded-sm flex gap-3 transition-all items-center border ${currentPlaylistIndex === index ? 'bg-ribbon/10 border-ribbon/50' : 'hover:bg-ink/5 border-transparent'}`}
-            >
-              <span
-                className={`text-[10px] font-bold w-4 text-center ${currentPlaylistIndex === index ? 'text-ribbon' : 'text-mute'}`}
-              >
-                {index + 1}
-              </span>
-              <img
-                src={`https://img.youtube.com/vi/${id}/default.jpg`}
-                className="w-16 h-10 sm:w-20 sm:h-12 object-cover rounded-sm shadow-page"
-                loading="lazy"
-              />
-              <div className="flex-1 overflow-hidden">
-                <p
-                  className={`text-[10px] sm:text-xs font-semibold truncate ${currentPlaylistIndex === index ? 'text-ribbon' : 'text-ink'}`}
-                >
-                  Bölüm #{index + 1}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
+    <nav
+      aria-label="Oynatma listesi"
+      className="flex max-h-[400px] flex-col overflow-hidden rounded-sm border border-rule bg-page shadow-page lg:h-full lg:max-h-none"
+    >
+      <div className="flex shrink-0 items-baseline justify-between border-b border-rule px-4 py-3">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-mute">Oynatma listesi</h2>
+        <span className="font-mono text-[11px] tabular-nums text-mute">{playlistItems.length} video</span>
       </div>
-    </div>
+      <ol className="custom-scrollbar flex-1 overflow-y-auto py-1">
+        {playlistItems.map((id, index) => {
+          const active = currentPlaylistIndex === index;
+          const title = known.get(id);
+          return (
+            <li key={`${id}-${index}`}>
+              <button
+                type="button"
+                onClick={() => handlePlaylistVideoSelect(index)}
+                aria-current={active ? 'true' : undefined}
+                className={`flex min-h-11 w-full items-center gap-3 border-l-2 py-2 pl-3 pr-4 text-left text-sm hover:bg-ink/5 ${active ? 'border-ribbon' : 'border-transparent'}`}
+              >
+                <span
+                  className={`w-6 shrink-0 font-mono text-[11px] tabular-nums ${active ? 'text-ribbon' : 'text-mute'}`}
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <img
+                  src={`https://img.youtube.com/vi/${id}/default.jpg`}
+                  alt=""
+                  width={64}
+                  height={36}
+                  loading="lazy"
+                  className="h-9 w-16 shrink-0 rounded-sm bg-plate object-cover"
+                />
+                <span className={`min-w-0 flex-1 truncate ${active ? 'font-serif italic text-ink' : 'text-ink'}`}>
+                  {title ?? `Bölüm ${index + 1}`}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 };
