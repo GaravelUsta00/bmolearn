@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { THEME_COLORS } from '@/constants/theme';
+import type { InstallPromptEvent } from '@/store/types';
 
 export const PWAInjector = () => {
   const setInstallPrompt = useStore((state) => state.setInstallPrompt);
@@ -34,9 +35,9 @@ export const PWAInjector = () => {
         link.href = URL.createObjectURL(blob);
         document.head.appendChild(link);
       }
-      const handler = (e: any) => {
+      const handler = (e: Event) => {
         e.preventDefault();
-        setInstallPrompt(e);
+        setInstallPrompt(e as InstallPromptEvent);
       };
       window.addEventListener('beforeinstallprompt', handler);
       return () => window.removeEventListener('beforeinstallprompt', handler);

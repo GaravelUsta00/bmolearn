@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 
+// Safari'nin önekli tam ekran API'si (TypeScript DOM tiplerinde yok).
+type WebkitDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void>;
+};
+type WebkitElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+const doc = () => document as WebkitDocument;
+
 export const useFullscreen = () => {
   const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFocusMode(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+      setIsFocusMode(!!(document.fullscreenElement || doc().webkitFullscreenElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -16,17 +24,16 @@ export const useFullscreen = () => {
   }, []);
 
   const toggleFocusMode = async () => {
-    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+    if (!document.fullscreenElement && !doc().webkitFullscreenElement) {
       try {
         if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-        else if ((document.documentElement as any).webkitRequestFullscreen)
-          await (document.documentElement as any).webkitRequestFullscreen();
+        else await (document.documentElement as WebkitElement).webkitRequestFullscreen?.();
         setIsFocusMode(true);
       } catch (e) {}
     } else {
       try {
         if (document.exitFullscreen) await document.exitFullscreen();
-        else if ((document as any).webkitExitFullscreen) await (document as any).webkitExitFullscreen();
+        else await doc().webkitExitFullscreen?.();
         setIsFocusMode(false);
       } catch (e) {}
     }
