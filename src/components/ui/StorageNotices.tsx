@@ -24,7 +24,7 @@ const message = (n: StorageNotice): string => {
       return `"${n.name}" bu tarayıcıda saklanamıyor (gizli pencere ya da engellenmiş site verisi olabilir). ${after}`;
     }
     case 'migration-failed':
-      return 'Eski BMO Learn verilerin aktarılamadı. Eski veriler silinmedi; Ayarlar > Yedeği yükle ile bir yedek dosyasından yükleyebilirsin.';
+      return 'Eski sürümden kalan verilerin aktarılamadı. Eski veriler silinmedi; Ayarlar > Yedeği yükle ile bir yedek dosyasından yükleyebilirsin.';
   }
 };
 
