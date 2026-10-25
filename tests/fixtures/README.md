@@ -8,5 +8,5 @@ Gerçek bir dökümle test etmek için dosyayı `fixtures/local/bmo-dump.json` o
 Biçim: `{ "bmo_notes": "<localStorage'daki ham string>", ... }`. Tarayıcı konsolunda şöyle alınabilir:
 
 ```js
-copy(JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k]) => k.startsWith('bmo_')))))
+copy(JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k]) => k.startsWith('bmo_')))));
 ```

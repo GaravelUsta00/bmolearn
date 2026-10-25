@@ -11,19 +11,20 @@ Kitap/masa hissi: sakin, odaklı, sade. Kâğıt zemin, mürekkep metin, tek vur
 
 Aşağıdakiler hiçbir bileşende kullanılmaz. Her adımın sonunda §11'deki kontrol komutlarıyla doğrulanır.
 
-| Yasak | Örnek |
-|---|---|
+| Yasak                                       | Örnek                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------- |
 | Lacivert/koyu mavi tonlar, mavi-siyah zemin | `#1C2130`, `#26405F`, `#09090b` + mavi gölgeler, `blue-*`, `#3b82f6` |
-| Cam efekti | `backdrop-blur-*`, yarı saydam kart zeminleri (`rgba(…, .85)`) |
-| Bulanık ışık lekeleri ("blob") | `blur-[80px]`, `animate-blob`, `animate-subtle-glow` |
-| Turuncu ve turuncu gölgeler | `#FF8C00`, `#ea580c`, `orange-*`, `rgba(255,140,0,…)` |
-| Her yerde büyük yuvarlaklık | `rounded-3xl`, `rounded-2xl`, `rounded-xl`, `rounded-[20px]` … |
-| Gradient | `bg-gradient-*`, `bg-linear-*`, `linear-gradient(` |
-| Dekoratif ikon yığını | Başlık yanında süs ikonu, her etikette ikon |
-| Bileşen içinde sabit hex/rgba | Tüm renkler token'dan gelir (§3) |
-| Liste dışı süs animasyonları | `float`, `bounce`, `pulse`, ekolayzer, parıltı (§7) |
+| Cam efekti                                  | `backdrop-blur-*`, yarı saydam kart zeminleri (`rgba(…, .85)`)       |
+| Bulanık ışık lekeleri ("blob")              | `blur-[80px]`, `animate-blob`, `animate-subtle-glow`                 |
+| Turuncu ve turuncu gölgeler                 | `#FF8C00`, `#ea580c`, `orange-*`, `rgba(255,140,0,…)`                |
+| Her yerde büyük yuvarlaklık                 | `rounded-3xl`, `rounded-2xl`, `rounded-xl`, `rounded-[20px]` …       |
+| Gradient                                    | `bg-gradient-*`, `bg-linear-*`, `linear-gradient(`                   |
+| Dekoratif ikon yığını                       | Başlık yanında süs ikonu, her etikette ikon                          |
+| Bileşen içinde sabit hex/rgba               | Tüm renkler token'dan gelir (§3)                                     |
+| Liste dışı süs animasyonları                | `float`, `bounce`, `pulse`, ekolayzer, parıltı (§7)                  |
 
 **Bilinçli istisnalar** (yasak kapsamında sayılmaz):
+
 - **Mavi ışık filtresi** katmanı işlevsel bir amber tondur (`rgba(255,140,0,.25)` + `multiply`). Marka rengi değildir, korunur ve `--filter-warm` token'ına taşınır.
 - **YouTube iframe'i** ve **PDF sayfası** kendi renkleriyle görünür (video `plate` zemin üzerinde, PDF sayfası beyaz).
 - **Mavi**, yalnızca gerçekten gerekirse ve küçük miktarda bilgi mesajında kullanılabilir. Varsayılan olarak hiç kullanılmaz.
@@ -36,45 +37,45 @@ Aşağıdakiler hiçbir bileşende kullanılmaz. Her adımın sonunda §11'deki 
 
 **Tek sabit kopya:** `<meta name="theme-color">` ve PWA manifest'i CSS değişkeni okuyamadığı için `src/constants/theme.ts` (`THEME_COLORS`) token değerlerinin kopyasını tutar; globals.css ile senkron tutulmalıdır.
 
-| Token | Gündüz | Gece | Kullanım |
-|---|---|---|---|
-| `paper` | `#E8E6DD` | `#141210` | Sayfa zemini (masa) |
-| `page` | `#F4F2EB` | `#1D1A17` | Kitap sayfası: panel, kart, modal, widget |
-| `page-2` | `#ECE9DF` | `#181613` | İkincil yüzey: sekme şeridi, input zemini, satır vurgusu |
-| `ink` | `#26231F` | `#ECE6DA` | Ana metin, birincil düğme dolgusu |
-| `mute` | `#66615A` | `#9A958B` | İkincil metin, etiketler, **etkileşimli çizgiler** (input alt çizgisi, odak dışı kenarlık) |
-| `rule` | `#CBC8BB` | `#2E2A25` | **Yalnızca dekoratif** ayırıcı çizgiler (satır arası, panel kenarı) |
-| `ribbon` | `#8F2D2D` | `#D2604A` | Tek vurgu: aktif sekme çizgisi, zaman damgası, italik vurgu, odak halkası, birincil eylem |
-| `ok` | `#33604A` | `#7FB596` | Başarı: doğru cevap, "öğrendim", kayıt edildi |
-| `plate` | `#1A1816` | `#0E0C0B` | Video "şekil" zemini |
-| `shadow` | `rgba(38,35,31,.26)` | `rgba(0,0,0,.6)` | Yalnızca kitap/kart yüzeyleri (§6) |
+| Token    | Gündüz               | Gece             | Kullanım                                                                                   |
+| -------- | -------------------- | ---------------- | ------------------------------------------------------------------------------------------ |
+| `paper`  | `#E8E6DD`            | `#141210`        | Sayfa zemini (masa)                                                                        |
+| `page`   | `#F4F2EB`            | `#1D1A17`        | Kitap sayfası: panel, kart, modal, widget                                                  |
+| `page-2` | `#ECE9DF`            | `#181613`        | İkincil yüzey: sekme şeridi, input zemini, satır vurgusu                                   |
+| `ink`    | `#26231F`            | `#ECE6DA`        | Ana metin, birincil düğme dolgusu                                                          |
+| `mute`   | `#66615A`            | `#9A958B`        | İkincil metin, etiketler, **etkileşimli çizgiler** (input alt çizgisi, odak dışı kenarlık) |
+| `rule`   | `#CBC8BB`            | `#2E2A25`        | **Yalnızca dekoratif** ayırıcı çizgiler (satır arası, panel kenarı)                        |
+| `ribbon` | `#8F2D2D`            | `#D2604A`        | Tek vurgu: aktif sekme çizgisi, zaman damgası, italik vurgu, odak halkası, birincil eylem  |
+| `ok`     | `#33604A`            | `#7FB596`        | Başarı: doğru cevap, "öğrendim", kayıt edildi                                              |
+| `plate`  | `#1A1816`            | `#0E0C0B`        | Video "şekil" zemini                                                                       |
+| `shadow` | `rgba(38,35,31,.26)` | `rgba(0,0,0,.6)` | Yalnızca kitap/kart yüzeyleri (§6)                                                         |
 
 **Hata durumu** ayrı bir kırmızı kullanmaz: `ribbon` + metin + ikon. (Örn. "Senin cevabın — yanlış".)
 
 **Kitaplık sırtları** (geçmiş kartları, sırayla dönüşümlü):
 
-| Sırt | Gündüz | Gece | Sırt yazısı |
-|---|---|---|---|
+| Sırt                   | Gündüz    | Gece      | Sırt yazısı                       |
+| ---------------------- | --------- | --------- | --------------------------------- |
 | `spine-1` orman yeşili | `#3E5F4C` | `#3F6652` | gündüz `#F4F2EB` · gece `#ECE6DA` |
-| `spine-2` bordo | `#8F2D2D` | `#8E3A38` | 〃 |
-| `spine-3` hardal | `#7C5A18` | `#7D5F22` | 〃 |
-| `spine-4` kömür | `#3B3834` | `#4A4640` | 〃 |
-| `spine-5` şarap moru | `#5B3A4E` | `#6A4559` | 〃 |
+| `spine-2` bordo        | `#8F2D2D` | `#8E3A38` | 〃                                |
+| `spine-3` hardal       | `#7C5A18` | `#7D5F22` | 〃                                |
+| `spine-4` kömür        | `#3B3834` | `#4A4640` | 〃                                |
+| `spine-5` şarap moru   | `#5B3A4E` | `#6A4559` | 〃                                |
 
 Sırt rengi içerik id'sinden deterministik seçilir (aynı kitap her açılışta aynı renk).
 
 ### 3.1 Ölçülmüş kontrast (WCAG 2.1)
 
-| Çift | Gündüz | Gece | Sonuç |
-|---|---|---|---|
-| `ink` / `page` | 13.96 | 13.94 | AA ✅ |
-| `mute` / `page` · `paper` | 5.48 · 4.91 | 5.81 · 6.27 | AA ✅ |
-| `ribbon` / `page` · `paper` | 7.26 · 6.51 | **4.55** · 4.91 | AA ✅ (gece sınırda: `ribbon` metni gecede ≥ 14px ve normal/kalın ağırlıkta, ince ağırlık yok) |
-| `ok` / `page` | 6.44 | 7.38 | AA ✅ |
-| `page` metni / `ribbon` dolgu | 7.26 | 4.55 | AA ✅ |
-| Sırt yazısı / sırt | 5.63–10.41 | 4.78–7.54 | AA ✅ |
-| `rule` / `page` | 1.50 | 1.22 | ❌ 3:1 değil → `rule` yalnızca dekoratif; bileşen sınırı gereken yerde `mute` |
-| Gece sırtları / `page` zemini | — | 1.85–2.91 | Sırtlar yazı ve şekilleriyle ayırt ediliyor; rafın tahta çizgisi `mute` |
+| Çift                          | Gündüz      | Gece            | Sonuç                                                                                          |
+| ----------------------------- | ----------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| `ink` / `page`                | 13.96       | 13.94           | AA ✅                                                                                          |
+| `mute` / `page` · `paper`     | 5.48 · 4.91 | 5.81 · 6.27     | AA ✅                                                                                          |
+| `ribbon` / `page` · `paper`   | 7.26 · 6.51 | **4.55** · 4.91 | AA ✅ (gece sınırda: `ribbon` metni gecede ≥ 14px ve normal/kalın ağırlıkta, ince ağırlık yok) |
+| `ok` / `page`                 | 6.44        | 7.38            | AA ✅                                                                                          |
+| `page` metni / `ribbon` dolgu | 7.26        | 4.55            | AA ✅                                                                                          |
+| Sırt yazısı / sırt            | 5.63–10.41  | 4.78–7.54       | AA ✅                                                                                          |
+| `rule` / `page`               | 1.50        | 1.22            | ❌ 3:1 değil → `rule` yalnızca dekoratif; bileşen sınırı gereken yerde `mute`                  |
+| Gece sırtları / `page` zemini | —           | 1.85–2.91       | Sırtlar yazı ve şekilleriyle ayırt ediliyor; rafın tahta çizgisi `mute`                        |
 
 Yeni bir renk çifti eklendiğinde bu tabloya ölçümüyle birlikte eklenir.
 
@@ -89,28 +90,28 @@ Yeni bir renk çifti eklendiğinde bu tabloya ölçümüyle birlikte eklenir.
 
 ## 5. Tipografi
 
-| Aile | Kullanım | Yükleme |
-|---|---|---|
-| **Literata** (variable, `opsz` ekseni, normal + italik) | Gövde, başlıklar, logo | `next/font/google`, `subsets: ['latin', 'latin-ext']` (Türkçe ğ, ş, ı, İ), `axes: ['opsz']`, `display: 'swap'` |
-| **DM Mono** (400, 500) | Sayaç, zaman damgası, küçük etiketler, sekme sayaçları | `next/font/google`, `latin` + `latin-ext` |
+| Aile                                                    | Kullanım                                               | Yükleme                                                                                                        |
+| ------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| **Literata** (variable, `opsz` ekseni, normal + italik) | Gövde, başlıklar, logo                                 | `next/font/google`, `subsets: ['latin', 'latin-ext']` (Türkçe ğ, ş, ı, İ), `axes: ['opsz']`, `display: 'swap'` |
+| **DM Mono** (400, 500)                                  | Sayaç, zaman damgası, küçük etiketler, sekme sayaçları | `next/font/google`, `latin` + `latin-ext`                                                                      |
 
 Geist kaldırılır. `font-optical-sizing: auto`.
 
 **Ölçek** (rem tabanlı, 1rem = 16px):
 
-| Rol | Boyut / satır | Not |
-|---|---|---|
-| `display` | `clamp(3rem, 9vw, 8rem)` / 0.95 | Landing başlığı, sola hizalı, `text-wrap: balance` |
-| `h1` | 2rem / 1.15 | `text-wrap: balance` |
-| `h2` | 1.5rem / 1.2 | 〃 |
-| `h3` | 1.1875rem / 1.3 | 〃 |
-| `body` | 1rem / 1.6 | Arayüz metni |
-| `reading` | 1.03125rem (16.5px) / 1.75 | Özet ve uzun metin |
-| `small` | 0.875rem / 1.5 | |
-| `label` | DM Mono 0.6875–0.75rem, BÜYÜK HARF, `letter-spacing: .12em` | Etiketler, sekme sayaçları |
-| `timer` | DM Mono, `font-variant-numeric: tabular-nums` | Pomodoro, zaman damgaları |
+| Rol       | Boyut / satır                                               | Not                                                |
+| --------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| `display` | `clamp(3rem, 9vw, 8rem)` / 0.95                             | Landing başlığı, sola hizalı, `text-wrap: balance` |
+| `h1`      | 2rem / 1.15                                                 | `text-wrap: balance`                               |
+| `h2`      | 1.5rem / 1.2                                                | 〃                                                 |
+| `h3`      | 1.1875rem / 1.3                                             | 〃                                                 |
+| `body`    | 1rem / 1.6                                                  | Arayüz metni                                       |
+| `reading` | 1.03125rem (16.5px) / 1.75                                  | Özet ve uzun metin                                 |
+| `small`   | 0.875rem / 1.5                                              |                                                    |
+| `label`   | DM Mono 0.6875–0.75rem, BÜYÜK HARF, `letter-spacing: .12em` | Etiketler, sekme sayaçları                         |
+| `timer`   | DM Mono, `font-variant-numeric: tabular-nums`               | Pomodoro, zaman damgaları                          |
 
-- **Logo:** metin olarak "Be" düz + "*Learn*" italik (Literata), `ink` rengi (`<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
+- **Logo:** metin olarak "Be" düz + "_Learn_" italik (Literata), `ink` rengi (`<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
 - **Yer tutucu ikon** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de üretildi; gerçek ikon gelince `public/icons/` ve `src/app/{favicon.ico,apple-icon.png}` değiştirilir.
 - Türkçe büyük harf dönüşümü için `lang="tr"` zorunlu (`i` → `İ` doğru dönüşsün).
 
@@ -143,7 +144,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 ### 8.1 Landing (çok sade; yalnızca bunlar)
 
 1. Sol üst: "BeLearn" logosu. Sağ üst: tema düğmesi (Gece/Gündüz).
-2. Çok büyük, sola hizalı başlık: "Sadece *odaklan.*" ("odaklan." italik + `ribbon`). Ortalanmış jenerik hero yok.
+2. Çok büyük, sola hizalı başlık: "Sadece _odaklan._" ("odaklan." italik + `ribbon`). Ortalanmış jenerik hero yok.
 3. Tek cümle: "Bir YouTube videosu, oynatma listesi ya da PDF aç. Notların, özetin, kartların ve soruların yanında beklesin."
 4. Tek kaynak girişi: alt çizgili input (placeholder: "YouTube bağlantısı ya da PDF") + "Aç" düğmesi; altında metin bağlantısı "ya da PDF yükle".
 5. Geçmiş varsa "Son çalışmalar": kitaplık rafı (dikey sırtlar, başlık dikey yazılı, üstüne gelince kalkar, altta ince tahta çizgisi). **En fazla 12 sırt**; rafın sağında küçük bir "Tüm geçmiş" metin bağlantısı Geçmiş modalını açar. Playlist sırtında "Koleksiyon · N video" (DM Mono etiket). PDF sırtında "PDF" etiketi. Landing'de "Geçmişi temizle" düğmesi yok; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı. (Karar #3)
@@ -154,6 +155,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 ### 8.2 Üst çubuk (çalışma ekranı)
 
 İnce, tek satır, `page` zemin, altta `rule` çizgi.
+
 - **Sol:** "BeLearn" (Landing'e döner).
 - **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · geçmiş · radyo · ses · tam ekran · odak modu (§8.7) · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
 - **Ayarlar menüsü:** mavi ışık filtresi, uygulamayı yükle (PWA), Adım 4'ten itibaren "Yedeği indir / Yedeği yükle". (Karar #2)
@@ -202,6 +204,7 @@ Tek bir bölünmüş kontrol:
 ### 8.5 Widget'lar ve modallar
 
 Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
+
 - `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `plate` (bulanıklık yok; `ink` gece temasında açık renk olduğu için örtüde kullanılmaz). Açılış/kapanış yalnızca 150 ms solma (§7.5).
 - Başlık Literata, etiketler DM Mono.
 - Pomodoro: büyük DM Mono sayaç; "Odak" ve "Mola" modları renkle değil **metinle** ayrılır (mavi yok). Isı haritası `ribbon` opaklık basamaklarıyla.
@@ -217,6 +220,7 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 ### 8.7 Odak modu (onaylandı, Adım 9'da eklendi)
 
 Üst çubuğu soluklaştırma ve kenarları karartma.
+
 - Üst çubuktaki göz ikonu ("Odak modu", `aria-pressed`) ve mobil menü açıp kapatır. Kalıcı değildir (sayfa yenilenince kapalı).
 - **Soluklaştırma opaklıkla değil token'la yapılır:** çubuğun içinde `ink` ve `ribbon` → `mute`. Opaklık metin kontrastını AA'nın altına düşürüyordu (axe); `mute`/`page` 5.48 ile AA korunur. Üzerine gelince ya da klavye odağı çubuğa girince (`:focus-visible`) normale döner.
 - **Kenar karartması:** sabit, tıklamayı engellemeyen (`pointer-events: none`) bir katman; `plate` renginde iç gölge (`box-shadow: inset`), gündüz %55, gece %80. Renk geçişi kullanılmaz.

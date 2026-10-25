@@ -17,9 +17,11 @@ Dal: `refactor/bmo-optimizasyon`.
 ---
 
 ## Adım 1 — Temel ve güvenlik ağı ✅
+
 - Dal, baseline (`docs/baseline/`), Prettier, `typecheck`/`format`/`check` script'leri, lint'te 0 hata (3 kural belgelenmiş şekilde geçici olarak uyarıda), ANALYSIS.md, PLAN.md, test listesi.
 
 ## Adım 2 — Dosya parçalama (saf taşıma) ✅
+
 - `src/` yapısı, 41 modül, 5 hook; `page.tsx` 166 satır. Edge'de 31/31 senaryo ve 16/16 ekran görüntüsü eski sürümle birebir aynı ([ANALYSIS §7](ANALYSIS.md#7-doğrulama-kayıtları)).
 
 ---
@@ -31,6 +33,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Kritik açığı kapatmak; BeLearn markasına ve yeni tasarım sistemine geçmek; cam efekti ve turuncuyu tamamen kaldırmak; tema/FOUC ve stil bulgularını (T1–T7, B18–B20) çözmek.
 
 **Alt commit'ler (sırayla):**
+
 1. **3a `chore(deps)`: Next güvenlik yükseltmesi, tek başına.** `next` ve `eslint-config-next` → 16.4.x. `node_modules/next/dist/docs/` içindeki 16.2 → 16.4 değişiklikleri okunur. `npm audit` tekrar alınır. **Kapı:** build + otomatik duman testi + test listesi yeşil olmadan 3b'ye geçilmez (bu commit'te görsel değişiklik yok, ekran görüntüleri Adım 2 ile piksel eşit olmalı).
 2. **3b `chore`:** `errors.txt` silinir; `package.json` adı `bmo-learn` → `belearn` (karar #7).
 3. **3c `feat(design)`: Tasarım altyapısı.**
@@ -70,6 +73,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `package.json`, `package-lock.json`, `errors.txt` (silinir), `src/app/{globals.css,layout.tsx}`, `src/hooks/useAppInit.ts`, `src/store/useStore.ts` (yalnızca `setTheme`), `src/components/**` (3g), `src/components/landing/*`, `src/components/layout/*`, `src/components/pwa/*`, `src/lib/notifications.ts`, `README.md`, `docs/DESIGN.md` (gerekirse).
 
 **Bitti kriteri:**
+
 - `npm audit --omit=dev`: kritik açık yok.
 - DESIGN §11 komutları 0 sonuç veriyor (istisnalar hariç): turuncu, cam, blob, gradient, `rounded-xl/2xl/3xl`, bileşenlerde sabit hex yok.
 - Kullanıcıya görünen hiçbir yerde "BMO" geçmiyor.
@@ -81,6 +85,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - Test listesi tekrarlandı ve veri kaybı yok.
 
 **Riskler:**
+
 - 16.2 → 16.4 arasında kırılan bir API olabilir (AGENTS.md uyarısı) → 3a ayrı ve geri alınabilir.
 - 3g'de mekanik boyama ara bir görünüm üretir; bileşenler sonraki adımlarda ikinci kez elden geçer (bilinçli çift iş).
 - Inline script ile hidrasyon uyuşmazlığı.
@@ -100,6 +105,7 @@ Dal: `refactor/bmo-optimizasyon`.
 > **Karar #1 (2026-10-24):** Eski adres tamamen bırakılıyor; BeLearn yeni adreste sıfırdan yayınlanacak. Bu yüzden adresler arası taşıma (eski siteye yedek düğmesi ya da taşıma sayfası) **yapılmaz**. Yedek özelliği genel amaçlı bir yedek/geri yükleme olarak kalır. `bmo_*` → `belearn_*` kopyası yalnızca aynı adreste (yerel geliştirme, `localhost`) veri bulunursa çalışan basit bir güvenlik ağıdır: kopyala → doğrula → başarısızsa kopyayı geri al. Salt okunur geri dönüş modu kapsamdan çıkarıldı.
 
 **Alt commit'ler:**
+
 1. **4a — İLK commit: "Yedeği indir / Yedeği yükle"** (depolamaya henüz dokunmadan).
    - **İndir:** O an localStorage'da bulunan tüm `bmo_*` (ve varsa `belearn_*`) anahtarları ham haliyle `belearn-yedek-YYYY-AA-GG.json` dosyasına yazılır (`{ app: 'BeLearn', format: 1, exportedAt, source: location.origin, data: {...} }`).
    - **Yükle:** Bu dosyayı ve ham `bmo_*` dökümünü (anahtar → string) kabul eder. Önizleme gösterir (kaç not/kart/soru…), onay ister, yalnızca boş ya da onaylanan anahtarlara yazar; mevcut veriyi kaybettirmez.
@@ -121,6 +127,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/store/**`, `src/lib/storage.ts`, `src/lib/backup.ts`, `src/lib/schemas.ts`, `src/hooks/useAppInit.ts`, Ayarlar UI, `.gitignore`, `tests/fixtures/` (sahte veri).
 
 **Bitti kriteri:**
+
 - Yedek indir → tarayıcı verisini temizle → yedek yükle sonrası veri birebir aynı.
 - Ham `bmo_*` dökümü yüklenince her şey görünüyor.
 - Migrasyon sonrası `bmo_*` anahtarları byte-byte değişmemiş.
@@ -129,6 +136,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - Test listesi tekrarlandı ve veri kaybı yok.
 
 **Riskler:**
+
 - **Veri kaybı** (en yüksek risk) → kopyala-doğrula-geri al akışı ve 4a yedeği önce.
 - Persist hidrasyonu ile ilk render arasındaki fark.
 - Farklı adresteki (origin) veriye bu migrasyon erişemez; karar #1 gereği bu kabul edildi.
@@ -144,6 +152,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Güvenilmez girdinin güvenli işlenmesi ve tarayıcı korumaları.
 
 **Yapılacaklar:**
+
 - `react-markdown` (HTML kapalı, izinli elemanlar; link'ler yalnızca `https:` ve `rel="noopener noreferrer"`); `dangerouslySetInnerHTML` tamamen kalkar (S1, B12).
 - Markdown çıktısı yeni tipografiyle: başlık/liste/alıntı/kod stilleri DESIGN §5 ve §8.4'e göre; özetteki drop cap için ilk paragraf işaretlenir.
 - AI JSON zod şeması + normalize (`correct` büyük harf, adet ve uzunluk sınırı, hatalı öğe raporu) (S4).
@@ -157,6 +166,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/lib/markdown.tsx`, `src/lib/url.ts`, `src/lib/schemas.ts`, `src/components/ai/AIModal.tsx`, `src/components/ErrorBoundary.tsx`, `next.config.ts`, `public/sounds/*`, `SECURITY.md`.
 
 **Bitti kriteri:**
+
 - XSS test girdileri (`<img onerror>`, `[x](javascript:…)`, `<script>`) düz metin olarak görünüyor.
 - Şemaya uymayan JSON çökme yerine anlaşılır bir hata veriyor.
 - CSP ihlali olmadan YouTube, radyo ve PDF çalışıyor (konsol temiz).
@@ -164,6 +174,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - Test listesi tekrarlandı ve veri kaybı yok.
 
 **Riskler:**
+
 - CSP'nin YouTube iframe API'sini ya da Next ve tema inline script'lerini kırması (nonce/hash gerekebilir; tema script'i hash ile).
 - Mevcut özetlerde `react-markdown` ile farklı görünen biçimlendirmeler.
 
@@ -178,6 +189,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Oynatıcı yaşam döngüsünü düzeltmek; video, playlist ve radyo bileşenlerini yeni tasarımla yeniden yazmak.
 
 **Yapılacaklar:**
+
 - Promise tabanlı tekil `loadYouTubeApi()` (B2).
 - `useYouTubePlayer`: create/destroy, unmount cleanup, ref sıfırlama (B1).
 - Callback'lerde `getState()`/ref kullanımı; belge moduna geçerken video durdurulur (B3).
@@ -192,6 +204,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/lib/youtube.ts`, `src/hooks/useYouTubePlayer.ts`, `src/hooks/useRadio.ts`, `src/components/player/{ContentViewer,PlaylistSidebar}.tsx`, `src/components/radio/*`.
 
 **Bitti kriteri:**
+
 - Test #3–9, #14, #29, #30 tarayıcıda geçiyor.
 - Landing ↔ app 5 kez gidip gelince oynatıcı çalışıyor ve DOM'da tek `iframe_api` script'i var.
 - YouTube kodunda `any` yok.
@@ -210,6 +223,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Doğru ve hafif bir zamanlayıcı; pomodoro arayüzünün yeni tasarımı.
 
 **Yapılacaklar:**
+
 - `endsAt` zaman damgası tabanlı sayaç (B4).
 - Zamanlayıcı state'i store'a ya da izole bir bileşene taşınır; `App`'in saniyelik render'ı biter (P1). Üst çubuktaki sayaç yalnızca kendini render eder.
 - Yerel tarih anahtarı; **eski UTC kayıtlar olduğu gibi kalır** (migrasyon yok).
@@ -221,6 +235,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/hooks/usePomodoroTimer.ts`, `src/store/pomodoro*`, `src/components/pomodoro/*`, `src/components/layout/AppHeader.tsx` (sayaç), `src/lib/notifications.ts`, `src/lib/date.ts`.
 
 **Bitti kriteri:**
+
 - 10 dk arka plandan sonra sapma < 1 sn.
 - Profiler'da zamanlayıcı çalışırken yalnızca sayaç bileşenleri render oluyor.
 - 00:30'da (TR) biten pomodoro o güne yazılıyor (sahte saatle birim test).
@@ -240,6 +255,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Mobilde çalışan, kalıcı bir belge deneyimi; web adresi dalının kaldırılması.
 
 **Yapılacaklar:**
+
 - `pdfjs-dist` görüntüleyici: lazy, worker, sayfa sanallaştırma, yakınlaştırma, metin seçimi → not (A3, S3).
 - **IndexedDB kalıcılığı:**
   - "Bu cihazda sakla" **varsayılan açık**, dosya başına **~50 MB** sınır.
@@ -254,6 +270,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/components/player/{PdfViewer,DocReloadModal,ContentToolbar}.tsx`, `src/lib/idb.ts`, `src/lib/openDocument.ts`, `src/components/landing/*`.
 
 **Bitti kriteri:**
+
 - iOS Safari ve Android Chrome'da çok sayfalı PDF kaydırılıyor.
 - Yenilemede ve geçmişten açınca PDF dosya seçmeden geliyor.
 - 50 MB üstü dosyada anlaşılır mesaj çıkıyor.
@@ -262,6 +279,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - Test listesi tekrarlandı ve veri kaybı yok.
 
 **Riskler:**
+
 - pdf.js bundle boyutu (lazy yükleme şart).
 - Worker ve CSP uyumu.
 - Safari'nin IndexedDB kotası ve özel modu.
@@ -277,6 +295,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Çalışma ekranının kalan görsel yenilemesi ve erişilebilir, akıcı, dokunmatik dostu arayüz.
 
 **Yapılacaklar:**
+
 - **Tasarım (DESIGN §8.4):**
   - `StudyPanel` "açık kitap sayfası", altı çizgili sekmeler ve sayaçlar.
   - Notlar: zaman damgası sütunu, satır çizgileri.
@@ -304,6 +323,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/components/{layout,notes,summary,flashcards,quiz,history,ai}/*`, `src/components/ui/{Modal,ConfirmDialog}.tsx`, `src/hooks/useKeyboardShortcuts.ts`.
 
 **Bitti kriteri:**
+
 - Lighthouse (mobil): Erişilebilirlik ≥ 95, Best Practices ≥ 95, Performans önceki ölçümden düşük değil.
 - axe'te kritik ihlal yok.
 - Tüm akışlar yalnızca klavyeyle tamamlanabiliyor.
@@ -312,6 +332,7 @@ Dal: `refactor/bmo-optimizasyon`.
 - Test listesi tekrarlandı ve veri kaybı yok.
 
 **Riskler:**
+
 - Modal odak yönetiminin YouTube iframe'iyle çakışması.
 - Tek soru görünümüne geçişin mevcut kullanıcı alışkanlığını değiştirmesi.
 
@@ -324,6 +345,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Amaç:** Kurulabilir, test edilmiş, belgelenmiş BeLearn sürümü.
 
 **Yapılacaklar:**
+
 - `src/app/manifest.ts`: `name`/`short_name` "BeLearn", `theme_color`/`background_color` token'lardan.
 - **Yer tutucu ikonlar:** Adım 3d'de üretildi (`public/icons/`, `src/app/favicon.ico`, `src/app/apple-icon.png`). Bu adımda yalnızca `manifest.ts`'e bağlanır; gerçek ikon gelirse dosyalar değiştirilir.
 - Service worker: uygulama kabuğu önbelleği, YouTube önbelleklenmez, sürümleme + güncelleme bildirimi. `PWAInjector` kaldırılır (W1).
@@ -338,6 +360,7 @@ Dal: `refactor/bmo-optimizasyon`.
 **Dosyalar:** `src/app/manifest.ts`, `public/icons/*`, `src/app/icon.*`, SW dosyası, `vitest.config.ts`, `playwright.config.ts`, `tests/**`, `README.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/DESIGN.md`, `eslint.config.mjs`.
 
 **Bitti kriteri:**
+
 - Chrome'da "Yükle" çalışıyor, adı BeLearn.
 - Uygulama kabuğu çevrimdışı açılıyor.
 - `npm test` ve `npx playwright test` yeşil.
@@ -353,12 +376,12 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ## Kararlar (2026-10-24, yanıtlandı)
 
-| # | Konu | Karar | Adım |
-|---|---|---|---|
-| 1 | Eski adresten veri taşıma | Eski adres tamamen bırakılıyor; BeLearn yeni adreste sıfırdan yayınlanacak. Adresler arası taşıma yapılmayacak. Yedek özelliği genel amaçlı kalıyor; `bmo_*` kopyası yalnızca aynı adreste çalışan basit bir güvenlik ağı | 4 |
-| 2 | Üst çubukta yeri belirtilmeyen işlevler | Öneri kabul: playlist düğmesi yalnızca playlist varken görünür; mavi ışık, PWA yükleme ve yedek tek bir "Ayarlar" menüsünde; ilerleme ve sayaçlar sekme sayaçlarına taşınır | 3f, 4a, 9 |
-| 3 | Landing'de geçmiş | Öneri kabul: en fazla 12 sırt + "Tüm geçmiş" bağlantısı; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı | 3e, 9 |
-| 4 | ilovepdf bağlantısı | Kaldırılır; PDF olmayan dosyada yalnızca "Desteklenmeyen dosya" uyarısı | 3e, 8 |
-| 5 | Modal ve toast açılışı | 150 ms opaklık geçişi (solma); `prefers-reduced-motion`'da kapalı | 3c (token), 6–9 |
-| 6 | Üst çubuktaki "Odaklan" | Pomodoroyu doğrudan başlatır; yanında odak ve mola süresi ayar paneli (DESIGN §8.2.1). Süreler Adım 7'de kalıcı hale gelir | 3f, 7 |
-| 7 | `package.json` adı | `bmo-learn` → `belearn` | 3b |
+| #   | Konu                                    | Karar                                                                                                                                                                                                                     | Adım            |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| 1   | Eski adresten veri taşıma               | Eski adres tamamen bırakılıyor; BeLearn yeni adreste sıfırdan yayınlanacak. Adresler arası taşıma yapılmayacak. Yedek özelliği genel amaçlı kalıyor; `bmo_*` kopyası yalnızca aynı adreste çalışan basit bir güvenlik ağı | 4               |
+| 2   | Üst çubukta yeri belirtilmeyen işlevler | Öneri kabul: playlist düğmesi yalnızca playlist varken görünür; mavi ışık, PWA yükleme ve yedek tek bir "Ayarlar" menüsünde; ilerleme ve sayaçlar sekme sayaçlarına taşınır                                               | 3f, 4a, 9       |
+| 3   | Landing'de geçmiş                       | Öneri kabul: en fazla 12 sırt + "Tüm geçmiş" bağlantısı; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı                                                                                                             | 3e, 9           |
+| 4   | ilovepdf bağlantısı                     | Kaldırılır; PDF olmayan dosyada yalnızca "Desteklenmeyen dosya" uyarısı                                                                                                                                                   | 3e, 8           |
+| 5   | Modal ve toast açılışı                  | 150 ms opaklık geçişi (solma); `prefers-reduced-motion`'da kapalı                                                                                                                                                         | 3c (token), 6–9 |
+| 6   | Üst çubuktaki "Odaklan"                 | Pomodoroyu doğrudan başlatır; yanında odak ve mola süresi ayar paneli (DESIGN §8.2.1). Süreler Adım 7'de kalıcı hale gelir                                                                                                | 3f, 7           |
+| 7   | `package.json` adı                      | `bmo-learn` → `belearn`                                                                                                                                                                                                   | 3b              |
