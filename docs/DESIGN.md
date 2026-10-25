@@ -1,7 +1,7 @@
 # BeLearn — Tasarım Sistemi
 
 > **Bağlayıcıdır.** Adım 3'ten itibaren yazılan ya da değiştirilen her bileşen bu dokümana uyar. Bir kurala aykırı bir ihtiyaç doğarsa önce bu doküman güncellenir (onaylı), sonra kod yazılır.
-> Karar tarihi: 2026-10-24 · Uygulama: Adım 3 (altyapı, Landing, üst çubuk), Adım 6–9 (bileşenler)
+> Karar tarihi: 2026-10-24 · Uygulama: Adım 3 (altyapı, Landing, üst çubuk), Adım 6–9 (bileşenler), Adım 10 (PWA bildirimleri) · **Durum: refactor sonu (0.1.0) itibarıyla tüm bileşenler bu dokümana uygun.**
 
 ## 1. Yön
 
@@ -226,6 +226,14 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 - **Kenar karartması:** sabit, tıklamayı engellemeyen (`pointer-events: none`) bir katman; `plate` renginde iç gölge (`box-shadow: inset`), gündüz %55, gece %80. Renk geçişi kullanılmaz.
 - Kart çevirme, sekmeler ve kısayollar odak modunda aynen çalışır.
 
+### 8.8 Sistem bildirimleri (Adım 10)
+
+- **Yeni sürüm:** sağ altta `page` yüzeyli küçük kutu, 150 ms solma: "BeLearn'ün yeni sürümü hazır." + `ink` dolgu "Yenile" düğmesi + kapat. Kendiliğinden yenilemez; `role="status"`.
+- **Depolama uyarıları:** sol altta, sol kenarda 2 px `ribbon` çizgi; `role="alert"`.
+- **Çevrimdışı:** üstte tam genişlik `ribbon` şerit, `role="status"`; bağlantı gelince kalkar.
+- Bildirimler üst üste binmez: yeni sürüm sağ altta, depolama sol altta, pomodoro üst ortada.
+- Sistem (işletim sistemi) bildirimi yer tutucu simgeyle (`/icons/icon-192.png`) gösterilir.
+
 ## 9. Metin ve ses tonu
 
 - Ad: **BeLearn** (tek kelime, B ve L büyük). "BMO", "BMO Learn" ve "bmo" kullanıcıya görünen hiçbir yerde geçmez.
@@ -241,7 +249,9 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 - Dokunma hedefleri ≥ 44 px; silme düğmeleri hover gerektirmez.
 - İkon düğmelerinde `aria-label`; durum bildirimleri `aria-live="polite"`.
 
-## 11. Kontrol listesi (her adım sonunda)
+## 11. Kontrol listesi (her değişiklikte)
+
+Otomatik: `npm test` (markdown güvenliği dahil), `npm run test:e2e` (axe iki temada, modal odak yönetimi, 375 px / Pixel 7'de taşma ve ≥ 44 px hedefler). Elle: aşağıdaki taramalar.
 
 ```bash
 # Yasaklı kalıplar (Adım 3 sonundan itibaren 0 olmalı; istisna dosyaları hariç)

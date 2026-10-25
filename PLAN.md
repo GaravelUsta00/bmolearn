@@ -340,7 +340,9 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ---
 
-## Adım 10 — PWA, testler, teslim
+## Adım 10 — PWA, testler, teslim ✅
+
+> **Tamamlandı (2026-10-25):** Kurulabilirlik denetimi hatasız, çevrimdışı açılış ve güncelleme akışı doğrulandı. `npm test` 49/49, `npx playwright test` 17/17 (Chromium ve Edge), `npm audit` 0 açık, ESLint'te override yok. Ayrıntı: [ANALYSIS.md §7, Adım 10](ANALYSIS.md#adım-10-pwa-testler-teslim).
 
 **Amaç:** Kurulabilir, test edilmiş, belgelenmiş BeLearn sürümü.
 

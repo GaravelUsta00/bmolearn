@@ -620,6 +620,61 @@ Lint 0 hata, 0 uyarı; geçici lint istisnası kalmadı (`set-state-in-effect` y
 - **K27:** axe, kitap sırtlarındaki dikey ve döndürülmüş metni görünür saymadığı için `aria-label` ile ad uyuşmazlığı bildirdi. `aria-label` kaldırıldı; erişilebilir ad içerikten geliyor ("Video Başlık").
 - **Bilinen gözlem:** Mobil LCP'nin büyük kısmı (≈1,1 sn simüle "render gecikmesi") landing koreografisinden geliyor: cümle `fade-up` ile görünür oluyor (DESIGN §7.1). Bunu değiştirmek tasarım kararı gerektirir; bu adımda değiştirilmedi.
 
+### Adım 10: PWA, testler, teslim
+
+Commit'ler: `b271ef7` (yalnızca Prettier biçimi), `239ff09` (PWA), `c8bed89` (testler).
+
+**Yöntem:**
+
+- **PWA:** Edge kalıcı profilde (Playwright `launchPersistentContext`). Kurulabilirlik Chromium'un kendi denetimiyle ölçüldü (CDP `Page.getInstallabilityErrors`, `Page.getAppManifest`).
+- **Güncelleme akışı:** aynı profille iki ayrı derleme arasında denendi.
+- **Çevrimdışı:** `context.setOffline`.
+- **Testler:** yeni Vitest ve Playwright paketleri, ayrıca önceki adımların tüm doğrulama betikleri bu sürümde yeniden koşturuldu.
+
+| Senaryo                                                                                                                                                       | Sonuç                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **W1** `/manifest.webmanifest`: ad ve kısa ad "BeLearn", `start_url` `/`, `standalone`, 192 / 512 / 512 maskable simgeler erişilebilir                        | ✅                                                                 |
+| **W1** Chromium kurulabilirlik denetimi: kurulabilirlik hatası 0, manifest hatası 0 ("Yükle" sunulur)                                                         | ✅                                                                 |
+| Service worker sayfayı denetliyor; ilk kurulumda sayfa kendiliğinden **yenilenmiyor**                                                                         | ✅                                                                 |
+| Önbellekte yalnızca aynı kaynak (27 kayıt, YouTube 0)                                                                                                         | ✅                                                                 |
+| Çevrimdışı: uygulama kabuğu açılıyor; çalışma ekranı açılıyor; not ekleniyor ve `belearn_notes`'a yazılıyor                                                   | ✅                                                                 |
+| Çevrimdışı uyarısı (offline olayı)                                                                                                                            | ✅                                                                 |
+| Güncelleme: yeni derleme → "BeLearn'ün yeni sürümü hazır" bildirimi, sayfa yenilenmiyor → "Yenile" → yeni sürüm etkin, eski önbellekler silindi, veri duruyor | ✅                                                                 |
+| CSP ihlali · sayfa hatası                                                                                                                                     | ✅ yok · yok                                                       |
+| `npm test` (Vitest, 6 dosya)                                                                                                                                  | **49/49**                                                          |
+| `npx playwright test` (Chromium + Pixel 7) · `PW_CHANNEL=msedge` (Edge)                                                                                       | **17/17 · 17/17**                                                  |
+| `npm audit --omit=dev` · `npm audit`                                                                                                                          | **0 · 0** açık                                                     |
+| ESLint: geçici override                                                                                                                                       | **yok** (0 hata, 0 uyarı)                                          |
+| Prettier `--check .`                                                                                                                                          | ✅ (önceden 7 dosyada uyarı vardı; ayrı `style` commit'i)          |
+| Regresyon: PWA · Adım 9 · duman · güvenlik · oynatıcı · depolama · pomodoro · PDF                                                                             | **10/10 · 42/42 · 46/46 · 20/20 · 19/19 · 20/20 · 16/16 · 20/20**  |
+| Lighthouse mobil (3 tekrar): performans · erişilebilirlik · en iyi uygulamalar                                                                                | 75 · 79 · 79 · 100 · 100 (Adım 9: 78–79; 75'li ölçümde TBT 250 ms) |
+
+**Test güvenilirliği:** Birim testleri kodu bilerek bozarak denendi. Bozulan dört davranışın dördünü de yakaladı:
+
+- yerel gün yerine UTC kullanmak,
+- ay sınırının yanlış hesaplanması,
+- migrasyonda geri almanın yapılmaması,
+- `https` yerine `http` bağlantıya izin vermek.
+
+Kod geri alındı. Uçtan uca testler YouTube yerine sahte bir IFrame API kullanır; YouTube'un kendi davranışı için elle denetim listesi `tests/e2e/README.md`'de.
+
+**Çözülen bulgular:** W1. Bildirimler artık service worker üzerinden gösteriliyor; Android Chrome `new Notification()`'a izin vermiyordu.
+
+**Davranış değişiklikleri:**
+
+- Yeni sürüm yayınlanınca açık sekmeler "Yenile" bildirimi görür; yeni sürüm kullanıcı onayıyla devreye girer. Yenileme çalışan pomodoro sayacını sıfırlar (sayaç durumu kalıcı değil).
+- Pomodoro bildirimine tıklayınca BeLearn sekmesi öne gelir.
+- Geliştirme ve test için Node.js 22.12+ gerekir (Vitest 5).
+
+**Adım 10 sırasında bulunan ek konular:**
+
+- **K28:** Lighthouse 12 ve 13, headless Edge'de izi kaydedemiyor (`NO_NAVSTART`); ölçümler Chrome headless-shell ile alındı.
+- **K29:** Service worker ilk kurulumda sayfayı devralınca (`clients.claim`) `controllerchange` olayı da tetikleniyor. İlk sürümde bu olay sayfayı yeniliyordu; yazılmakta olan bir not kaybolabilirdi. Artık yalnızca kullanıcı "Yenile" dediyse yenileniyor ve bunu test doğruluyor.
+- **K30:** Playwright'ın çevrimdışı öykünmesi kalıcı profilde `navigator.onLine`'ı değiştirmiyor; çevrimdışı uyarısı `offline` olayıyla ayrıca doğrulandı.
+- **K31:** Ara commit'lerin tam derlemesi geçici worktree'de denenemedi: Turbopack, `node_modules` bağlantı (junction) üzerinden gelince Next paketini bulamıyor. Ara commit'ler tip denetimi ve lint ile doğrulandı; tam derleme ve tüm testler son commit'te.
+- **Bilinen sınır (Adım 7'den):** Arka plan sekmesinde faz bitiş bildirimi gecikebilir. Service worker, push sunucusu olmadan bildirimi zamanlayamaz; Notification Triggers standartlaşmadı. Bu yüzden sınır kaldırılmadı (SECURITY.md).
+- **Yapılmayanlar:** Gerçek simge (yer tutucu duruyor), iOS/Android gerçek cihaz testi, CI yapılandırması (istenmedi; GitHub Actions ile `npm run check` ve `npm run test:e2e` eklenebilir, `playwright.config.ts` CI kipini destekliyor).
+
 ## 8. Marka ve tasarım kararları (Revizyon 2)
 
 Karar tarihi 2026-10-24. Bağlayıcı tasarım kuralları [docs/DESIGN.md](docs/DESIGN.md)'de, uygulama sırası [PLAN.md](PLAN.md)'de.
