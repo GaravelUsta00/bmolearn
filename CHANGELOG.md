@@ -2,6 +2,20 @@
 
 Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/). Kod adları (B4, P1 …) [ANALYSIS.md](ANALYSIS.md)'deki bulgulara karşılık gelir.
 
+## [Yayımlanmadı]
+
+### Değişti
+
+- **Marka rengi:** logodaki "Be" ve landing'deki "odaklan." iki temada da `#8F2D2D` (`brand` token'ı). Gece temasında kontrast AA'nın altında; bilinçli karar.
+- Landing kaynak girişinin yazısı "YouTube bağlantısı".
+- **Sinema modu** (eski "Odak modu"): kenar karartması yerine yarı saydam siyah örtü; video önde, panel ve çubuklar üzerine gelince ya da odaktayken öne çıkar; `Esc` ile çıkılır.
+- Üst çubuk sadeleşti: Geçmiş ve Sinema modu Ayarlar menüsüne taşındı.
+- **AI Sihirbazı:** cevap tek bir ```json kod bloğunda isteniyor, net biçim kuralları ve adet sınırları var (12 kart, 10 soru, en fazla 600 kelimelik özet). Bozuk JSON `jsonrepair` ile onarılıyor (satır sonu, kaçışsız tırnak, sondaki virgül, yorum, akıllı tırnak, yarıda kesilme); sarılmış yanıtlar, Türkçe/eş anahtarlar ve "A) …" şıkları kabul ediliyor. PDF'lerde "PDF'ini de ekle" tavsiyesi.
+
+### Kaldırıldı
+
+- **Görevler** ve 30 günlük pomodoro haritası. Görevler artık yedeğe girmiyor; eski yedeklerdeki görevler yok sayılıyor. Pomodoro geçmişi korunuyor.
+
 ## [0.1.0] — 2026-10-25
 
 BMO Learn'ün yeniden yapılandırılmış ilk sürümü: **BeLearn**. 10 adımlık refactor planının sonucu ([PLAN.md](PLAN.md)).

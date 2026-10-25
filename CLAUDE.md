@@ -42,7 +42,7 @@ Node.js 22.12+. `public/pdfjs/` ve `public/sw.js` derlemede üretilir (git'te yo
 
 ## Durum
 
-10 adımlık refactor planı tamamlandı (2026-10-25), dal `refactor/bmo-optimizasyon`; henüz push edilmedi. Ayrıntı: [PLAN.md](PLAN.md) (plan ve "Sonraki işler"), [ANALYSIS.md](ANALYSIS.md) §7 (her adımın doğrulama kaydı, bulgu kodları B*/A*/P*/K*), [CHANGELOG.md](CHANGELOG.md).
+10 adımlık refactor planı tamamlandı (2026-10-25), dal `refactor/bmo-optimizasyon` GitHub'a gönderildi (`main`'e birleştirme/PR kullanıcı onayıyla). 0.1.0 sonrası kullanıcı istekleri (marka rengi, sinema modu, görevlerin kaldırılması, AI JSON onarımı) CHANGELOG "Yayımlanmadı" bölümünde. Görevler emekli (`RETIRED_KEYS` in `lib/storageKeys.ts`): okunmaz/yazılmaz/yedeğe girmez. Ayrıntı: [PLAN.md](PLAN.md) (plan ve "Sonraki işler"), [ANALYSIS.md](ANALYSIS.md) §7 (her adımın doğrulama kaydı, bulgu kodları B*/A*/P*/K*), [CHANGELOG.md](CHANGELOG.md).
 
 ## Bu ortamda bilinen tuzaklar (Windows, Git Bash)
 

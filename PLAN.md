@@ -6,7 +6,7 @@ Dal: `refactor/bmo-optimizasyon`.
 
 ## Durum (2026-10-25)
 
-**10 adımın tamamı bitti ✅** — sürüm 0.1.0 ([CHANGELOG.md](CHANGELOG.md)). Dal henüz uzak depoya gönderilmedi (push/PR kullanıcı onayıyla).
+**10 adımın tamamı bitti ✅** — sürüm 0.1.0 ([CHANGELOG.md](CHANGELOG.md)). Dal 2026-10-25'te GitHub'a gönderildi; `main`'e birleştirme kullanıcı onayıyla. 0.1.0 sonrası değişiklikler CHANGELOG "Yayımlanmadı" bölümünde.
 
 | Adım                                                       | Commit'ler                                                                             |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -17,12 +17,13 @@ Son doğrulama: `npm run check` yeşil; Vitest 49/49; Playwright 17/17 (Chromium
 
 ## Sonraki işler (öneri; planın dışında, kullanıcı onayıyla)
 
-1. Dalı push edip `main`'e PR açmak.
-2. CI: GitHub Actions'ta `npm run check` ve `npx playwright install chromium && npm run test:e2e`.
-3. Gerçek uygulama simgesi (`public/icons/*`, `src/app/favicon.ico`, `src/app/apple-icon.png`; DESIGN §5).
-4. iOS Safari ve Android Chrome'da gerçek cihaz testi (PDF, IndexedDB kotası, PWA kurulumu, bildirim).
-5. Gerçek YouTube ile elle denetim listesi: [tests/e2e/README.md](tests/e2e/README.md#gerçek-youtube).
-6. İsteğe bağlı: arka plan sekmesinde zamanında pomodoro bildirimi (push sunucusu gerekir; bugün kapsam dışı), mobil LCP için landing açılış animasyonunun gözden geçirilmesi (tasarım kararı), `www.youtube-nocookie.com`'a geçiş.
+1. ~~Dalı push etmek~~ ✅ 2026-10-25. `main`'e PR/birleştirme ve yayın (barındırma seçimi; CSP başlıkları `next.config.ts`'te, statik barındırmada `_headers` gerekir).
+2. Performans: landing ilk yüklemede tam `zod` paketi (≈392 KB, gzip ≈91 KB) iniyor; `zod/mini`'ye geçiş ya da depolama doğrulamasının ilk boyamadan sonra yüklenmesi.
+3. CI: GitHub Actions'ta `npm run check` ve `npx playwright install chromium && npm run test:e2e`.
+4. Gerçek uygulama simgesi (`public/icons/*`, `src/app/favicon.ico`, `src/app/apple-icon.png`; DESIGN §5).
+5. iOS Safari ve Android Chrome'da gerçek cihaz testi (PDF, IndexedDB kotası, PWA kurulumu, bildirim).
+6. Gerçek YouTube ile elle denetim listesi: [tests/e2e/README.md](tests/e2e/README.md#gerçek-youtube).
+7. İsteğe bağlı: arka plan sekmesinde zamanında pomodoro bildirimi (push sunucusu gerekir; bugün kapsam dışı), mobil LCP için landing açılış animasyonunun gözden geçirilmesi (tasarım kararı), `www.youtube-nocookie.com`'a geçiş.
 
 ## Her adım için geçerli kurallar
 

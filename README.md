@@ -9,9 +9,9 @@ BeLearn tamamen tarayıcıda çalışır. Hesap ve sunucu yoktur; notların ve i
 - YouTube videosu ve oynatma listesi; kaldığın saniyeden devam
 - PDF görüntüleme (pdf.js): seçilebilir metin, yakınlaştırma, seçili metni nota ekleme; PDF'ler istenirse bu cihazda saklanır
 - Zaman damgalı notlar (`Alt+N`); panoya kopyalama ya da `.txt` olarak indirme
-- **AI Sihirbazı:** içeriğe uygun bir istem (prompt) üretir. İstemi kendi kullandığın yapay zekâya yapıştırırsın, dönen JSON'u geri yapıştırırsın; özet, bilgi kartları ve çoktan seçmeli sorular oluşur
-- Pomodoro zamanlayıcısı (ayarlanabilir süreler), günlük görevler ve 30 günlük çalışma haritası
-- Odak radyosu, mavi ışık filtresi, tam ekran, odak modu, Gece/Gündüz teması
+- **AI Sihirbazı:** içeriğe uygun bir istem (prompt) üretir. İstemi kendi kullandığın yapay zekâya yapıştırırsın, dönen cevabı tek seferde geri yapıştırırsın; özet, bilgi kartları ve çoktan seçmeli sorular oluşur. Bozuk JSON (satır sonu, tırnak, virgül hataları, yarıda kesilme) otomatik onarılır
+- Pomodoro zamanlayıcısı (ayarlanabilir süreler)
+- Odak radyosu, mavi ışık filtresi, tam ekran, sinema modu, Gece/Gündüz teması
 - Yedeği indir / yükle (başka tarayıcıya ya da cihaza taşımak için)
 - Ana ekrana eklenebilir (PWA); uygulama kabuğu çevrimdışı da açılır
 
@@ -23,7 +23,7 @@ BeLearn tamamen tarayıcıda çalışır. Hesap ve sunucu yoktur; notların ve i
 | `K` ya da `Space`    | Videoyu oynat / duraklat (yazı alanında ve bir düğme odaktayken çalışmaz) |
 | `←` `→` `Home` `End` | Panel sekmeleri arasında gezin                                            |
 | `Enter` / `Space`    | Kartı çevir                                                               |
-| `Esc`                | Pencereyi ya da menüyü kapat                                              |
+| `Esc`                | Pencereyi ya da menüyü kapat; sinema modundan çık                         |
 
 ## Geliştirme
 
