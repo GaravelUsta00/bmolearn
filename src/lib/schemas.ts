@@ -31,12 +31,6 @@ export const QuizQuestionSchema = z.looseObject({
   userAnswer: z.string().optional(),
 });
 
-export const TodoSchema = z.looseObject({
-  id: Id,
-  text: z.string(),
-  completed: z.boolean(),
-});
-
 const WatchedVideoSchema = z.looseObject({
   contentId: z.string(),
   title: z.string(),
@@ -65,7 +59,6 @@ export const KEY_SCHEMAS: Record<Exclude<DataKey, 'theme'>, Kind> = {
   notes: { list: NoteSchema },
   flashcards: { list: FlashcardSchema },
   quiz: { list: QuizQuestionSchema },
-  todos: { list: TodoSchema },
   history: { list: HistoryItemSchema },
   summaries: { record: z.string() },
   pomodoro: { record: z.number() },

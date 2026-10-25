@@ -12,7 +12,6 @@ export const DATA_KEYS = [
   'flashcards',
   'quiz',
   'summaries',
-  'todos',
   'history',
   'pomodoro',
   'pomodoro_settings',
@@ -27,7 +26,6 @@ export const DATA_KEY_LABELS: Record<DataKey, string> = {
   flashcards: 'Kartlar',
   quiz: 'Sorular',
   summaries: 'Özetler',
-  todos: 'Görevler',
   history: 'Geçmiş',
   pomodoro: 'Pomodoro geçmişi',
   pomodoro_settings: 'Pomodoro süreleri',
@@ -37,3 +35,8 @@ export const DATA_KEY_LABELS: Record<DataKey, string> = {
 };
 
 export const isDataKey = (s: string): s is DataKey => (DATA_KEYS as readonly string[]).includes(s);
+
+// Kaldırılan özelliklerin anahtarları (görevler, 2026-10-25): okunmaz, yazılmaz, yedeğe girmez,
+// eski yedeklerde sessizce yok sayılır. Cihazdaki eski değerlere dokunulmaz.
+export const RETIRED_KEYS = ['todos'] as const;
+export const isRetiredKey = (s: string) => (RETIRED_KEYS as readonly string[]).includes(s);

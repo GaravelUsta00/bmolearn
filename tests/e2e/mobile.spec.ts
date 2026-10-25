@@ -29,7 +29,7 @@ test('mobil: yatay taşma yok, menü tüm işlemleri içerir, panel hedefleri �
     'Geçmiş',
     'Odak radyosu',
     'Tam ekran',
-    'Odak modu',
+    'Sinema modu',
     'Mavi ışık',
     'Uygulamayı yükle',
     'Yedeği indir',

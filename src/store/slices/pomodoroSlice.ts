@@ -1,4 +1,3 @@
-import { newId } from '@/lib/id';
 import { localDateKey } from '@/lib/date';
 import { NotificationManager } from '@/lib/notifications';
 import type { AppState, PomodoroSlice, SliceCreator } from '@/store/types';
@@ -17,7 +16,6 @@ export const remainingMs = (s: Pick<AppState, 'timerStatus' | 'timerEndsAt' | 't
 
 export const createPomodoroSlice: SliceCreator<PomodoroSlice> = (set, get) => ({
   pomodoroHistory: {},
-  todos: [],
   pomodoroSettings: { focusMinutes: 25, breakMinutes: 5 },
 
   timerMode: 'focus',
@@ -31,21 +29,6 @@ export const createPomodoroSlice: SliceCreator<PomodoroSlice> = (set, get) => ({
     set((state) => {
       const day = localDateKey(at);
       return { pomodoroHistory: { ...state.pomodoroHistory, [day]: (state.pomodoroHistory[day] || 0) + 1 } };
-    }),
-  addTodo: (text) =>
-    set((state) => {
-      const newTodos = [...state.todos, { id: newId(), text, completed: false }];
-      return { todos: newTodos };
-    }),
-  toggleTodo: (id) =>
-    set((state) => {
-      const newTodos = state.todos.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
-      return { todos: newTodos };
-    }),
-  deleteTodo: (id) =>
-    set((state) => {
-      const newTodos = state.todos.filter((t) => t.id !== id);
-      return { todos: newTodos };
     }),
 
   startTimer: () => {

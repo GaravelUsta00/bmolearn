@@ -14,12 +14,20 @@ const DATA = {
   belearn_summaries: { [VIDEO]: '# Özet\nİlk paragraf.' },
 };
 
+// Bilinçli istisna (DESIGN §3.1, kullanıcı kararı 2026-10-25): marka bordosu (`text-brand`, logo "Be" ve
+// "odaklan.") gecede de #8F2D2D kalır; yalnızca bu düğümlerin kontrast ihlali yok sayılır.
+// axe'nin seçicisi her zaman sınıfı içermez; düğümün kendi HTML'ine bakılır.
+const isBrandContrast = (id: string, html: string) =>
+  id === 'color-contrast' && /class="[^"]*\btext-brand\b/.test(html);
+
 // Giriş animasyonları ve 150 ms solma bitsin: axe ara opaklıkta ölçmesin.
 const scan = async (page: Page) => {
   await page.waitForTimeout(700);
   const { violations } = await new AxeBuilder({ page }).exclude('iframe').analyze();
   return violations
     .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    .map((v) => ({ ...v, nodes: v.nodes.filter((n) => !isBrandContrast(v.id, n.html)) }))
+    .filter((v) => v.nodes.length > 0)
     .map((v) => `${v.id}: ${v.nodes[0]?.target}`);
 };
 
@@ -32,6 +40,7 @@ for (const theme of ['light', 'dark']) {
       await app.tab(tab).click();
       expect(await scan(page), String(tab)).toEqual([]);
     }
+    await page.getByRole('button', { name: 'Ayarlar', exact: true }).click();
     await page.getByRole('button', { name: 'Geçmiş', exact: true }).click();
     expect(await scan(page)).toEqual([]);
   });

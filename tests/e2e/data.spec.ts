@@ -20,7 +20,10 @@ test('eski BMO verisi belearn_* anahtarlarına kopyalanır; bmo_* olduğu gibi k
   const bmo = await app.rawStorage('bmo_');
   const belearn = await app.rawStorage('belearn_');
   expect(bmo).toEqual(legacy);
-  for (const [k, v] of Object.entries(legacy)) expect(belearn[k.replace('bmo_', 'belearn_')]).toBe(v);
+  // Görevler kaldırıldı (2026-10-25): bmo_todos yerinde kalır ama kopyalanmaz.
+  for (const [k, v] of Object.entries(legacy)) {
+    expect(belearn[k.replace('bmo_', 'belearn_')]).toBe(k === 'bmo_todos' ? undefined : v);
+  }
   expect(JSON.parse(belearn.belearn_meta)).toMatchObject({ migratedFrom: 'bmo' });
 });
 
@@ -28,7 +31,7 @@ test('geçmiş: kayıt silme ve tümünü temizleme onaylı; vazgeçince hiçbir
   await app.open({
     belearn_history: HISTORY,
     belearn_notes: [{ id: 1, contentId: VIDEO, text: 'not', time: 3 }],
-    belearn_todos: [{ id: 2, text: 'görev', completed: false }],
+    belearn_pomodoro: { '2026-10-24': 3 },
   });
   await page.getByRole('button', { name: 'Tüm geçmiş' }).click();
   const dialog = page.getByRole('dialog', { name: 'Geçmiş' });
@@ -42,11 +45,11 @@ test('geçmiş: kayıt silme ve tümünü temizleme onaylı; vazgeçince hiçbir
   await expect.poll(() => app.storage('belearn_history')).toHaveLength(1);
 
   await dialog.getByRole('button', { name: 'Tümünü temizle' }).click();
-  await expect(page.getByRole('alertdialog')).toContainText('Görevlerin ve pomodoro geçmişin korunur');
+  await expect(page.getByRole('alertdialog')).toContainText('Pomodoro geçmişin korunur');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Tümünü sil' }).click();
   await expect.poll(() => app.storage('belearn_history')).toBeNull();
   expect(await app.storage('belearn_notes')).toBeNull();
-  expect(await app.storage('belearn_todos')).toHaveLength(1);
+  expect(await app.storage('belearn_pomodoro')).toEqual({ '2026-10-24': 3 });
 });
 
 test('yedek: indir, boş cihaza yükle, veri geri gelir', async ({ app, page }) => {

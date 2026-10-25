@@ -15,6 +15,7 @@ const isTextField = (el: HTMLElement) =>
  * - Alt+N: not alanına geç (her yerde).
  * - K ya da Space: videoyu oynat/duraklat (B21; eskiden Ctrl+Space). Yazı alanında, modal açıkken
  *   ve Space için bir düğme/bağlantı odaktayken çalışmaz (Space o düğmeye basar).
+ * - Escape: sinema modundan çık (yazı alanında ve modal açıkken çalışmaz).
  */
 export const useKeyboardShortcuts = ({ playerRef, noteInputRef }: KeyboardShortcutsOptions) => {
   useEffect(() => {
@@ -28,6 +29,11 @@ export const useKeyboardShortcuts = ({ playerRef, noteInputRef }: KeyboardShortc
       }
 
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || isModalOpen() || isTextField(target)) return;
+      if (e.key === 'Escape') {
+        // Açık bir menü Escape'i kendisi işlediyse (useDismiss) sinema modu açık kalır.
+        if (!e.defaultPrevented && useStore.getState().focusMode) useStore.getState().toggleFocusMode();
+        return;
+      }
       const isK = e.key.toLowerCase() === 'k';
       const isSpace = e.code === 'Space' || e.key === ' ';
       if (!isK && !isSpace) return;

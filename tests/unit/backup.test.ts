@@ -37,8 +37,8 @@ describe('yedek (Adım 4a)', () => {
   });
 
   it('bozuk alanlar ve geçersiz tema atlanır', () => {
-    const b = parse(JSON.stringify({ belearn_notes: '{bozuk', belearn_theme: 'mor', belearn_todos: '[]' }));
-    expect(b.values).toEqual({ todos: '[]' });
+    const b = parse(JSON.stringify({ belearn_notes: '{bozuk', belearn_theme: 'mor', belearn_quiz: '[]' }));
+    expect(b.values).toEqual({ quiz: '[]' });
     expect(b.skipped).toEqual(['belearn_notes', 'belearn_theme']);
     expect(parseBackup('{"x":1}')).toMatchObject({ ok: false });
     expect(parseBackup('yedek değil')).toMatchObject({ ok: false });
@@ -46,26 +46,36 @@ describe('yedek (Adım 4a)', () => {
 
   it('fill: dolu anahtara dokunmaz; replace: değiştirir', () => {
     localStorage.setItem('belearn_notes', '[{"id":1}]');
-    const b = parse(JSON.stringify({ belearn_notes: '[{"id":2}]', belearn_todos: '[{"id":3}]' }));
+    const b = parse(JSON.stringify({ belearn_notes: '[{"id":2}]', belearn_quiz: '[{"id":3}]' }));
     expect(currentlyFilledKeys()).toEqual(['notes']);
-    expect(applyBackup(b, 'fill')).toMatchObject({ ok: true, written: ['todos'], kept: ['notes'] });
+    expect(applyBackup(b, 'fill')).toMatchObject({ ok: true, written: ['quiz'], kept: ['notes'] });
     expect(localStorage.getItem('belearn_notes')).toBe('[{"id":1}]');
-    expect(applyBackup(b, 'replace')).toMatchObject({ ok: true, written: ['notes', 'todos'] });
+    expect(applyBackup(b, 'replace')).toMatchObject({ ok: true, written: ['notes', 'quiz'] });
     expect(localStorage.getItem('belearn_notes')).toBe('[{"id":2}]');
   });
 
   it('kota dolarsa yazılanlar geri alınır, hiçbir veri değişmez', () => {
     localStorage.setItem('belearn_notes', '[{"id":1}]');
-    const b = parse(JSON.stringify({ belearn_notes: '[{"id":2}]', belearn_todos: '[{"id":3}]' }));
+    const b = parse(JSON.stringify({ belearn_notes: '[{"id":2}]', belearn_quiz: '[{"id":3}]' }));
     const orig = Storage.prototype.setItem;
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
-      if (k === 'belearn_todos') throw new DOMException('dolu', 'QuotaExceededError');
+      if (k === 'belearn_quiz') throw new DOMException('dolu', 'QuotaExceededError');
       return orig.call(this, k, v);
     });
     expect(applyBackup(b, 'replace')).toMatchObject({ ok: false, error: expect.stringContaining('dolu') });
     vi.restoreAllMocks();
     expect(localStorage.getItem('belearn_notes')).toBe('[{"id":1}]');
-    expect(localStorage.getItem('belearn_todos')).toBeNull();
+    expect(localStorage.getItem('belearn_quiz')).toBeNull();
+  });
+
+  it('kaldırılan görevler yedeğe girmez; eski yedekteki görevler sessizce yok sayılır', () => {
+    localStorage.setItem('belearn_todos', '[{"id":1,"text":"x","completed":false}]');
+    localStorage.setItem('bmo_todos', '[]');
+    localStorage.setItem('belearn_notes', '[]');
+    expect(Object.keys(collectBackup().data)).toEqual(['belearn_notes']);
+    const b = parse(JSON.stringify({ belearn_notes: '[]', belearn_todos: '[{"id":3}]', bmo_todos: '[]' }));
+    expect(b.values).toEqual({ notes: '[]' });
+    expect(b.skipped).toEqual([]);
   });
 
   it('bmo_* anahtarlarına asla yazmaz', () => {

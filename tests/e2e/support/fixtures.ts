@@ -40,7 +40,7 @@ export class App {
   }
 
   async openLink(url: string) {
-    await this.page.getByPlaceholder('YouTube bağlantısı ya da PDF').fill(url);
+    await this.page.getByPlaceholder('YouTube bağlantısı').fill(url);
     await this.page.keyboard.press('Enter');
     await expect(this.page.getByRole('tablist', { name: 'Çalışma paneli' })).toBeVisible();
   }

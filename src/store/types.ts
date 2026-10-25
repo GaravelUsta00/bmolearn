@@ -1,15 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type {
-  ContentConfig,
-  Flashcard,
-  HistoryItem,
-  Note,
-  QuizQuestion,
-  Setter,
-  StudyTab,
-  TimerMode,
-  Todo,
-} from '@/types';
+import type { ContentConfig, Flashcard, HistoryItem, Note, QuizQuestion, Setter, StudyTab, TimerMode } from '@/types';
 
 /** `beforeinstallprompt` olayı (TypeScript DOM tiplerinde yok). */
 export interface InstallPromptEvent extends Event {
@@ -80,7 +70,6 @@ export type TimerStatus = 'idle' | 'running' | 'paused';
 
 export interface PomodoroSlice {
   pomodoroHistory: Record<string, number>;
-  todos: Todo[];
   /** Kalıcı: belearn_pomodoro_settings (karar #6) */
   pomodoroSettings: PomodoroSettings;
 
@@ -92,9 +81,6 @@ export interface PomodoroSlice {
   pomodoroToast: { message: string; type: TimerMode | null; visible: boolean };
 
   addPomodoroRecord: (at?: number) => void;
-  addTodo: (text: string) => void;
-  toggleTodo: (id: Todo['id']) => void;
-  deleteTodo: (id: Todo['id']) => void;
 
   startTimer: () => void;
   pauseTimer: () => void;
@@ -132,13 +118,12 @@ export interface UiSlice {
   showHistory: boolean;
   showInstallModal: boolean;
   showAIModal: boolean;
-  showPomodoroWidget: boolean;
   showPlaylistSidebar: boolean;
   showMusicWidget: boolean;
   copyFeedback: boolean;
   newNote: string;
   videoUrlInput: string;
-  /** Odak modu (DESIGN §8.7): üst çubuk soluk, kenarlar karartılmış. Kalıcı değil. */
+  /** Sinema modu (DESIGN §8.7): video önde, geri kalan her şey yarı saydam siyahın altında. Kalıcı değil. */
   focusMode: boolean;
 
   setTheme: (theme: 'dark' | 'light') => void;
@@ -154,7 +139,6 @@ export interface UiSlice {
   setShowHistory: Setter<boolean>;
   setShowInstallModal: Setter<boolean>;
   setShowAIModal: Setter<boolean>;
-  setShowPomodoroWidget: Setter<boolean>;
   setShowPlaylistSidebar: Setter<boolean>;
   setShowMusicWidget: Setter<boolean>;
   setCopyFeedback: Setter<boolean>;
@@ -169,7 +153,6 @@ export interface PersistedData {
   flashcards: Flashcard[];
   quiz: QuizQuestion[];
   summaries: Record<string, string>;
-  todos: Todo[];
   history: HistoryItem[];
   pomodoroHistory: Record<string, number>;
   videoProgress: Record<string, number>;

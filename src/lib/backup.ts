@@ -1,4 +1,12 @@
-import { ACTIVE_PREFIX, DATA_KEYS, LEGACY_PREFIX, PREFIX, isDataKey, type DataKey } from '@/lib/storageKeys';
+import {
+  ACTIVE_PREFIX,
+  DATA_KEYS,
+  LEGACY_PREFIX,
+  PREFIX,
+  isDataKey,
+  isRetiredKey,
+  type DataKey,
+} from '@/lib/storageKeys';
 
 // Yedek dosyası biçimi. `data` localStorage'daki ham değerleri (string) olduğu gibi taşır;
 // böylece yedek, uygulamanın o anki veri biçiminden bağımsızdır.
@@ -20,14 +28,20 @@ const safeLocalStorage = (): Storage | null => {
   }
 };
 
-/** localStorage'daki tüm `bmo_*` ve `belearn_*` anahtarlarını ham haliyle toplar. */
+const suffixOf = (key: string) => {
+  const m = key.match(BACKUP_KEY_RE);
+  return m ? key.slice(m[1].length) : null;
+};
+
+/** localStorage'daki tüm `bmo_*` ve `belearn_*` anahtarlarını (kaldırılan özellikler hariç) ham haliyle toplar. */
 export const collectBackup = (): BackupFile => {
   const ls = safeLocalStorage();
   const data: Record<string, string> = {};
   if (ls) {
     for (let i = 0; i < ls.length; i++) {
       const key = ls.key(i);
-      if (!key || !BACKUP_KEY_RE.test(key)) continue;
+      const suffix = key ? suffixOf(key) : null;
+      if (!key || suffix === null || isRetiredKey(suffix)) continue;
       const value = ls.getItem(key);
       if (value !== null) data[key] = value;
     }
@@ -103,7 +117,8 @@ export const parseBackup = (text: string): { ok: true; backup: ParsedBackup } | 
     const m = fullKey.match(BACKUP_KEY_RE);
     const suffix = m ? fullKey.slice(m[1].length) : '';
     if (!m || !isDataKey(suffix)) {
-      if (!fullKey.startsWith(`${PREFIX}backup_`) && !fullKey.startsWith(`${PREFIX}meta`)) skipped.push(fullKey);
+      const internal = fullKey.startsWith(`${PREFIX}backup_`) || fullKey.startsWith(`${PREFIX}meta`);
+      if (!internal && !(m && isRetiredKey(suffix))) skipped.push(fullKey);
       continue;
     }
     // Aynı veri iki önekle varsa yenisi (belearn_) kazanır.

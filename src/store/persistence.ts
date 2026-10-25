@@ -11,7 +11,6 @@ export const PERSISTED_FIELDS: Record<keyof PersistedData, Exclude<DataKey, 'the
   flashcards: 'flashcards',
   quiz: 'quiz',
   summaries: 'summaries',
-  todos: 'todos',
   history: 'history',
   pomodoroHistory: 'pomodoro',
   pomodoroSettings: 'pomodoro_settings',

@@ -2,8 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import {
-  Eye,
-  EyeOff,
+  Clapperboard,
   History,
   ListVideo,
   Maximize,
@@ -70,7 +69,6 @@ const MenuRow = ({ icon, label, onClick, pressed }: MenuRowProps) => (
 );
 
 interface AppHeaderProps {
-  setShowPomodoroWidget: Setter<boolean>;
   showPlaylistSidebar: boolean;
   setShowPlaylistSidebar: Setter<boolean>;
   setShowHistory: Setter<boolean>;
@@ -83,7 +81,6 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({
-  setShowPomodoroWidget,
   showPlaylistSidebar,
   setShowPlaylistSidebar,
   setShowHistory,
@@ -130,9 +127,13 @@ export const AppHeader = ({
     setMenuOpen(false);
     fn();
   };
+  const closeSettingsAnd = (fn: () => void) => () => {
+    setSettingsOpen(false);
+    fn();
+  };
 
   return (
-    <header className="focus-dim sticky top-0 z-40 border-b border-rule bg-page">
+    <header className="cinema-header sticky top-0 z-40 border-b border-rule bg-page">
       <div className="mx-auto flex w-full max-w-[1700px] items-center justify-between gap-3 px-3 py-1.5 sm:px-6">
         <button
           type="button"
@@ -144,7 +145,7 @@ export const AppHeader = ({
         </button>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <PomodoroControl onOpenWidget={() => setShowPomodoroWidget(true)} />
+          <PomodoroControl />
 
           {/* Masaüstü: ikon düğmeleri */}
           <div className="ml-2 hidden items-center gap-0.5 border-l border-rule pl-2 sm:flex">
@@ -158,9 +159,6 @@ export const AppHeader = ({
               </IconButton>
             )}
             <ThemeToggle />
-            <IconButton label="Geçmiş" onClick={() => setShowHistory(true)}>
-              <History size={18} strokeWidth={1.5} />
-            </IconButton>
             <IconButton
               label={radioLabel}
               pressed={showMusicWidget}
@@ -174,9 +172,6 @@ export const AppHeader = ({
             <IconButton label="Tam ekran" pressed={isFullscreen} onClick={toggleFullscreen}>
               {isFullscreen ? <Minimize size={18} strokeWidth={1.5} /> : <Maximize size={18} strokeWidth={1.5} />}
             </IconButton>
-            <IconButton label="Odak modu" pressed={focusMode} onClick={toggleFocusMode}>
-              {focusMode ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
-            </IconButton>
             <div ref={settingsRef} className="relative">
               <IconButton label="Ayarlar" expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>
                 <SlidersHorizontal size={18} strokeWidth={1.5} />
@@ -189,6 +184,19 @@ export const AppHeader = ({
                   onAnimationEnd={settingsPresence.onAnimationEnd}
                   className={`absolute right-0 top-full z-50 mt-2 w-72 rounded-sm border border-rule bg-page p-4 shadow-page ${settingsPresence.fadeClass}`}
                 >
+                  <div className="mb-3 divide-y divide-rule border-b border-rule pb-1">
+                    <MenuRow
+                      icon={<History size={16} strokeWidth={1.5} />}
+                      label="Geçmiş"
+                      onClick={closeSettingsAnd(() => setShowHistory(true))}
+                    />
+                    <MenuRow
+                      icon={<Clapperboard size={16} strokeWidth={1.5} />}
+                      label="Sinema modu"
+                      pressed={focusMode}
+                      onClick={closeSettingsAnd(toggleFocusMode)}
+                    />
+                  </div>
                   <SettingsContent onInstall={handleInstallClick} onClose={() => setSettingsOpen(false)} />
                 </div>
               )}
@@ -256,8 +264,8 @@ export const AppHeader = ({
                     onClick={closeMenuAnd(toggleFullscreen)}
                   />
                   <MenuRow
-                    icon={focusMode ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
-                    label="Odak modu"
+                    icon={<Clapperboard size={16} strokeWidth={1.5} />}
+                    label="Sinema modu"
                     pressed={focusMode}
                     onClick={closeMenuAnd(toggleFocusMode)}
                   />

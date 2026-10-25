@@ -20,7 +20,10 @@ describe('migrasyon bmo_* → belearn_* (Adım 4c)', () => {
     const before = snapshot('bmo_');
     const r = runMigration(new Date('2026-10-25T10:00:00Z'));
     expect(r.status).toBe('migrated');
-    for (const [k, v] of Object.entries(legacy)) expect(localStorage.getItem(k.replace('bmo_', 'belearn_'))).toBe(v);
+    // Görevler kaldırıldı (2026-10-25): bmo_todos yerinde kalır ama kopyalanmaz.
+    for (const [k, v] of Object.entries(legacy)) {
+      expect(localStorage.getItem(k.replace('bmo_', 'belearn_'))).toBe(k === 'bmo_todos' ? null : v);
+    }
     expect(snapshot('bmo_')).toEqual(before); // eski anahtarlar ASLA silinmez/yazılmaz
     expect(JSON.parse(localStorage.getItem(META_KEY)!)).toMatchObject({ version: 1, migratedFrom: 'bmo' });
   });

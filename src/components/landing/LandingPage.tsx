@@ -90,7 +90,7 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
             <span className={`block ${rise}`}>Sadece</span>
           </span>{' '}
           <span className="block overflow-hidden pb-[0.12em]">
-            <em className={`block italic text-ribbon ${rise}`} style={intro ? { animationDelay: '90ms' } : undefined}>
+            <em className={`block italic text-brand ${rise}`} style={intro ? { animationDelay: '90ms' } : undefined}>
               odaklan.
             </em>
           </span>
@@ -106,7 +106,7 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
         <div {...fadeUp(1)}>
           <form onSubmit={handleStart} className="mt-12 flex max-w-2xl items-end gap-4">
             <label className="flex-1">
-              <span className="sr-only">YouTube bağlantısı ya da PDF</span>
+              <span className="sr-only">YouTube bağlantısı</span>
               <input
                 type="text"
                 value={url}
@@ -115,7 +115,7 @@ export const LandingPage = ({ onShowHistory }: LandingPageProps) => {
                   if (inputError) setInputError(null);
                 }}
                 aria-describedby={inputError ? 'landing-input-error' : undefined}
-                placeholder="YouTube bağlantısı ya da PDF"
+                placeholder="YouTube bağlantısı"
                 className="w-full border-0 border-b border-mute bg-transparent pb-2 text-base text-ink placeholder:text-mute focus:border-b-2 focus:border-ribbon focus:pb-[7px] focus:outline-none sm:text-xl"
                 autoFocus
               />

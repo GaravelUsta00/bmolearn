@@ -16,6 +16,8 @@
   --mute: #66615a;
   --rule: #cbc8bb;
   --ribbon: #8f2d2d;
+  /* Marka bordosu: iki temada aynı (logo "Be", Landing "odaklan.") */
+  --brand: #8f2d2d;
   --ok: #33604a;
   --plate: #1a1816;
   --shadow: rgba(38, 35, 31, 0.26);
@@ -41,6 +43,7 @@
   --mute: #9a958b;
   --rule: #2e2a25;
   --ribbon: #d2604a;
+  --brand: #8f2d2d;
   --ok: #7fb596;
   --plate: #0e0c0b;
   --shadow: rgba(0, 0, 0, 0.6);
@@ -65,6 +68,7 @@
     --mute: #9a958b;
     --rule: #2e2a25;
     --ribbon: #d2604a;
+    --brand: #8f2d2d;
     --ok: #7fb596;
     --plate: #0e0c0b;
     --shadow: rgba(0, 0, 0, 0.6);
@@ -90,6 +94,7 @@
   --color-mute: var(--mute);
   --color-rule: var(--rule);
   --color-ribbon: var(--ribbon);
+  --color-brand: var(--brand);
   --color-ok: var(--ok);
   --color-plate: var(--plate);
   --color-spine-1: var(--spine-1);
@@ -245,23 +250,34 @@
   }
 }
 
-/* Odak modu (DESIGN §8.7): üst çubuk soluklaşır, kenarlar kararır */
-/* Soluklaştırma opaklıkla değil token'la: metin `mute` olur, kontrast AA'da kalır (mute/page 5.48).
-   Üzerine gelince ya da klavye odağında (fareyle tıklama sonrası değil) normale döner. */
-[data-focus-mode='true'] .focus-dim:not(:hover):not(:has(:focus-visible)) {
-  --ink: var(--mute);
-  --ribbon: var(--mute);
-}
-.focus-vignette {
+/* Sinema modu (DESIGN §8.7): video önde; geri kalan her şey yarı saydam siyah örtünün altında.
+   Örtü tıklamayı engellemez. Panel, araç çubuğu ve üst çubuk üzerine gelince ya da içlerinde
+   odak varken (ör. Alt+N ile not yazarken) örtünün üstüne çıkar. */
+.cinema-backdrop {
   position: fixed;
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  box-shadow: inset 0 0 12rem 2rem var(--plate);
-  opacity: 0.55;
+  background: color-mix(in srgb, var(--plate) 85%, transparent);
 }
-[data-theme='dark'] .focus-vignette {
-  opacity: 0.8;
+[data-focus-mode='true'] .cinema-screen {
+  z-index: 40;
+}
+[data-focus-mode='true'] .cinema-lift:is(:hover, :focus-within) {
+  position: relative;
+  z-index: 40;
+}
+/* Üst çubuk ayrı bir katmanda (sticky z-40): kendi örtüsünü taşır */
+[data-focus-mode='true'] .cinema-header::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 -1px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--plate) 85%, transparent);
+  transition: opacity var(--dur-fade) ease-out;
+}
+[data-focus-mode='true'] .cinema-header:is(:hover, :focus-within)::after {
+  opacity: 0;
 }
 
 /* ============================================================

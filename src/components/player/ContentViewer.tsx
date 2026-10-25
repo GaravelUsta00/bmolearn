@@ -62,7 +62,7 @@ export const ContentViewer = ({ hostRef, videoError, apiError, onRetry }: Conten
   return (
     <figure className="m-0">
       <div
-        className={`relative w-full overflow-hidden rounded-sm bg-plate shadow-page ${isVideo ? 'aspect-video' : 'h-[75vh] min-h-[420px] lg:h-[calc(100vh-14rem)]'}`}
+        className={`cinema-screen relative w-full overflow-hidden rounded-sm bg-plate shadow-page ${isVideo ? 'aspect-video' : 'h-[75vh] min-h-[420px] lg:h-[calc(100vh-14rem)]'}`}
       >
         <div
           ref={hostRef}

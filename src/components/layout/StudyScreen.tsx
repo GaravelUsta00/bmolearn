@@ -16,7 +16,6 @@ import { PlaylistSidebar } from '@/components/player/PlaylistSidebar';
 
 // İlk açılışta indirilir (P3). Her biri kendi <Suspense> sınırında: indirilirken çalışma ekranı gizlenmesin.
 const AIModal = dynamic(() => import('@/components/ai/AIModal').then((m) => m.AIModal));
-const PomodoroWidget = dynamic(() => import('@/components/pomodoro/PomodoroWidget').then((m) => m.PomodoroWidget));
 const RadioWidget = dynamic(() => import('@/components/radio/RadioWidget').then((m) => m.RadioWidget));
 
 interface StudyScreenProps {
@@ -31,8 +30,6 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
   const setActiveTab = useStore((s) => s.setActiveTab);
   const showAIModal = useStore((s) => s.showAIModal);
   const setShowAIModal = useStore((s) => s.setShowAIModal);
-  const showPomodoroWidget = useStore((s) => s.showPomodoroWidget);
-  const setShowPomodoroWidget = useStore((s) => s.setShowPomodoroWidget);
   const showPlaylistSidebar = useStore((s) => s.showPlaylistSidebar);
   const setShowPlaylistSidebar = useStore((s) => s.setShowPlaylistSidebar);
   const showMusicWidget = useStore((s) => s.showMusicWidget);
@@ -58,7 +55,6 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   const aiMounted = useMountedOnce(showAIModal);
-  const pomodoroMounted = useMountedOnce(showPomodoroWidget);
   const radioMounted = useMountedOnce(showMusicWidget);
 
   return (
@@ -66,7 +62,6 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
       data-focus-mode={focusMode}
       className="relative flex min-h-screen flex-col overflow-x-hidden bg-paper text-ink"
     >
-      {focusMode && <div className="focus-vignette animate-fade" aria-hidden="true" />}
       {aiMounted && (
         <Suspense fallback={null}>
           <AIModal
@@ -79,11 +74,6 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
         </Suspense>
       )}
 
-      {pomodoroMounted && (
-        <Suspense fallback={null}>
-          <PomodoroWidget showPomodoroWidget={showPomodoroWidget} setShowPomodoroWidget={setShowPomodoroWidget} />
-        </Suspense>
-      )}
       {radioMounted && (
         <Suspense fallback={null}>
           <RadioWidget
@@ -101,7 +91,6 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
       )}
 
       <AppHeader
-        setShowPomodoroWidget={setShowPomodoroWidget}
         showPlaylistSidebar={showPlaylistSidebar}
         setShowPlaylistSidebar={setShowPlaylistSidebar}
         setShowHistory={setShowHistory}
@@ -120,7 +109,9 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
         <h1 className="sr-only">
           {contentConfig.title ? `${contentConfig.title} — BeLearn` : 'BeLearn çalışma ekranı'}
         </h1>
-        <div className="lg:col-start-1 lg:row-start-1">
+        {/* Sinema modu örtüsü main'in katmanında: video (.cinema-screen) üstüne çıkabilsin */}
+        {focusMode && <div className="cinema-backdrop animate-fade" aria-hidden="true" />}
+        <div className="cinema-lift lg:col-start-1 lg:row-start-1">
           <ContentToolbar
             videoUrlInput={videoUrlInput}
             setVideoUrlInput={setVideoUrlInput}
@@ -132,7 +123,7 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
         </div>
 
         {sidebarVisible && (
-          <div className="lg:row-start-2">
+          <div className="cinema-lift lg:row-start-2">
             <PlaylistSidebar
               showPlaylistSidebar={showPlaylistSidebar}
               handlePlaylistVideoSelect={selectPlaylistIndex}
@@ -140,7 +131,7 @@ export default function StudyScreen({ radio }: StudyScreenProps) {
           </div>
         )}
 
-        <div className="lg:row-start-2">
+        <div className="cinema-lift lg:row-start-2">
           <StudyPanel noteInputRef={noteInputRef} jumpToTime={jumpToTime} playerRef={playerRef} />
         </div>
       </main>

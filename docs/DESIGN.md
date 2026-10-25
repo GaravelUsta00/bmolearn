@@ -46,8 +46,9 @@ Aşağıdakiler hiçbir bileşende kullanılmaz. Her adımın sonunda §11'deki 
 | `mute`   | `#66615A`            | `#9A958B`        | İkincil metin, etiketler, **etkileşimli çizgiler** (input alt çizgisi, odak dışı kenarlık) |
 | `rule`   | `#CBC8BB`            | `#2E2A25`        | **Yalnızca dekoratif** ayırıcı çizgiler (satır arası, panel kenarı)                        |
 | `ribbon` | `#8F2D2D`            | `#D2604A`        | Tek vurgu: aktif sekme çizgisi, zaman damgası, italik vurgu, odak halkası, birincil eylem  |
+| `brand`  | `#8F2D2D`            | `#8F2D2D`        | Marka bordosu, iki temada aynı: yalnızca logodaki "Be" ve Landing başlığındaki "odaklan."  |
 | `ok`     | `#33604A`            | `#7FB596`        | Başarı: doğru cevap, "öğrendim", kayıt edildi                                              |
-| `plate`  | `#1A1816`            | `#0E0C0B`        | Video "şekil" zemini                                                                       |
+| `plate`  | `#1A1816`            | `#0E0C0B`        | Video "şekil" zemini; sinema modu örtüsü (%85)                                             |
 | `shadow` | `rgba(38,35,31,.26)` | `rgba(0,0,0,.6)` | Yalnızca kitap/kart yüzeyleri (§6)                                                         |
 
 **Hata durumu** ayrı bir kırmızı kullanmaz: `ribbon` + metin + ikon. (Örn. "Senin cevabın — yanlış".)
@@ -71,6 +72,7 @@ Sırt rengi içerik id'sinden deterministik seçilir (aynı kitap her açılış
 | `ink` / `page`                | 13.96       | 13.94           | AA ✅                                                                                          |
 | `mute` / `page` · `paper`     | 5.48 · 4.91 | 5.81 · 6.27     | AA ✅                                                                                          |
 | `ribbon` / `page` · `paper`   | 7.26 · 6.51 | **4.55** · 4.91 | AA ✅ (gece sınırda: `ribbon` metni gecede ≥ 14px ve normal/kalın ağırlıkta, ince ağırlık yok) |
+| `brand` / `page` · `paper`    | 7.26 · 6.51 | **2.13 · 2.30** | Gece ❌ bilinçli (kullanıcı kararı 2026-10-25; yalnızca logo ve başlık; axe testinde muaf)     |
 | `ok` / `page`                 | 6.44        | 7.38            | AA ✅                                                                                          |
 | `page` metni / `ribbon` dolgu | 7.26        | 4.55            | AA ✅                                                                                          |
 | Sırt yazısı / sırt            | 5.63–10.41  | 4.78–7.54       | AA ✅                                                                                          |
@@ -111,7 +113,7 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 | `label`   | DM Mono 0.6875–0.75rem, BÜYÜK HARF, `letter-spacing: .12em` | Etiketler, sekme sayaçları                         |
 | `timer`   | DM Mono, `font-variant-numeric: tabular-nums`               | Pomodoro, zaman damgaları                          |
 
-- **Logo:** metin olarak "Be" düz + "_Learn_" italik (Literata), `ink` rengi (`<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
+- **Logo:** metin olarak "Be" düz, `brand` rengi + "_Learn_" italik, `ink` rengi (Literata, `<Logo />`). `/logo.png` kullanılmaz. Erişilebilir ad "BeLearn".
 - **Yer tutucu ikon** (favicon, apple-icon, PWA 192/512/maskable): kâğıt zemin üzerinde Literata "B" (`ink`) + italik "L" (`ribbon`). Adım 3d'de üretildi; gerçek ikon gelince `public/icons/` ve `src/app/{favicon.ico,apple-icon.png}` değiştirilir.
 - Türkçe büyük harf dönüşümü için `lang="tr"` zorunlu (`i` → `İ` doğru dönüşsün).
 
@@ -136,17 +138,16 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 
 - Süreler token'dır: `--dur-fade: 150ms`, `--dur-flip: 450ms`, `--dur-rise: 600ms`.
 - `prefers-reduced-motion: reduce` durumunda hepsi kapalı (anında son durum).
-- Kaldırılacak mevcut animasyonlar: `float`, `subtleGlow`, `blob`, `eq-*` (radyo ekolayzeri → durum metni "Çalıyor"), `animate-bounce`, `animate-pulse` (zamanlayıcı/radyo ikonları), `scaleIn` ve `fadeIn` (→ madde 5'teki 150 ms solma), `fadeInUp` (koreografi dışı), `taskComplete`.
-- ⚠️ `taskComplete` bugün işlevsel: tamamlanan görev **animasyon bitince** (`onAnimationEnd`) siliniyor. Animasyon kaldırılırken silme akışı açık bir mantığa taşınmalı (bkz. PLAN Adım 7).
+- Kaldırılacak mevcut animasyonlar: `float`, `subtleGlow`, `blob`, `eq-*` (radyo ekolayzeri → durum metni "Çalıyor"), `animate-bounce`, `animate-pulse` (zamanlayıcı/radyo ikonları), `scaleIn` ve `fadeIn` (→ madde 5'teki 150 ms solma), `fadeInUp` (koreografi dışı), `taskComplete` (görev özelliğiyle birlikte kaldırıldı).
 
 ## 8. Bileşen kuralları
 
 ### 8.1 Landing (çok sade; yalnızca bunlar)
 
 1. Sol üst: "BeLearn" logosu. Sağ üst: tema düğmesi (Gece/Gündüz).
-2. Çok büyük, sola hizalı başlık: "Sadece _odaklan._" ("odaklan." italik + `ribbon`). Ortalanmış jenerik hero yok.
+2. Çok büyük, sola hizalı başlık: "Sadece _odaklan._" ("odaklan." italik + `brand`, iki temada aynı bordo). Ortalanmış jenerik hero yok.
 3. Tek cümle: "Bir YouTube videosu, oynatma listesi ya da PDF aç. Notların, özetin, kartların ve soruların yanında beklesin."
-4. Tek kaynak girişi: alt çizgili input (placeholder: "YouTube bağlantısı ya da PDF") + "Aç" düğmesi; altında metin bağlantısı "ya da PDF yükle".
+4. Tek kaynak girişi: alt çizgili input (placeholder: "YouTube bağlantısı") + "Aç" düğmesi; altında metin bağlantısı "ya da PDF yükle".
 5. Geçmiş varsa "Son çalışmalar": kitaplık rafı (dikey sırtlar, başlık dikey yazılı, üstüne gelince kalkar, altta ince tahta çizgisi). **En fazla 12 sırt**; rafın sağında küçük bir "Tüm geçmiş" metin bağlantısı Geçmiş modalını açar. Playlist sırtında "Koleksiyon · N video" (DM Mono etiket). PDF sırtında "PDF" etiketi. Landing'de "Geçmişi temizle" düğmesi yok; "Tümünü temizle" yalnızca Geçmiş modalında ve onaylı. (Karar #3)
 6. Altta tek satır: "Notların ve ilerlemen yalnızca bu cihazda saklanır."
 
@@ -157,8 +158,8 @@ Geist kaldırılır. `font-optical-sizing: auto`.
 İnce, tek satır, `page` zemin, altta `rule` çizgi.
 
 - **Sol:** "BeLearn" (Landing'e döner).
-- **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · geçmiş · radyo · ses · tam ekran · odak modu (§8.7) · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
-- **Ayarlar menüsü:** mavi ışık filtresi, uygulamayı yükle (PWA), Adım 4'ten itibaren "Yedeği indir / Yedeği yükle". (Karar #2)
+- **Sağ (soldan sağa):** pomodoro kontrolü (§8.2.1) · [playlist, yalnızca playlist varken] · tema (Gece/Gündüz) · radyo · ses · tam ekran · Ayarlar. İkonlar sade (lucide, 1.5 çizgi kalınlığı); çerçeveli çip yok, gerekirse ince çizgili. Her ikon düğmesinin `aria-label`'ı var.
+- **Ayarlar menüsü:** en üstte "Geçmiş" ve "Sinema modu" (§8.7) satırları (üst çubuk sade kalsın diye buraya taşındı, 2026-10-25); ardından mavi ışık filtresi, "Yedeği indir / Yedeği yükle", PDF depolama, uygulamayı yükle (PWA). (Karar #2)
 - İlerleme yüzdesi ve not/kart/soru sayaçları üst çubukta **yok**; sağ paneldeki sekme sayaçlarında gösterilir. (Karar #2)
 - Mobilde (< 640 px) yalnızca logo, pomodoro kontrolü ve bir "Menü" düğmesi görünür; diğer düğmeler menüde listelenir (dokunma hedefi ≥ 44 px).
 
@@ -178,9 +179,9 @@ Tek bir bölünmüş kontrol:
   - "Mola" süresi: dakika, 1–30, aynı şekilde.
   - Hazır ayarlar (çip, tam yuvarlak): `25 / 5`, `50 / 10`, `90 / 15`.
   - "Sıfırla" ve (molada) "Molayı atla".
-  - "Görevler ve 30 günlük harita →" bağlantısı mevcut Pomodoro widget'ını açar.
+- Pomodoro'nun tek arayüzü bu paneldir. "Görevler ve 30 günlük harita" widget'ı ve görev özelliği 2026-10-25'te tamamen kaldırıldı (sadelik, kullanıcı kararı). `todos` anahtarı emeklidir (`RETIRED_KEYS`): okunmaz, yazılmaz, yedeğe girmez, eski yedeklerde yok sayılır; cihazdaki eski değerlere dokunulmaz. Pomodoro geçmişi korunur.
 - Süre alanları zamanlayıcı **çalışırken kilitlidir** (bugünkü davranış). Değişiklik, durmuş sayaca anında yansır.
-- Üst çubuk paneli ile widget **aynı state'i** kullanır; iki yerde ayrı süre tutulmaz. Süreler Adım 7'de kalıcı hale gelir (`belearn_pomodoro_settings`).
+- Süreler kalıcıdır (`belearn_pomodoro_settings`).
 - Erişilebilirlik: süre değişimi `aria-live="polite"` ile duyurulmaz (her saniye gürültü olur). Yalnızca mod değişimi ve bitiş duyurulur. Adımlayıcılar `aria-label="Odak süresini 1 dakika azalt"` gibi açık etiketler taşır.
 
 ### 8.3 Video ve playlist
@@ -203,11 +204,10 @@ Tek bir bölünmüş kontrol:
 
 ### 8.5 Widget'lar ve modallar
 
-Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
+Radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 
 - `page` zemin, 1px `rule` kenarlık, 2px köşe, §6 gölge; **cam efekti yok**, arka plan örtüsü düz ve yarı saydam `plate` (bulanıklık yok; `ink` gece temasında açık renk olduğu için örtüde kullanılmaz). Açılış/kapanış yalnızca 150 ms solma (§7.5).
 - Başlık Literata, etiketler DM Mono.
-- Pomodoro: büyük DM Mono sayaç; "Odak" ve "Mola" modları renkle değil **metinle** ayrılır (mavi yok). Isı haritası `ribbon` opaklık basamaklarıyla.
 - Radyo: çalma durumu metinle ("Çalıyor" / "Duraklatıldı"); ekolayzer animasyonu yok.
 
 ### 8.6 Mobil (375 px)
@@ -217,14 +217,14 @@ Pomodoro, radyo, Geçmiş, AI Sihirbazı, PDF yeniden yükle, onay diyalogları:
 - Silme düğmeleri hover gerektirmeden görünür (`@media (hover: hover)` olan cihazlarda hover ile belirginleşebilir).
 - Yatay kaydırma yok.
 
-### 8.7 Odak modu (onaylandı, Adım 9'da eklendi)
+### 8.7 Sinema modu (Adım 9'da "Odak modu" olarak eklendi; 2026-10-25'te sinema moduna çevrildi)
 
-Üst çubuğu soluklaştırma ve kenarları karartma.
+Film sitelerindeki sinema modu gibi: video önde, geri kalan her şey yarı saydam siyahın altında.
 
-- Üst çubuktaki göz ikonu ("Odak modu", `aria-pressed`) ve mobil menü açıp kapatır. Kalıcı değildir (sayfa yenilenince kapalı).
-- **Soluklaştırma opaklıkla değil token'la yapılır:** çubuğun içinde `ink` ve `ribbon` → `mute`. Opaklık metin kontrastını AA'nın altına düşürüyordu (axe); `mute`/`page` 5.48 ile AA korunur. Üzerine gelince ya da klavye odağı çubuğa girince (`:focus-visible`) normale döner.
-- **Kenar karartması:** sabit, tıklamayı engellemeyen (`pointer-events: none`) bir katman; `plate` renginde iç gölge (`box-shadow: inset`), gündüz %55, gece %80. Renk geçişi kullanılmaz.
-- Kart çevirme, sekmeler ve kısayollar odak modunda aynen çalışır.
+- Ayarlar menüsündeki "Sinema modu" satırı (`aria-pressed`) ve mobil menü açıp kapatır; **Escape** kapatır (yazı alanında ve modal açıkken değil). Kalıcı değildir (sayfa yenilenince kapalı).
+- **Örtü:** sabit, tıklamayı engellemeyen (`pointer-events: none`) düz bir katman, `plate` %85 (`color-mix`; renk geçişi ve bulanıklık yok). Video kutusu (`.cinema-screen`) örtünün üstündedir.
+- Üst çubuk kendi örtüsünü taşır (`.cinema-header::after`). Üst çubuk, araç çubuğu, oynatma listesi ve sağ panel (`.cinema-lift`) **üzerine gelince ya da içlerinde odak varken** örtünün üstüne çıkar; Alt+N ile not yazmak sinema modunda da çalışır.
+- Kart çevirme, sekmeler ve kısayollar sinema modunda aynen çalışır.
 
 ### 8.8 Sistem bildirimleri (Adım 10)
 

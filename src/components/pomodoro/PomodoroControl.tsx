@@ -7,12 +7,8 @@ import { useDismiss } from '@/hooks/useDismiss';
 import { TimerReadout } from '@/components/pomodoro/TimerReadout';
 import { DurationControls, usePrimaryTimerAction } from '@/components/pomodoro/DurationControls';
 
-interface PomodoroControlProps {
-  onOpenWidget: () => void;
-}
-
-// Üst çubuktaki pomodoro kontrolü (docs/DESIGN.md §8.2.1). Durum store'da; widget ile ortak.
-export const PomodoroControl = ({ onOpenWidget }: PomodoroControlProps) => {
+// Üst çubuktaki pomodoro kontrolü (docs/DESIGN.md §8.2.1). Durum store'da.
+export const PomodoroControl = () => {
   const mode = useStore((s) => s.timerMode);
   const running = useStore((s) => s.timerStatus === 'running');
   const resetTimer = useStore((s) => s.resetTimer);
@@ -54,27 +50,15 @@ export const PomodoroControl = ({ onOpenWidget }: PomodoroControlProps) => {
           className="absolute right-0 top-full z-50 mt-2 w-72 animate-fade rounded-sm border border-rule bg-page p-4 shadow-page"
         >
           <DurationControls />
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-rule pt-3 text-sm">
-            <div className="flex gap-3">
-              <button type="button" onClick={resetTimer} className="min-h-9 text-mute hover:text-ink">
-                Sıfırla
-              </button>
-              {isBreak && (
-                <button type="button" onClick={skipBreak} className="min-h-9 text-mute hover:text-ink">
-                  Molayı atla
-                </button>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onOpenWidget();
-              }}
-              className="min-h-9 text-ink underline decoration-rule underline-offset-4 hover:decoration-mute"
-            >
-              Görevler ve harita →
+          <div className="mt-4 flex gap-3 border-t border-rule pt-3 text-sm">
+            <button type="button" onClick={resetTimer} className="min-h-9 text-mute hover:text-ink">
+              Sıfırla
             </button>
+            {isBreak && (
+              <button type="button" onClick={skipBreak} className="min-h-9 text-mute hover:text-ink">
+                Molayı atla
+              </button>
+            )}
           </div>
         </div>
       )}

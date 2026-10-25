@@ -264,8 +264,8 @@ const HistoryBody = ({ close }: { close: () => void }) => {
         {shown?.kind === 'all' && (
           <p>
             {shown.count} kayıt ve bunlara ait tüm notlar, özetler, kartlar, sorular, video ilerlemesi ve bu cihazda
-            saklanan PDF&apos;ler silinir. Görevlerin ve pomodoro geçmişin korunur. Bu işlem geri alınamaz; istersen
-            önce Ayarlar&apos;dan yedeği indir.
+            saklanan PDF&apos;ler silinir. Pomodoro geçmişin korunur. Bu işlem geri alınamaz; istersen önce
+            Ayarlar&apos;dan yedeği indir.
           </p>
         )}
         {shown?.kind === 'item' && (

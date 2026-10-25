@@ -119,7 +119,7 @@ export const createHistorySlice: SliceCreator<HistorySlice> = (set, get) => ({
     return ids;
   },
 
-  // Video ilerlemesi de temizlenir (B6). Görevler ve pomodoro geçmişi bilinçli olarak korunur.
+  // Video ilerlemesi de temizlenir (B6). Pomodoro geçmişi bilinçli olarak korunur.
   clearHistory: () =>
     set(() => ({ history: [], notes: [], flashcards: [], quiz: [], summaries: {}, videoProgress: {} })),
 });

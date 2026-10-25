@@ -16,11 +16,6 @@ export interface Flashcard {
   answer: string;
   learned?: boolean;
 }
-export interface Todo {
-  id: Id;
-  text: string;
-  completed: boolean;
-}
 export interface WatchedVideo {
   contentId: string;
   title: string;

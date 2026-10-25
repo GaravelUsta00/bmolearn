@@ -143,12 +143,20 @@ test.describe('çalışma ekranı', () => {
     await expect(app.playerState()).toHaveAttribute('data-yt-state', '1');
   });
 
-  test('odak modu ve tema', async ({ app, page }) => {
-    await page.getByRole('button', { name: 'Odak modu' }).click();
+  test('sinema modu ve tema', async ({ app, page }) => {
+    const toggleCinema = async () => {
+      await page.getByRole('button', { name: 'Ayarlar', exact: true }).click();
+      await page.getByRole('button', { name: 'Sinema modu' }).click();
+    };
+    await toggleCinema();
     await expect(page.locator('[data-focus-mode="true"]')).toBeVisible();
-    await expect(page.locator('.focus-vignette')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Odak modu' }).click();
-    await expect(page.locator('.focus-vignette')).toHaveCount(0);
+    await expect(page.locator('.cinema-backdrop')).toHaveCount(1);
+    await toggleCinema();
+    await expect(page.locator('.cinema-backdrop')).toHaveCount(0);
+    await toggleCinema();
+    await page.locator('figcaption').click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.cinema-backdrop')).toHaveCount(0);
 
     const before = await page.evaluate(() => document.documentElement.dataset.theme);
     await page
